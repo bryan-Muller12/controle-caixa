@@ -1,4 +1,4 @@
-// common.js
+// public/common.js
 // Lógica de verificação de login, logout e notificações (compartilhada entre todas as páginas)
 
 // --- VERIFICAÇÃO DE LOGIN ---
@@ -56,6 +56,11 @@ notificationsBtn.addEventListener('click', (e) => {
     notificationsTab.classList.toggle('hidden');
 });
 
+// Adiciona um event listener para impedir a propagação de cliques dentro do painel de notificação
+notificationsTab.addEventListener('click', (e) => {
+    e.stopPropagation();
+});
+
 clearNotificationsBtn.addEventListener('click', () => {
     notificationsList.innerHTML = '<li>Nenhuma notificação.</li>';
     notificationsBadge.classList.add('hidden');
@@ -66,6 +71,7 @@ document.addEventListener('click', (e) => {
     // Se o painel de notificação estiver visível
     if (!notificationsTab.classList.contains('hidden')) {
         // E o clique não foi dentro do painel de notificação E o clique não foi dentro do botão de notificação
+        // Com o stopPropagation no notificationsTab, este `if` será true apenas se o clique for fora de ambos.
         if (!notificationsTab.contains(e.target) && !notificationsBtn.contains(e.target)) {
             notificationsTab.classList.add('hidden');
         }

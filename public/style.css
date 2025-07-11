@@ -182,6 +182,9 @@ header h1 {
 }
 
 /* Notificações: Ajuste de z-index e top para garantir que apareça sobre tudo e feche. */
+.hidden {
+  display: none !important; /* Adicione esta linha para garantir que o elemento seja ocultado */
+}
 .notifications-tab {
     position: fixed;
     top: calc(var(--header-height) + 10px); /* 10px abaixo do header */
