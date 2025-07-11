@@ -1,6 +1,6 @@
 :root {
-  --primary-color: #4f46e5; /* Um índigo moderno */
-  --primary-hover: #4338ca;
+  --primary-color: #4f6e5; /* Um índigo moderno */
+  --primary-hover: #d92664;
   --danger-color: #ef4444;
   --danger-hover: #dc2626;
   --success-color: #22c55e;
@@ -8,7 +8,7 @@
   --background-color: #f8fafc; /* Um cinza muito claro */
   --card-bg-color: #ffffff;
   --text-color: #1e293b; /* Um cinza-azulado escuro */
-  --text-light-color: #64748b;
+  --text-light-color: #d92664;
   --border-color: #e2e8f0;
   --shadow-color: rgba(79, 70, 229, 0.15);
   --font-family: 'Roboto', sans-serif;

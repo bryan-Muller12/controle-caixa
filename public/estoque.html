@@ -1,106 +1,123 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle de Estoque</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Estoque - Meu Sistema</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
-<body>
+<body id="page-estoque">
+    <header>
+        <div class="header-left">
+            <h1>Controle de Estoque</h1>
+        </div>
+        <div class="header-right">
+            <button id="notifications-btn" class="btn-icon"><i class="fas fa-bell"></i><span id="notifications-badge" class="badge hidden">0</span></button>
+            <button id="logout-btn" class="btn-icon" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </header>
 
-  <nav class="navbar">
-    <div class="container">
-      <h1 class="logo">Estoque Cartório📦</h1>
-      <div class="navbar-actions">
-        <button id="notifications-btn" class="btn-icon">
-          <i class="fas fa-bell"></i>
-          <span id="notifications-badge" class="badge hidden">0</span>
-        </button>
-        <button id="logout-btn" class="btn btn-danger">Sair</button>
-      </div>
-    </div>
-    <div id="notifications-tab" class="notifications-tab hidden">
-        <h3>Notificações de Estoque Baixo</h3>
-        <ul id="notifications-list">
-          </ul>
-        <button id="clear-notifications-btn" class="btn-secondary btn-small">Limpar Notificações</button>
-    </div>
-  </nav>
-
-  <main class="container">
-    <div class="card">
-      <div class="card-header">
-        <h2>Meus Produtos</h2>
-        <button id="open-add-modal-btn" class="btn btn-primary">
-          <i class="fas fa-plus"></i> Adicionar Produto
-        </button>
-      </div>
-      <div class="form-group-filter">
-        <input type="text" id="filtro" placeholder="🔎 Filtrar produtos por nome...">
-      </div>
-      <ul id="lista-produtos">
+    <aside class="sidebar-nav">
+        <div class="sidebar-logo">
+            <i class="fas fa-box-open"></i>
+        </div>
+        <ul>
+            <li><a href="estoque.html" class="active" title="Estoque"><i class="fas fa-boxes"></i><span>Estoque</span></a></li>
+            <li><a href="venda.html" title="Venda"><i class="fas fa-cash-register"></i><span>Venda</span></a></li>
+            <li><a href="controle.html" title="Controle de Caixa"><i class="fas fa-wallet"></i><span>Caixa</span></a></li>
         </ul>
+    </aside>
+
+    <main class="content">
+        <div class="notifications-tab hidden" id="notifications-tab">
+            <h2>Notificações</h2>
+            <ul id="notifications-list">
+                <li>Nenhuma notificação.</li>
+            </ul>
+            <button id="clear-notifications-btn" class="btn-clear-notifications">Limpar Notificações</button>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="filtro" placeholder="Filtrar produtos...">
+            <button id="open-add-modal-btn" class="btn-primary">Adicionar Novo Produto</button>
+        </div>
+
+        <ul id="lista-produtos" class="product-list">
+            </ul>
+    </main>
+
+    <div class="modal-overlay hidden" id="add-modal-overlay">
+        <div class="modal-content">
+            <h2>Adicionar Novo Produto</h2>
+            <form id="add-form">
+                <div class="form-group">
+                    <label for="add-nome">Nome do Produto:</label>
+                    <input type="text" id="add-nome" required>
+                </div>
+                <div class="form-group">
+                    <label for="add-cod-produto">Código do Produto:</label>
+                    <input type="text" id="add-cod-produto" required>
+                </div>
+                <div class="form-group">
+                    <label for="add-quantidade">Quantidade:</label>
+                    <input type="number" id="add-quantidade" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="add-min-quantidade">Quantidade Mínima em Estoque:</label>
+                    <input type="number" id="add-min-quantidade" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="add-preco-unitario">Preço Unitário (R$):</label>
+                    <input type="number" id="add-preco-unitario" min="0.01" step="0.01" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary">Adicionar</button>
+                    <button type="button" id="cancel-add-btn" class="btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
     </div>
-  </main>
 
-  <div id="add-modal-overlay" class="modal-overlay hidden">
-    <div class="modal-content">
-      <h2>Adicionar Novo Produto</h2>
-      <form id="add-form">
-        <div class="form-group">
-          <label for="add-nome">Nome do Produto</label>
-          <input type="text" id="add-nome" required>
+    <div class="modal-overlay hidden" id="edit-modal-overlay">
+        <div class="modal-content">
+            <h2>Editar Produto</h2>
+            <form id="edit-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label for="edit-nome">Nome do Produto:</label>
+                    <input type="text" id="edit-nome" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-cod-produto">Código do Produto:</label>
+                    <input type="text" id="edit-cod-produto" required readonly>
+                </div>
+                <div class="form-group">
+                    <label for="edit-quantidade">Quantidade:</label>
+                    <input type="number" id="edit-quantidade" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-min-quantidade">Quantidade Mínima em Estoque:</label>
+                    <input type="number" id="edit-min-quantidade" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-preco-unitario">Preço Unitário (R$):</label>
+                    <input type="number" id="edit-preco-unitario" min="0.01" step="0.01" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary">Salvar Alterações</button>
+                    <button type="button" id="delete-btn" class="btn-danger">Excluir Produto</button>
+                    <button type="button" id="cancel-edit-btn" class="btn-secondary">Cancelar</button>
+                </div>
+            </form>
         </div>
-        <div class="form-group">
-          <label for="add-quantidade">Quantidade Inicial</label>
-          <input type="number" id="add-quantidade" required min="0">
-        </div>
-        <div class="form-group">
-          <label for="add-min-quantidade">Avisar quando for menor que</label>
-          <input type="number" id="add-min-quantidade" placeholder="Ex: 5" required min="1">
-        </div>
-        <div class="modal-actions">
-          <button type="button" id="cancel-add-btn" class="btn-secondary">Cancelar</button>
-          <button type="submit" class="btn-primary">Adicionar</button>
-        </div>
-      </form>
     </div>
-  </div>
 
-  <div id="edit-modal-overlay" class="modal-overlay hidden">
-    <div class="modal-content">
-      <h2>Editar Produto</h2>
-      <form id="edit-form">
-       <input type="hidden" id="edit-id">
-        <div class="form-group">
-          <label for="edit-nome">Nome do Produto</label>
-          <input type="text" id="edit-nome" required>
-        </div>
-        <div class="form-group">
-          <label for="edit-quantidade">Quantidade</label>
-          <input type="number" id="edit-quantidade" required min="0">
-        </div>
-        <div class="form-group">
-            <label for="edit-min-quantidade">Avisar quando for menor que</label>
-            <input type="number" id="edit-min-quantidade" required min="1">
-          </div>
-        <div class="modal-actions">
-          <button type="button" id="delete-btn" class="btn-delete">Excluir Item</button>
-          <div>
-            <button type="button" id="cancel-edit-btn" class="btn-secondary">Cancelar</button>
-            <button type="submit" class="btn-primary">Salvar Alterações</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
+    <footer class="main-footer">
+        <p>Desenvolvido por <a href="https://www.instagram.com/obryanmuller/" target="_blank">Bryan Muller</a></p>
+    </footer>
 
-  <footer class="main-footer">
-    <p>Desenvolvido por <a href="https://www.instagram.com/obryanmuller/" target="_blank">Bryan Muller</a></p>
-  </footer>
-
-  <script src="script.js"></script>
+    <script src="estoque.js"></script>
+    <script src="common.js"></script>
 </body>
 </html>
