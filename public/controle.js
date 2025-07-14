@@ -13,6 +13,20 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
     const valorTransacaoInput = document.getElementById('valor-transacao');
     const dataTransacaoInput = document.getElementById('data-transacao');
 
+    // Elementos do DOM para Relatórios de Caixa
+    const dataRelatorioInput = document.getElementById('data-relatorio');
+    const mesRelatorioInput = document.getElementById('mes-relatorio');
+    const gerarRelatorioDiarioBtn = document.getElementById('gerar-relatorio-diario');
+    const gerarRelatorioMensalBtn = document.getElementById('gerar-relatorio-mensal');
+    const relatorioOutput = document.getElementById('relatorio-output');
+
+    // NOVO: Elementos do DOM para Relatórios de Vendas
+    const dataInicioVendasInput = document.getElementById('data-inicio-vendas');
+    const dataFimVendasInput = document.getElementById('data-fim-vendas');
+    const gerarRelatorioVendasBtn = document.getElementById('gerar-relatorio-vendas-btn');
+    const relatorioVendasOutput = document.getElementById('relatorio-vendas-output');
+
+
     // --- ESTADO DA APLICAÇÃO ---
     let historicoTransacoes = [];
     let saldoAtual = 0;
@@ -61,6 +75,27 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
             const valorClasse = transacao.tipo === 'entrada' ? 'positive' : 'negative';
             const sinal = transacao.tipo === 'entrada' ? '+' : '-';
 
+            let detalhesHTML = '';
+            if (transacao.detalhesVenda) {
+                detalhesHTML = `
+                    <details style="margin-top: 10px; padding-top: 5px; border-top: 1px dashed var(--border-color);">
+                        <summary style="font-weight: 500; cursor: pointer; color: var(--primary-color);">Ver Detalhes da Venda</summary>
+                        <div style="font-size: 0.9em; margin-top: 10px;">
+                            <p><strong>Total Bruto:</strong> R$ ${transacao.detalhesVenda.totalBruto}</p>
+                            <p><strong>Desconto Aplicado:</strong> R$ ${transacao.detalhesVenda.valorDesconto}</p>
+                            <p><strong>Total Final da Venda:</strong> R$ ${transacao.detalhesVenda.totalFinal}</p>
+                            <ul style="list-style: none; padding-left: 15px; margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+                                <li style="font-weight: bold; margin-bottom: 5px;">Itens Vendidos:</li>
+                                ${transacao.detalhesVenda.itens.map(item => `
+                                    <li style="margin-bottom: 3px;">- ${item.nomeProduto} (${item.codProduto}): ${item.quantidadeVendida} x R$ ${item.precoUnitarioVenda.toFixed(2)} = R$ ${item.totalItem.toFixed(2)}</li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    </details>
+                `;
+                transacao.descricao = `Venda (${transacao.detalhesVenda.itens.length} itens)`;
+            }
+
             li.innerHTML = `
                 <div class="transaction-info">
                     <span class="transaction-description">${transacao.descricao}</span>
@@ -69,6 +104,7 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
                     <span class="transaction-value ${valorClasse}">${sinal} ${valorFormatado}</span>
                     <span class="transaction-date">${new Date(transacao.data).toLocaleDateString('pt-BR')}</span>
                 </div>
+                ${detalhesHTML}
             `;
             listaTransacoes.appendChild(li);
         });
@@ -80,7 +116,7 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
         const tipo = tipoTransacaoSelect.value;
         const descricao = descricaoTransacaoInput.value.trim();
         const valor = parseFloat(valorTransacaoInput.value);
-        const data = dataTransacaoInput.value; // Já está no formato YYYY-MM-DD
+        const data = dataTransacaoInput.value;
 
         if (!descricao || isNaN(valor) || valor <= 0 || !data) {
             alert('Por favor, preencha todos os campos corretamente.');
@@ -103,6 +139,150 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
         alert('Transação registrada com sucesso!');
     }
 
+    // Função para gerar Relatório Diário de Caixa
+    function gerarRelatorioDiario() {
+        const dataSelecionada = dataRelatorioInput.value;
+        if (!dataSelecionada) {
+            alert('Por favor, selecione uma data para o relatório diário.');
+            return;
+        }
+
+        const transacoesDoDia = historicoTransacoes.filter(t => t.data === dataSelecionada);
+
+        let entradas = 0;
+        let saidas = 0;
+        transacoesDoDia.forEach(t => {
+            if (t.tipo === 'entrada') {
+                entradas += t.valor;
+            } else if (t.tipo === 'saida') {
+                saidas += t.valor;
+            }
+        });
+
+        const saldoDoDia = entradas - saidas;
+
+        relatorioOutput.innerHTML = `
+            <h3>Relatório Diário - ${new Date(dataSelecionada).toLocaleDateString('pt-BR')}</h3>
+            <p><strong>Total de Entradas:</strong> R$ ${entradas.toFixed(2)}</p>
+            <p><strong>Total de Saídas:</strong> R$ ${saidas.toFixed(2)}</p>
+            <p><strong>Saldo do Dia:</strong> R$ ${saldoDoDia.toFixed(2)}</p>
+            <p>(${transacoesDoDia.length} transações)</p>
+        `;
+    }
+
+    // Função para gerar Relatório Mensal de Caixa
+    function gerarRelatorioMensal() {
+        const mesSelecionado = mesRelatorioInput.value;
+        if (!mesSelecionado) {
+            alert('Por favor, selecione um mês para o relatório mensal.');
+            return;
+        }
+
+        const [ano, mes] = mesSelecionado.split('-');
+        const transacoesDoMes = historicoTransacoes.filter(t => {
+            const dataTransacao = new Date(t.data);
+            return dataTransacao.getFullYear() === parseInt(ano) && (dataTransacao.getMonth() + 1) === parseInt(mes);
+        });
+
+        let entradas = 0;
+        let saidas = 0;
+        transacoesDoMes.forEach(t => {
+            if (t.tipo === 'entrada') {
+                entradas += t.valor;
+            } else if (t.tipo === 'saida') {
+                saidas += t.valor;
+            }
+        });
+
+        const saldoDoMes = entradas - saidas;
+
+        relatorioOutput.innerHTML = `
+            <h3>Relatório Mensal - ${new Date(ano, parseInt(mes) - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
+            <p><strong>Total de Entradas:</strong> R$ ${entradas.toFixed(2)}</p>
+            <p><strong>Total de Saídas:</strong> R$ ${saidas.toFixed(2)}</p>
+            <p><strong>Saldo do Mês:</strong> R$ ${saldoDoMes.toFixed(2)}</p>
+            <p>(${transacoesDoMes.length} transações)</p>
+        `;
+    }
+
+    // NOVO: Função para gerar Relatório de Vendas (Resumo e Top Vendas)
+    function gerarRelatorioVendas() {
+        const dataInicio = dataInicioVendasInput.value;
+        const dataFim = dataFimVendasInput.value;
+
+        if (!dataInicio || !dataFim) {
+            alert('Por favor, selecione as datas de início e fim para o relatório de vendas.');
+            return;
+        }
+
+        // Ajusta as datas para cobrir o dia inteiro
+        const dataInicioObj = new Date(dataInicio + 'T00:00:00');
+        const dataFimObj = new Date(dataFim + 'T23:59:59');
+
+        const vendasNoPeriodo = historicoTransacoes.filter(t => {
+            // Filtra apenas transações de venda com detalhes
+            if (t.tipo === 'entrada' && t.detalhesVenda) {
+                const dataTransacao = new Date(t.data + 'T00:00:00'); // Garante que a data da transação seja tratada como início do dia
+                return dataTransacao >= dataInicioObj && dataTransacao <= dataFimObj;
+            }
+            return false;
+        });
+
+        let totalVendasPeriodo = 0;
+        let totalItensVendidosPeriodo = 0;
+        const produtosVendidosDetalhes = {}; // Objeto para agregar quantidades e valores de produtos
+
+        vendasNoPeriodo.forEach(venda => {
+            totalVendasPeriodo += parseFloat(venda.detalhesVenda.totalFinal);
+            venda.detalhesVenda.itens.forEach(item => {
+                totalItensVendidosPeriodo += item.quantidadeVendida;
+                if (produtosVendidosDetalhes[item.nomeProduto]) {
+                    produtosVendidosDetalhes[item.nomeProduto].quantidade += item.quantidadeVendida;
+                    produtosVendidosDetalhes[item.nomeProduto].valorTotal += item.totalItem;
+                } else {
+                    produtosVendidosDetalhes[item.nomeProduto] = {
+                        quantidade: item.quantidadeVendida,
+                        valorTotal: item.totalItem
+                    };
+                }
+            });
+        });
+
+        // Converte o objeto de produtos em um array e ordena para o Top 5
+        const topProdutosVendidos = Object.keys(produtosVendidosDetalhes)
+            .map(nome => ({
+                nome: nome,
+                quantidade: produtosVendidosDetalhes[nome].quantidade,
+                valorTotal: produtosVendidosDetalhes[nome].valorTotal
+            }))
+            .sort((a, b) => b.quantidade - a.quantidade) // Ordena por quantidade vendida (decrescente)
+            .slice(0, 5); // Pega os top 5 produtos
+
+        let topProdutosHtml = '';
+        if (topProdutosVendidos.length > 0) {
+            topProdutosHtml = `
+                <h4>Top 5 Produtos Mais Vendidos:</h4>
+                <ul style="list-style: decimal; padding-left: 20px;">
+                    ${topProdutosVendidos.map(p => `
+                        <li>${p.nome}: ${p.quantidade} unidades (R$ ${p.valorTotal.toFixed(2)})</li>
+                    `).join('')}
+                </ul>
+            `;
+        } else {
+            topProdutosHtml = `<p>Nenhum produto vendido no período selecionado.</p>`;
+        }
+
+
+        relatorioVendasOutput.innerHTML = `
+            <h3>Relatório de Vendas de ${new Date(dataInicio).toLocaleDateString('pt-BR')} a ${new Date(dataFim).toLocaleDateString('pt-BR')}</h3>
+            <p><strong>Número de Vendas:</strong> ${vendasNoPeriodo.length}</p>
+            <p><strong>Valor Total das Vendas:</strong> R$ ${totalVendasPeriodo.toFixed(2)}</p>
+            <p><strong>Total de Itens Vendidos:</strong> ${totalItensVendidosPeriodo} unidades</p>
+            ${topProdutosHtml}
+        `;
+    }
+
+
     // --- EVENT LISTENERS ---
     filterButtons.forEach(button => {
         button.addEventListener('click', () => {
@@ -114,6 +294,14 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
     });
 
     outraTransacaoForm.addEventListener('submit', registrarOutraTransacao);
+
+    // Event listeners para os botões de relatório de caixa
+    gerarRelatorioDiarioBtn.addEventListener('click', gerarRelatorioDiario);
+    gerarRelatorioMensalBtn.addEventListener('click', gerarRelatorioMensal);
+
+    // NOVO: Event listener para o botão de relatório de vendas
+    gerarRelatorioVendasBtn.addEventListener('click', gerarRelatorioVendas);
+
 
     // --- INICIALIZAÇÃO ---
     document.addEventListener('DOMContentLoaded', carregarDados);

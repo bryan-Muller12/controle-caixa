@@ -43,6 +43,40 @@
             <p id="saldo-atual">R$ 0.00</p>
         </div>
 
+        <div class="card" style="margin-top: 30px;">
+            <div class="card-header">
+                <h2>Relatórios de Caixa</h2>
+            </div>
+            <div class="form-group">
+                <label for="data-relatorio">Selecione uma Data (Diário):</label>
+                <input type="date" id="data-relatorio">
+                <button type="button" id="gerar-relatorio-diario" class="btn-primary" style="margin-top: 10px;">Gerar Relatório Diário</button>
+            </div>
+            <div class="form-group" style="margin-top: 20px;">
+                <label for="mes-relatorio">Selecione um Mês (Mensal):</label>
+                <input type="month" id="mes-relatorio">
+                <button type="button" id="gerar-relatorio-mensal" class="btn-primary" style="margin-top: 10px;">Gerar Relatório Mensal</button>
+            </div>
+            <div id="relatorio-output" style="margin-top: 20px;">
+                </div>
+        </div>
+
+        <div class="card" style="margin-top: 30px;">
+            <div class="card-header">
+                <h2>Relatórios de Vendas</h2>
+            </div>
+            <div class="form-group">
+                <label for="data-inicio-vendas">Data de Início:</label>
+                <input type="date" id="data-inicio-vendas">
+            </div>
+            <div class="form-group">
+                <label for="data-fim-vendas">Data de Fim:</label>
+                <input type="date" id="data-fim-vendas">
+            </div>
+            <button type="button" id="gerar-relatorio-vendas-btn" class="btn-primary" style="margin-top: 10px;">Gerar Relatório de Vendas</button>
+            <div id="relatorio-vendas-output" style="margin-top: 20px;">
+                </div>
+        </div>
         <div class="card">
             <div class="card-header">
                 <h2>Histórico de Transações</h2>
