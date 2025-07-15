@@ -10,7 +10,11 @@
 <body id="page-estoque">
     <header>
         <div class="header-left">
-            <h1>Controle de Estoque</h1>
+            
+            <h1>
+                 <img src="/logo_imasbento.png" alt="" style="height: 50px; vertical-align: middle;">
+                 Controle de Estoque
+            </h1>
         </div>
         <div class="header-right">
             <button id="notifications-btn" class="btn-icon"><i class="fas fa-bell"></i><span id="notifications-badge" class="badge hidden">0</span></button>
@@ -23,8 +27,8 @@
             <i class="fas fa-box-open"></i>
         </div>
         <ul>
-            <li><a href="estoque.html" class="active" title="Estoque"><i class="fas fa-boxes"></i><span>Estoque</span></a></li>
             <li><a href="venda.html" title="Venda"><i class="fas fa-cash-register"></i><span>Venda</span></a></li>
+            <li><a href="estoque.html" title="Estoque"><i class="fas fa-boxes"></i><span>Estoque</span></a></li>
             <li><a href="controle.html" title="Controle de Caixa"><i class="fas fa-wallet"></i><span>Caixa</span></a></li>
         </ul>
     </aside>
@@ -40,7 +44,7 @@
 
         <div class="controls">
             <input type="text" id="filtro" placeholder="Filtrar produtos...">
-            <button id="open-add-modal-btn" class="btn-primary">Adicionar Novo Produto</button>
+            <button id="open-add-modal-btn" class="btn-rosa">Adicionar Novo Produto</button>
         </div>
 
         <ul id="lista-produtos" class="product-list">
@@ -72,7 +76,7 @@
                     <input type="number" id="add-preco-unitario" min="0.01" step="0.01" required>
                 </div>
                 <div class="modal-actions">
-                    <button type="submit" class="btn-primary">Adicionar</button>
+                    <button type="submit" class="btn-rosa">Adicionar</button>
                     <button type="button" id="cancel-add-btn" class="btn-secondary">Cancelar</button>
                 </div>
             </form>
@@ -113,9 +117,7 @@
         </div>
     </div>
 
-    <footer class="main-footer">
-        <p>Desenvolvido por <a href="https://www.instagram.com/obryanmuller/" target="_blank">Bryan Muller</a></p>
-    </footer>
+   
 
     <script src="estoque.js"></script>
     <script src="common.js"></script>

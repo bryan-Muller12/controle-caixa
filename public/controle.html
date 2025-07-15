@@ -10,7 +10,10 @@
 <body id="page-controle">
     <header>
         <div class="header-left">
-            <h1>Controle de Caixa</h1>
+            <h1>
+                <img src="/logo_imasbento.png" alt="" style="height: 50px; vertical-align: middle;">
+                Controle de Caixa
+            </h1>
         </div>
         <div class="header-right">
             <button id="notifications-btn" class="btn-icon"><i class="fas fa-bell"></i><span id="notifications-badge" class="badge hidden">0</span></button>
@@ -23,8 +26,8 @@
             <i class="fas fa-box-open"></i>
         </div>
         <ul>
-            <li><a href="estoque.html" title="Estoque"><i class="fas fa-boxes"></i><span>Estoque</span></a></li>
             <li><a href="venda.html" title="Venda"><i class="fas fa-cash-register"></i><span>Venda</span></a></li>
+            <li><a href="estoque.html" title="Estoque"><i class="fas fa-boxes"></i><span>Estoque</span></a></li>
             <li><a href="controle.html" class="active" title="Controle de Caixa"><i class="fas fa-wallet"></i><span>Caixa</span></a></li>
         </ul>
     </aside>
@@ -43,23 +46,6 @@
             <p id="saldo-atual">R$ 0.00</p>
         </div>
 
-        <div class="card" style="margin-top: 30px;">
-            <div class="card-header">
-                <h2>Relatórios de Caixa</h2>
-            </div>
-            <div class="form-group">
-                <label for="data-relatorio">Selecione uma Data (Diário):</label>
-                <input type="date" id="data-relatorio">
-                <button type="button" id="gerar-relatorio-diario" class="btn-primary" style="margin-top: 10px;">Gerar Relatório Diário</button>
-            </div>
-            <div class="form-group" style="margin-top: 20px;">
-                <label for="mes-relatorio">Selecione um Mês (Mensal):</label>
-                <input type="month" id="mes-relatorio">
-                <button type="button" id="gerar-relatorio-mensal" class="btn-primary" style="margin-top: 10px;">Gerar Relatório Mensal</button>
-            </div>
-            <div id="relatorio-output" style="margin-top: 20px;">
-                </div>
-        </div>
 
         <div class="card" style="margin-top: 30px;">
             <div class="card-header">
@@ -121,9 +107,7 @@
         </div>
     </main>
 
-    <footer class="main-footer">
-        <p>Desenvolvido por <a href="https://www.instagram.com/obryanmuller/" target="_blank">Bryan Muller</a></p>
-    </footer>
+ 
 
     <script src="controle.js"></script>
     <script src="common.js"></script>

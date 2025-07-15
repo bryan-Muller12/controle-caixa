@@ -10,7 +10,9 @@
 <body id="page-venda">
     <header>
         <div class="header-left">
-            <h1>Ponto de Venda</h1>
+            <h1>
+                <img src="/logo_imasbento.png" alt="" style="height: 50px; vertical-align: middle;">
+                Ponto de Venda</h1>
         </div>
         <div class="header-right">
             <button id="notifications-btn" class="btn-icon"><i class="fas fa-bell"></i><span id="notifications-badge" class="badge hidden">0</span></button>
@@ -23,8 +25,8 @@
             <i class="fas fa-box-open"></i>
         </div>
         <ul>
-            <li><a href="estoque.html" title="Estoque"><i class="fas fa-boxes"></i><span>Estoque</span></a></li>
             <li><a href="venda.html" class="active" title="Venda"><i class="fas fa-cash-register"></i><span>Venda</span></a></li>
+            <li><a href="estoque.html" title="Estoque"><i class="fas fa-boxes"></i><span>Estoque</span></a></li>
             <li><a href="controle.html" title="Controle de Caixa"><i class="fas fa-wallet"></i><span>Caixa</span></a></li>
         </ul>
     </aside>
@@ -104,7 +106,6 @@
                     </div>
                     <div class="main-sale-buttons">
                         <button type="button" id="finalize-sale-btn" class="btn-primary" disabled>FINALIZAR VENDA</button>
-                        <button type="button" id="cancel-item-btn" class="btn-danger" disabled>CANCELAR ITEM</button>
                         <button type="button" id="cancel-all-items-btn" class="btn-secondary" disabled>CANCELAR TUDO</button>
                     </div>
                 </div>
@@ -112,9 +113,6 @@
         </div>
     </main>
 
-    <footer class="main-footer">
-        <p>Desenvolvido por <a href="https://www.instagram.com/obryanmuller/" target="_blank">Bryan Muller</a></p>
-    </footer>
 
     <script src="venda.js"></script>
     <script src="common.js"></script>

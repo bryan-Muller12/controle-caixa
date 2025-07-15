@@ -4,7 +4,7 @@
 // Garante que o código só rode na página de venda
 if (document.body.id === 'page-venda' || location.pathname.includes('venda.html')) {
     // --- ELEMENTOS DO DOM ---
-    const productNameDisplay = document.getElementById('product-name-display'); // Removido productImageDisplay
+    const productNameDisplay = document.getElementById('product-name-display');
 
     const searchProdutoInput = document.getElementById('search-produto-input');
     const findProductBtn = document.getElementById('find-product-btn');
@@ -28,21 +28,19 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     const valorDescontoGlobalInput = document.getElementById('valor-desconto-global');
 
     const finalizeSaleBtn = document.getElementById('finalize-sale-btn');
-    const cancelItemBtn = document.getElementById('cancel-item-btn');
     const cancelAllItemsBtn = document.getElementById('cancel-all-items-btn');
 
     // --- ESTADO DA APLICAÇÃO ---
-    let produtos = []; // Produtos do estoque
-    let historicoTransacoes = []; // Histórico de todas as transações
-    let produtoEncontradoParaAdicionar = null; // Produto retornado pela pesquisa
-    let carrinho = []; // Itens adicionados à venda atual
+    let produtos = [];
+    let historicoTransacoes = [];
+    let produtoEncontradoParaAdicionar = null;
+    let carrinho = [];
 
-    // --- FUNÇÕES DE CARREGAMENTO/SALVAMENTO ---
     function carregarDados() {
         produtos = JSON.parse(localStorage.getItem('produtos')) || [];
         historicoTransacoes = JSON.parse(localStorage.getItem('historicoTransacoes')) || [];
-        atualizarNotificacoesComuns(); // Atualiza as notificações comuns
-        resetVendaCompleta(); // Reseta a interface ao carregar a página
+        atualizarNotificacoesComuns();
+        resetVendaCompleta();
     }
 
     function salvarDados() {
@@ -50,12 +48,9 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         localStorage.setItem('historicoTransacoes', JSON.stringify(historicoTransacoes));
     }
 
-    // --- FUNÇÕES DA INTERFACE DE ADIÇÃO DE ITEM ---
     function exibirDetalhesProdutoEncontrado(produto) {
         if (produto) {
-            // Removido productImageDisplay.src
             productNameDisplay.textContent = produto.nome;
-
             foundProductName.textContent = produto.nome;
             foundProductCod.textContent = produto.cod_produto;
             foundProductQuantityStock.textContent = produto.quantidade;
@@ -63,13 +58,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
             quantidadeItemInput.value = 1;
             quantidadeItemInput.max = produto.quantidade;
-            quantidadeItemInput.min = 1; // Garante que a quantidade mínima seja 1
+            quantidadeItemInput.min = 1;
             valorUnitarioItemInput.value = parseFloat(produto.preco_unitario).toFixed(2);
-            
+
             atualizarValorTotalItem();
             addItemToCartBtn.disabled = false;
         } else {
-            // Removido productImageDisplay.src
             productNameDisplay.textContent = 'Produto Selecionado';
             foundProductDetails.classList.add('hidden');
             quantidadeItemInput.value = 1;
@@ -77,7 +71,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             valorTotalItemInput.value = (0).toFixed(2);
             addItemToCartBtn.disabled = true;
         }
-        produtoEncontradoParaAdicionar = produto; // Armazena o produto para adicionar ao carrinho
+        produtoEncontradoParaAdicionar = produto;
     }
 
     function pesquisarProduto() {
@@ -89,7 +83,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 (p.cod_produto && p.cod_produto.toLowerCase() === termoBusca) ||
                 (p.nome.toLowerCase() === termoBusca)
             );
-            // Se não encontrou por exata, tenta por inclusão, mas prioriza exata
             if (!produto) {
                 produto = produtos.find(p =>
                     (p.cod_produto && p.cod_produto.toLowerCase().includes(termoBusca)) ||
@@ -103,7 +96,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         } else {
             alert('Produto não encontrado ou sem estoque.');
             exibirDetalhesProdutoEncontrado(null);
-            searchProdutoInput.value = ''; // Limpa a pesquisa
+            searchProdutoInput.value = '';
         }
     }
 
@@ -136,11 +129,9 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             return;
         }
 
-        // Verifica se o item já está no carrinho
         const itemExistenteIndex = carrinho.findIndex(item => item.id === produtoEncontradoParaAdicionar.id);
 
         if (itemExistenteIndex !== -1) {
-            // Se já existe, atualiza a quantidade
             const novaQuantidadeTotal = carrinho[itemExistenteIndex].quantidadeVendidaNoCarrinho + quantidadeAdicionar;
             if (novaQuantidadeTotal > produtoEncontradoParaAdicionar.quantidade) {
                 alert(`Não é possível adicionar essa quantidade. Excederia o estoque disponível para "${produtoEncontradoParaAdicionar.nome}".`);
@@ -149,38 +140,36 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             carrinho[itemExistenteIndex].quantidadeVendidaNoCarrinho = novaQuantidadeTotal;
             carrinho[itemExistenteIndex].totalItem = novaQuantidadeTotal * valorUnitario;
         } else {
-            // Se não existe, adiciona novo item
             carrinho.push({
                 id: produtoEncontradoParaAdicionar.id,
                 codProduto: produtoEncontradoParaAdicionar.cod_produto,
                 nomeProduto: produtoEncontradoParaAdicionar.nome,
                 quantidadeVendidaNoCarrinho: quantidadeAdicionar,
                 precoUnitarioOriginal: parseFloat(produtoEncontradoParaAdicionar.preco_unitario),
-                precoUnitario: valorUnitario, // Valor de venda negociado
+                precoUnitario: valorUnitario,
                 totalItem: quantidadeAdicionar * valorUnitario
             });
         }
-        
+
         atualizarCarrinhoDisplay();
-        resetItemInputArea(); // Limpa a área de input do item
+        resetItemInputArea();
+        calcularTotaisVenda();
     }
 
     function resetItemInputArea() {
         searchProdutoInput.value = '';
-        exibirDetalhesProdutoEncontrado(null); // Limpa as infos do produto
+        exibirDetalhesProdutoEncontrado(null);
         quantidadeItemInput.value = 1;
         valorUnitarioItemInput.value = (0).toFixed(2);
         valorTotalItemInput.value = (0).toFixed(2);
         produtoEncontradoParaAdicionar = null;
     }
 
-    // --- FUNÇÕES DO CARRINHO ---
     function atualizarCarrinhoDisplay() {
         cartItemsList.innerHTML = '';
         if (carrinho.length === 0) {
             emptyCartMessage.classList.remove('hidden');
             finalizeSaleBtn.disabled = true;
-            cancelItemBtn.disabled = true;
             cancelAllItemsBtn.disabled = true;
             valorDescontoGlobalInput.value = '';
             aplicarDescontoCheckbox.checked = false;
@@ -189,7 +178,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             carrinho.forEach((item, index) => {
                 const li = document.createElement('li');
                 li.classList.add('cart-item');
-                li.dataset.index = index; // Para facilitar a remoção
+                li.dataset.index = index;
                 li.innerHTML = `
                     <span class="cart-item-number">${index + 1}</span>
                     <span class="cart-item-cod">${item.codProduto}</span>
@@ -204,7 +193,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 cartItemsList.appendChild(li);
             });
             finalizeSaleBtn.disabled = false;
-            cancelItemBtn.disabled = false;
             cancelAllItemsBtn.disabled = false;
         }
         calcularTotaisVenda();
@@ -223,7 +211,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
     }
 
-    // --- FUNÇÕES DE TOTAL E DESCONTO ---
     function calcularTotaisVenda() {
         let totalVolumes = 0;
         let subtotalVenda = 0;
@@ -245,13 +232,20 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             }
         } else {
             valorDescontoGlobalInput.classList.add('hidden');
-            valorDescontoGlobalInput.value = ''; // Limpa o valor do desconto ao desmarcar
+            valorDescontoGlobalInput.value = '';
         }
 
-        totalSaleDisplay.textContent = `R$ ${totalFinalVenda.toFixed(2)}`;
+        const novoValor = `R$ ${totalFinalVenda.toFixed(2)}`;
+        if (totalSaleDisplay.textContent !== novoValor) {
+            totalSaleDisplay.textContent = novoValor;
+        } else {
+            totalSaleDisplay.textContent = '';
+            requestAnimationFrame(() => {
+                totalSaleDisplay.textContent = novoValor;
+            });
+        }
     }
 
-    // --- FINALIZAR VENDA ---
     function finalizarVenda() {
         if (carrinho.length === 0) {
             alert('Não há itens no carrinho para finalizar a venda.');
@@ -262,7 +256,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             let totalDaVenda = parseFloat(totalSaleDisplay.textContent.replace('R$ ', '').replace(',', '.'));
             let valorDescontoAplicado = aplicarDescontoCheckbox.checked ? (parseFloat(valorDescontoGlobalInput.value) || 0) : 0;
 
-            // 1. Deduzir do estoque e preparar detalhes dos itens da venda
             let itensVendidosDetalhes = [];
             carrinho.forEach(itemCarrinho => {
                 const produtoEstoqueIndex = produtos.findIndex(p => p.id === itemCarrinho.id);
@@ -280,13 +273,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 });
             });
 
-            // 2. Registrar no histórico de transações
             const novaTransacao = {
                 id: Date.now(),
                 tipo: 'entrada',
                 descricao: `Venda de múltiplos itens`,
                 valor: totalDaVenda,
-                data: new Date().toISOString().split('T')[0], // Data atual
+                data: new Date().toISOString().split('T')[0],
                 detalhesVenda: {
                     totalBruto: itensVendidosDetalhes.reduce((sum, item) => sum + item.totalItem, 0).toFixed(2),
                     valorDesconto: valorDescontoAplicado.toFixed(2),
@@ -296,30 +288,27 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             };
             historicoTransacoes.push(novaTransacao);
 
-            // 3. Salvar dados
             salvarDados();
             alert('Venda finalizada com sucesso!');
-            
-            // 4. Resetar a interface de venda
+
             resetVendaCompleta();
         }
     }
 
     function resetVendaCompleta() {
         carrinho = [];
-        atualizarCarrinhoDisplay(); // Isso também reseta os totais
+        atualizarCarrinhoDisplay();
         resetItemInputArea();
         aplicarDescontoCheckbox.checked = false;
         valorDescontoGlobalInput.classList.add('hidden');
         valorDescontoGlobalInput.value = '';
         searchProdutoInput.value = '';
-        productNameDisplay.textContent = 'Produto Selecionado'; // Removido productImageDisplay.src
+        productNameDisplay.textContent = 'Produto Selecionado';
     }
 
-    // --- EVENT LISTENERS ---
     searchProdutoInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            e.preventDefault(); // Impede o envio do formulário padrão
+            e.preventDefault();
             pesquisarProduto();
         }
     });
@@ -342,15 +331,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
     finalizeSaleBtn.addEventListener('click', finalizarVenda);
     cancelAllItemsBtn.addEventListener('click', cancelarTodosItens);
-    
-    // O botão 'Cancelar Item' será utilizado para remover um item específico do carrinho
-    // Se não houver itens selecionados visualmente, ele pode ser o mesmo que 'cancelarTudo'
-    // Por simplicidade inicial, vamos usar o botão de remover item individualmente
-    // ou o "cancelar tudo". Se quiser uma seleção visual para "cancelar item",
-    // precisaríamos de mais lógica de interface (selecionar item na lista).
-    // Por enquanto, o botão "CANCELAR ITEM" no HTML não tem função direta,
-    // usamos o X ao lado de cada item.
 
-    // --- INICIALIZAÇÃO ---
     document.addEventListener('DOMContentLoaded', carregarDados);
 }
