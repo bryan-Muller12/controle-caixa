@@ -7,38 +7,44 @@
   <link rel="stylesheet" href="index.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <div class="login-page">
-    <div class="login-card">
-      <div class="card-header">
-        <img src="/logo_imasbento.png" alt="" style="height: 100px; vertical-align: middle;">
-        
-      </div>
+  <div class="login-container">
+    <div class="login-left">
       
-      <form id="login-form">
-        <div class="form-group">
-          <label for="email">Seu e-mail*</label>
-          <input type="email" id="email" required />
+      <div class="login-illustration">
         </div>
-        
-        <div class="form-group">
-          <label for="senha">Sua senha*</label>
-          <input type="password" id="senha" required />
-        </div>
-        
-        <div class="form-group-checkbox">
-          <input type="checkbox" id="lembrar-me" />
-          <label for="lembrar-me">Lembrar-me</label>
-        </div>
-        
-        <button type="submit" class="btn-login">ENTRAR</button>
-      </form>
-      
-      <p id="login-erro" class="error-message"></p>
+    </div>
 
+    <div class="login-right">
+      <div class="login-card">
+        <div class="card-header-login">
+          <h2>LOGIN</h2>
+        </div>
+        
+        <form id="login-form">
+          <div class="form-group">
+            <label for="username">Usuário</label>
+            <input type="text" id="username" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="password">Senha</label>
+            <input type="password" id="password" required />
+          </div>
+          
+          <div class="form-group-checkbox">
+            <input type="checkbox" id="keep-logged-in" />
+            <label for="keep-logged-in">Manter conectado</label>
+          </div>
+          
+          <button type="submit" class="btn-login">LOGIN</button>
+        </form>
+        
+        <p id="login-erro" class="error-message"></p>
+      </div>
     </div>
   </div>
 
@@ -51,19 +57,28 @@
 
     document.getElementById('login-form').addEventListener('submit', (e) => {
       e.preventDefault();
-      const email = document.getElementById('email').value;
-      const senha = document.getElementById('senha').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const keepLoggedIn = document.getElementById('keep-logged-in').checked; // Captura o estado do checkbox
       const erroEl = document.getElementById('login-erro');
 
-      // Procura o usuário na lista
-      const usuarioValido = usuarios.find(u => u.email === email && u.senha === senha);
+      const usuarioValido = usuarios.find(u => u.email === username && u.senha === password);
 
       if (usuarioValido) {
-        // Salva o email do usuário no localStorage para "lembrar" que ele está logado
-        localStorage.setItem('usuarioLogado', email);
-        window.location.href = 'estoque.html';
+        // Limpa ambos os armazenamentos para evitar conflitos de sessões anteriores
+        localStorage.removeItem('usuarioLogado');
+        sessionStorage.removeItem('usuarioLogado');
+
+        if (keepLoggedIn) {
+          // Se "Manter conectado" estiver marcado, usa localStorage (persistente)
+          localStorage.setItem('usuarioLogado', username);
+        } else {
+          // Se NÃO estiver marcado, usa sessionStorage (apenas para a sessão atual)
+          sessionStorage.setItem('usuarioLogado', username);
+        }
+        window.location.href = 'venda.html';
       } else {
-        erroEl.textContent = 'Email ou senha incorretos.';
+        erroEl.textContent = 'Usuário ou senha incorretos.';
         erroEl.style.display = 'block';
       }
     });

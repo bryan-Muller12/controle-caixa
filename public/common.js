@@ -2,9 +2,28 @@
 // Lógica de verificação de login, logout e notificações (compartilhada entre todas as páginas)
 
 // --- VERIFICAÇÃO DE LOGIN ---
-if (!localStorage.getItem('usuarioLogado')) {
+
+// Verifica se o usuário está logado usando sessionStorage (para "não manter conectado")
+// ou localStorage (para "manter conectado").
+let usuarioLogado = sessionStorage.getItem('usuarioLogado');
+
+// Se não estiver em sessionStorage, tenta localStorage
+if (!usuarioLogado) {
+    usuarioLogado = localStorage.getItem('usuarioLogado');
+    // Se encontrou no localStorage, mas não no sessionStorage (ex: primeira carga após fechar navegador)
+    // então copia para sessionStorage para gerenciar a sessão ativa.
+    if (usuarioLogado) {
+        sessionStorage.setItem('usuarioLogado', usuarioLogado);
+    }
+}
+
+
+if (!usuarioLogado) {
+    // Se não encontrou em nenhum dos dois, redireciona para a tela de login
     window.location.href = 'index.html';
 }
+
+// O restante do seu common.js segue aqui...
 
 // --- ELEMENTOS DO DOM (comuns) ---
 const notificationsBtn = document.getElementById('notifications-btn');
@@ -44,7 +63,9 @@ function renderizarNotificacoesComuns() {
 }
 
 function logout() {
+    // Ao deslogar, remove de ambos para garantir que não haja persistência indesejada
     localStorage.removeItem('usuarioLogado');
+    sessionStorage.removeItem('usuarioLogado');
     window.location.href = 'index.html';
 }
 

@@ -1,159 +1,304 @@
 :root {
-  --primary-color: #4f6e5; /* Um índigo moderno */
-  --primary-hover: #d92664;
-  --danger-color: #ef4444;
-  --danger-hover: #dc2626;
-  --success-color: #22c55e;
-  --warning-color: #f59e0b;
-  --background-color: #f8fafc; /* Um cinza muito claro */
-  --card-bg-color: #ffffff;
-  --text-color: #1e293b; /* Um cinza-azulado escuro */
-  --text-light-color: #d92664;
-  --border-color: #e2e8f0;
-  --shadow-color: rgba(79, 70, 229, 0.15);
-  --font-family: 'Roboto', sans-serif;
-  --border-radius: 12px; /* Bordas mais arredondadas */
+  --primary-color: #00ff7f; /* Verde vibrante para destaque */
+  --primary-hover: #00e676; /* Um pouco mais escuro para o hover */
+  --background-dark: #1a1a2e; /* Fundo principal escuro */
+  --card-dark: #16213e; /* Cor do card de login um pouco mais clara que o fundo */
+  --text-light: #e0e0e0; /* Cor do texto claro */
+  --text-dark: #00ff7f; /* Cor do texto de destaque (verde) */
+  --input-bg: #0f172a; /* Fundo dos inputs */
+  --input-border: #00ff7f; /* Borda dos inputs ao focar */
+  --error-color: #ff4c4c; /* Cor de mensagem de erro */
+  --font-family: 'Poppins', sans-serif;
+  --border-radius-main: 15px;
+  --border-radius-sm: 8px;
   --transition-speed: 0.3s;
 }
-/* --- GERAL E FUNDO DA PÁGINA --- */
+
 body {
   margin: 0;
-  font-family: 'Poppins', sans-serif;
-  background-color: #f0f2f5;
-  color: #333;
-  overflow: hidden; /* Previne barras de rolagem por causa da forma do fundo */
-}
-
-.login-page {
+  font-family: var(--font-family);
+  background-color: var(--background-dark);
+  color: var(--text-light);
+  overflow: hidden;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   min-height: 100vh;
-  position: relative;
-  z-index: 1;
 }
 
-/* A forma laranja/vermelha no fundo */
-.login-page::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  background: linear-gradient(to top right, #e70e57, #f48aa4);
-  clip-path: ellipse(80% 80% at 110% 20%);
-  z-index: -1;
+.login-container {
+  display: flex;
+  width: 90%;
+  max-width: 1200px;
+  min-height: 600px;
+  background-color: var(--background-dark);
+  border-radius: var(--border-radius-main);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
 }
 
-
-/* --- CARD DE LOGIN --- */
-.login-card {
-  background-color: white;
+.login-left {
+  flex: 1.5;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   padding: 40px;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 400px;
-  text-align: left;
+  position: relative;
 }
 
-.card-header {
-  margin-bottom: 30px;
+.login-welcome h1 {
+  font-size: 3.5rem;
+  margin-bottom: 10px;
+  color: var(--text-light);
+  font-weight: 700;
   text-align: center;
 }
 
-.card-header h2 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  display: inline-block;
-  position: relative;
-  padding-bottom: 8px;
+.login-welcome p {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+  margin-top: 0;
+  text-align: center;
 }
 
-/* A linha laranja abaixo do título */
-.card-header h2::after {
-  content: '';
+.login-illustration {
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 100%;
-  height: 3px;
-  background: linear-gradient(to right,  #e70e57, #e70e57);
+  right: 0;
+  height: 100%;
+  background-image: url('/mullersys.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  opacity: 0.8;
+  z-index: 0;
 }
 
+.login-left::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  
+    z-index: 1;
+}
 
-/* --- FORMULÁRIO --- */
+.login-welcome {
+    z-index: 2;
+    position: relative;
+}
+
+.login-right {
+  flex: 1;
+  background-color: var(--card-dark);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  position: relative;
+  z-index: 10;
+}
+
+.login-card {
+  background-color: var(--card-dark);
+  padding: 40px;
+  border-radius: var(--border-radius-main);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  border: 1px solid rgba(0, 255, 127, 0.3);
+}
+
+.card-header-login {
+  margin-bottom: 30px;
+}
+
+.card-header-login h2 {
+  font-size: 2.2rem;
+  margin: 0;
+  color: var(--primary-color);
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
 .form-group {
   margin-bottom: 25px;
-  position: relative;
+  text-align: left;
 }
 
 .form-group label {
   display: block;
-  font-size: 14px;
-  color: #555;
+  font-size: 0.9rem;
+  color: var(--text-light);
   margin-bottom: 8px;
+  font-weight: 500;
 }
 
-.form-group input[type="email"],
-.form-group input[type="password"] {
+.form-group input {
   width: 100%;
-  border: none;
-  border-bottom: 1px solid #ccc;
-  padding: 8px 0;
-  font-size: 16px;
-  background-color: transparent;
+  padding: 12px 15px;
+  border: 1px solid #333;
+  border-radius: var(--border-radius-sm);
+  background-color: var(--input-bg);
+  color: var(--text-light);
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: all var(--transition-speed) ease;
 }
 
 .form-group input:focus {
   outline: none;
-  border-bottom-color: #e70e57;
+  border-color: var(--input-border);
+  box-shadow: 0 0 0 3px rgba(0, 255, 127, 0.2);
 }
 
-
-/* --- CHECKBOX "LEMBRAR-ME" --- */
+/* Estilo para o checkbox (Manter conectado) */
 .form-group-checkbox {
   display: flex;
   align-items: center;
+  justify-content: flex-start; /* Alinha o checkbox e o label à esquerda */
   margin-bottom: 30px;
-  font-size: 14px;
+  font-size: 0.9rem;
+  color: var(--text-light); /* Cor do texto claro para o label */
 }
 
 .form-group-checkbox input[type="checkbox"] {
+  width: 18px; /* Tamanho maior para o checkbox */
+  height: 18px;
   margin-right: 10px;
-  width: 16px;
-  height: 16px;
-  accent-color: #4338ca; /* Cor do checkbox quando marcado */
+  accent-color: var(--primary-color); /* A cor verde vibrante quando marcado */
+  cursor: pointer;
+  border-radius: 4px; /* Bordas levemente arredondadas para o checkbox */
+  background-color: var(--input-bg); /* Fundo do checkbox */
+  border: 1px solid var(--border-color-dark); /* Borda do checkbox */
+  appearance: none; /* Remove estilo padrão do navegador */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  transition: all var(--transition-speed) ease;
+  position: relative;
+  display: flex; /* Para centralizar o ícone de check */
+  align-items: center;
+  justify-content: center;
 }
 
-/* --- BOTÃO E MENSAGEM DE ERRO --- */
+.form-group-checkbox input[type="checkbox"]:checked {
+  background-color: var(--primary-color); /* Fundo verde quando marcado */
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 255, 127, 0.2);
+}
+
+.form-group-checkbox input[type="checkbox"]:focus {
+    outline: none; /* Remove outline padrão no foco */
+    box-shadow: 0 0 0 3px rgba(0, 255, 127, 0.4); /* Sombra mais forte no foco */
+}
+
+/* Ícone de check customizado (usando pseudo-elemento) */
+.form-group-checkbox input[type="checkbox"]:checked::before {
+  content: '\2713'; /* Unicode para um sinal de "tick" (✓) */
+  font-size: 14px;
+  color: var(--background-dark); /* Cor escura para o tick */
+  font-weight: bold;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+
 .btn-login {
   width: 100%;
-  padding: 12px;
+  padding: 15px;
   border: none;
-  border-radius: 8px;
-  background: linear-gradient(to right,  #e70e57, #e70e57);
-  color: white;
-  font-size: 16px;
-  font-weight: 500;
+  border-radius: var(--border-radius-sm);
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: var(--background-dark);
+  font-size: 1.1rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.3s ease;
+  transition: all var(--transition-speed) ease;
+  box-shadow: 0 5px 15px rgba(0, 255, 127, 0.3);
 }
 
 .btn-login:hover {
-  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 7px 20px rgba(0, 255, 127, 0.4);
 }
 
 .error-message {
-    color: #d8000c;
-    background-color: #ffcccc;
-    border: 1px solid #ffb8b8;
-    border-radius: 8px;
-    padding: 10px;
-    margin-top: 20px;
-    display: none; /* Escondido por padrão */
-    text-align: center;
-    font-size: 14px;
+  color: var(--error-color);
+  background-color: rgba(255, 76, 76, 0.2);
+  border: 1px solid var(--error-color);
+  border-radius: var(--border-radius-sm);
+  padding: 10px;
+  margin-top: 20px;
+  display: none;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .login-left {
+    flex: 0.8;
+    padding: 20px;
+    justify-content: flex-end;
+  }
+  
+  .login-welcome h1 {
+    font-size: 2.5rem;
+  }
+
+  .login-welcome p {
+    font-size: 1.2rem;
+  }
+
+  .login-illustration {
+    background-size: cover;
+    background-position: center center;
+  }
+
+  .login-right {
+    flex: 1.2;
+    padding: 20px;
+  }
+
+  .login-card {
+    padding: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-left {
+    padding: 15px;
+  }
+
+  .login-welcome h1 {
+    font-size: 2rem;
+  }
+
+  .login-welcome p {
+    font-size: 1rem;
+  }
+
+  .login-card {
+    padding: 25px;
+  }
+
+  .card-header-login h2 {
+    font-size: 1.8rem;
+  }
 }
