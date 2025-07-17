@@ -29,9 +29,10 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
     const finalizeSaleBtn = document.getElementById('finalize-sale-btn');
     const cancelAllItemsBtn = document.getElementById('cancel-all-items-btn');
-    const printReceiptBtn = document.getElementById('print-receipt-btn');
+    // REMOVIDO: const printReceiptBtn = document.getElementById('print-receipt-btn');
 
-    // Elementos do DOM para o recibo
+    // REMOVIDO: Elementos do DOM para o recibo (não serão mais usados)
+    /*
     const receiptPrintArea = document.getElementById('receipt-print-area');
     const receiptDate = document.getElementById('receipt-date');
     const receiptTransactionId = document.getElementById('receipt-transaction-id');
@@ -39,12 +40,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     const receiptSubtotal = document.getElementById('receipt-subtotal');
     const receiptDiscount = document.getElementById('receipt-discount');
     const receiptTotal = document.getElementById('receipt-total');
-
+    */
 
     // --- ESTADO DA APLICAÇÃO ---
     let produtos = []; // Produtos carregados do banco de dados
     let carrinho = [];
-    let ultimaVendaFinalizada = null;
+    // REMOVIDO: let ultimaVendaFinalizada = null;
 
     // Função auxiliar para fazer requisições à API
     async function fazerRequisicaoApi(url, method, data = {}) {
@@ -202,7 +203,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             emptyCartMessage.classList.remove('hidden');
             finalizeSaleBtn.disabled = true;
             cancelAllItemsBtn.disabled = true;
-            printReceiptBtn.classList.add('hidden');
+            // REMOVIDO: printReceiptBtn.classList.add('hidden');
             valorDescontoGlobalInput.value = '';
             aplicarDescontoCheckbox.checked = false;
         } else {
@@ -242,7 +243,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             atualizarCarrinhoDisplay();
             resetItemInputArea();
             showCustomPopup('Sucesso', 'Todos os itens da venda foram cancelados.', 'success');
-            printReceiptBtn.classList.add('hidden');
+            // REMOVIDO: printReceiptBtn.classList.add('hidden');
         }
     }
 
@@ -299,7 +300,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 let itensVendidosParaTransacao = [];
                 let subtotalBruto = 0;
 
-                // Prepara os itens para a transação e atualiza o estoque localmente (será atualizado no backend)
+                // Prepara os itens para a transação e verifica estoque
                 for (const itemCarrinho of carrinho) {
                     const produtoEstoque = produtos.find(p => p.id === itemCarrinho.id);
                     
@@ -334,17 +335,14 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 };
 
                 // Envia a transação para a API de transações
-                const responseTransacao = await fazerRequisicaoApi('/api/transacoes', 'POST', novaTransacaoData);
+                await fazerRequisicaoApi('/api/transacoes', 'POST', novaTransacaoData);
                 
                 // Recarrega os produtos para refletir as atualizações de estoque feitas na API de transações
                 await carregarProdutos(); 
 
                 showCustomPopup('Sucesso', 'Venda finalizada com sucesso!', 'success');
                 
-                ultimaVendaFinalizada = responseTransacao; // Armazena a transação retornada pela API para o recibo
-                printReceiptBtn.classList.remove('hidden');
-                printReceiptBtn.disabled = false;
-
+                resetVendaCompleta(); // Reseta a venda após sucesso
             } catch (error) {
                 console.error('Erro ao finalizar venda:', error);
                 showCustomPopup('Erro', error.message || 'Não foi possível finalizar a venda.', 'error');
@@ -352,19 +350,17 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
     }
 
-    // Função para gerar o conteúdo do recibo
+    // REMOVIDO: Função para gerar o conteúdo do recibo
+    /*
     function gerarReciboParaImpressao() {
         if (!ultimaVendaFinalizada) {
             showCustomPopup('Erro', 'Nenhuma venda para gerar recibo.', 'error');
             return;
         }
 
-        // Popula os elementos do recibo
         receiptDate.textContent = new Date(ultimaVendaFinalizada.data).toLocaleDateString('pt-BR');
-        // Usamos o ID retornado pela API para a transação
-        receiptTransactionId.textContent = ultimaVendaFinalizada.id; 
+        receiptTransactionId.textContent = ultimaVendaFinalizada.id;
         
-        // Detalhes da venda agora vêm do objeto retornado pela API
         receiptSubtotal.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.totalBruto).toFixed(2);
         receiptDiscount.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.valorDesconto).toFixed(2);
         receiptTotal.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.totalFinal).toFixed(2);
@@ -386,6 +382,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         
         resetVendaCompleta();
     }
+    */
 
     function resetVendaCompleta() {
         carrinho = [];
@@ -396,9 +393,9 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         valorDescontoGlobalInput.value = '';
         searchProdutoInput.value = '';
         productNameDisplay.textContent = 'Produto Selecionado';
-        printReceiptBtn.classList.add('hidden');
-        printReceiptBtn.disabled = true;
-        ultimaVendaFinalizada = null;
+        // REMOVIDO: printReceiptBtn.classList.add('hidden');
+        // REMOVIDO: printReceiptBtn.disabled = true;
+        // REMOVIDO: ultimaVendaFinalizada = null;
         carregarProdutos(); // Recarrega os produtos após o reset da venda para garantir estoque atualizado
     }
 
@@ -411,7 +408,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     findProductBtn.addEventListener('click', pesquisarProduto);
 
     quantidadeItemInput.addEventListener('input', atualizarValorTotalItem);
-    valorUnitarioItemInput.addEventListener('input', atualizarValorTotalItem);
+    valorUnitarioItemInput.addEventListener('input', atualizarValorUnitarioItem); // <-- CORRIGIDO AQUI
     addItemToCartBtn.addEventListener('click', adicionarItemAoCarrinho);
 
     cartItemsList.addEventListener('click', (e) => {
@@ -427,7 +424,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
     finalizeSaleBtn.addEventListener('click', finalizarVenda);
     cancelAllItemsBtn.addEventListener('click', cancelarTodosItens);
-    printReceiptBtn.addEventListener('click', gerarReciboParaImpressao);
+    // REMOVIDO: printReceiptBtn.addEventListener('click', gerarReciboParaImpressao);
 
 
     document.addEventListener('DOMContentLoaded', carregarProdutos);
