@@ -408,7 +408,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     findProductBtn.addEventListener('click', pesquisarProduto);
 
     quantidadeItemInput.addEventListener('input', atualizarValorTotalItem);
-    valorUnitarioItemInput.addEventListener('input', atualizarValorUnitarioItem); // <-- CORRIGIDO AQUI
+    valorUnitarioItemInput.addEventListener('input', atualizarValorTotalItem); // <-- CORRIGIDO AQUI
     addItemToCartBtn.addEventListener('click', adicionarItemAoCarrinho);
 
     cartItemsList.addEventListener('click', (e) => {
