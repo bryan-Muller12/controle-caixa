@@ -11,7 +11,6 @@
     <header>
         <div class="header-left">
             <h1>
-                <img src="/logo_imasbento.png" alt="" style="height: 50px; vertical-align: middle;">
                 Controle de Caixa
             </h1>
         </div>
@@ -23,7 +22,7 @@
 
     <aside class="sidebar-nav">
         <div class="sidebar-logo">
-            <i class="fas fa-box-open"></i>
+            <i><img src="/mullersys.png" alt="" style="height: 80px; vertical-align: middle;"></i>
         </div>
         <ul>
             <li><a href="venda.html" title="Venda"><i class="fas fa-cash-register"></i><span>Venda</span></a></li>
@@ -66,47 +65,62 @@
         <div class="card">
             <div class="card-header">
                 <h2>Histórico de Transações</h2>
+                <button id="toggle-sort-btn" class="btn-secondary btn-icon" title="Alternar Ordem"><i class="fas fa-sort"></i></button>
             </div>
             <div class="transaction-type-filter">
                 <button class="active" data-filter="all">Todas</button>
                 <button data-filter="entrada">Entradas</button>
                 <button data-filter="saida">Saídas</button>
             </div>
-            <ul id="lista-transacoes" class="transaction-list">
+            <div class="transaction-list-container">
+                <ul id="lista-transacoes" class="transaction-list">
                 </ul>
+            </div>
         </div>
 
-        <div class="card" style="margin-top: 30px;">
-            <div class="card-header">
+        <div class="card collapsible-card" id="registrar-transacao-card">
+            <div class="card-header collapsible-header">
                 <h2>Registrar Outra Transação</h2>
+                <i class="fas fa-chevron-down toggle-icon"></i>
             </div>
-            <form id="outra-transacao-form">
-                <div class="form-group">
-                    <label for="tipo-transacao">Tipo:</label>
-                    <select id="tipo-transacao" required>
-                        <option value="entrada">Entrada</option>
-                        <option value="saida">Saída</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="descricao-transacao">Descrição:</label>
-                    <input type="text" id="descricao-transacao" required>
-                </div>
-                <div class="form-group">
-                    <label for="valor-transacao">Valor:</label>
-                    <input type="number" id="valor-transacao" min="0.01" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label for="data-transacao">Data:</label>
-                    <input type="date" id="data-transacao" required>
-                </div>
-                <div class="modal-actions">
-                    <button type="submit" class="btn-primary">Registrar Transação</button>
-                </div>
-            </form>
+            <div class="collapsible-content">
+                <form id="outra-transacao-form">
+                    <div class="form-group">
+                        <label for="tipo-transacao">Tipo:</label>
+                        <select id="tipo-transacao" required>
+                            <option value="entrada">Entrada</option>
+                            <option value="saida">Saída</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="descricao-transacao">Descrição:</label>
+                        <input type="text" id="descricao-transacao" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="valor-transacao">Valor:</label>
+                        <input type="number" id="valor-transacao" min="0.01" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="data-transacao">Data:</label>
+                        <input type="date" id="data-transacao" required>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-primary">Registrar Transação</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </main>
 
+    <div class="custom-popup-overlay hidden" id="custom-popup-overlay">
+        <div class="custom-popup-content">
+            <h2 id="custom-popup-title"></h2>
+            <p id="custom-popup-message"></p>
+            <div class="custom-popup-actions">
+                <button id="custom-popup-close-btn" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
  
 
     <script src="controle.js"></script>

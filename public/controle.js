@@ -26,11 +26,17 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
     const gerarRelatorioVendasBtn = document.getElementById('gerar-relatorio-vendas-btn');
     const relatorioVendasOutput = document.getElementById('relatorio-vendas-output');
 
+    // NOVOS Elementos do DOM para Ordenação e Collapsible
+    const toggleSortBtn = document.getElementById('toggle-sort-btn');
+    const registrarTransacaoCard = document.getElementById('registrar-transacao-card');
+
 
     // --- ESTADO DA APLICAÇÃO ---
     let historicoTransacoes = [];
     let saldoAtual = 0;
     let filtroAtual = 'all'; // 'all', 'entrada', 'saida'
+    let sortOrder = 'desc'; // 'desc' (mais recente) ou 'asc' (mais antigo)
+
 
     // --- FUNÇÕES ---
 
@@ -62,10 +68,14 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
         const transacoesFiltradas = historicoTransacoes.filter(transacao => {
             if (filtroAtual === 'all') return true;
             return transacao.tipo === filtroAtual;
-        }).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()); // Ordena por data mais recente
+        }).sort((a, b) => {
+            const dateA = new Date(a.data).getTime();
+            const dateB = new Date(b.data).getTime();
+            return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+        }); // Ordena por data
 
         if (transacoesFiltradas.length === 0) {
-            listaTransacoes.innerHTML = `<li style="justify-content: center; color: var(--text-light-color);">Nenhuma transação encontrada.</li>`;
+            listaTransacoes.innerHTML = `<li style="justify-content: center; color: var(--text-muted);">${filtroAtual === 'all' ? 'Nenhuma transação encontrada.' : 'Nenhuma transação deste tipo encontrada.'}</li>`;
             return;
         }
 
@@ -78,13 +88,13 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
             let detalhesHTML = '';
             if (transacao.detalhesVenda) {
                 detalhesHTML = `
-                    <details style="margin-top: 10px; padding-top: 5px; border-top: 1px dashed var(--border-color);">
+                    <details style="margin-top: 10px; padding-top: 5px; border-top: 1px dashed var(--border-color-dark);">
                         <summary style="font-weight: 500; cursor: pointer; color: var(--primary-color);">Ver Detalhes da Venda</summary>
                         <div style="font-size: 0.9em; margin-top: 10px;">
                             <p><strong>Total Bruto:</strong> R$ ${transacao.detalhesVenda.totalBruto}</p>
                             <p><strong>Desconto Aplicado:</strong> R$ ${transacao.detalhesVenda.valorDesconto}</p>
                             <p><strong>Total Final da Venda:</strong> R$ ${transacao.detalhesVenda.totalFinal}</p>
-                            <ul style="list-style: none; padding-left: 15px; margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+                            <ul style="list-style: none; padding-left: 15px; margin-top: 10px; border-top: 1px solid var(--border-color-dark); padding-top: 10px;">
                                 <li style="font-weight: bold; margin-bottom: 5px;">Itens Vendidos:</li>
                                 ${transacao.detalhesVenda.itens.map(item => `
                                     <li style="margin-bottom: 3px;">- ${item.nomeProduto} (${item.codProduto}): ${item.quantidadeVendida} x R$ ${item.precoUnitarioVenda.toFixed(2)} = R$ ${item.totalItem.toFixed(2)}</li>
@@ -119,7 +129,7 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
         const data = dataTransacaoInput.value;
 
         if (!descricao || isNaN(valor) || valor <= 0 || !data) {
-            alert('Por favor, preencha todos os campos corretamente.');
+            showCustomPopup('Erro', 'Por favor, preencha todos os campos corretamente.', 'error');
             return;
         }
 
@@ -136,7 +146,8 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
         calcularESetarSaldo();
         renderizarHistorico();
         outraTransacaoForm.reset();
-        alert('Transação registrada com sucesso!');
+        showCustomPopup('Sucesso', 'Transação registrada com sucesso!', 'success');
+        registrarTransacaoCard.classList.remove('expanded'); // Fecha o collapsible após o registro
     }
 
     // Remova as funções de relatório diário e mensal
@@ -149,7 +160,7 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
         const dataFim = dataFimVendasInput.value;
 
         if (!dataInicio || !dataFim) {
-            alert('Por favor, selecione as datas de início e fim para o relatório de vendas.');
+            showCustomPopup('Erro', 'Por favor, selecione as datas de início e fim para o relatório de vendas.', 'error');
             return;
         }
 
@@ -236,6 +247,21 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
 
     // NOVO: Event listener para o botão de relatório de vendas
     gerarRelatorioVendasBtn.addEventListener('click', gerarRelatorioVendas);
+
+    // NOVO: Event listener para o botão de alternar ordenação
+    toggleSortBtn.addEventListener('click', () => {
+        sortOrder = sortOrder === 'desc' ? 'asc' : 'desc';
+        renderizarHistorico();
+        toggleSortBtn.querySelector('i').classList.toggle('fa-sort-up', sortOrder === 'asc');
+        toggleSortBtn.querySelector('i').classList.toggle('fa-sort-down', sortOrder === 'desc');
+        toggleSortBtn.querySelector('i').classList.toggle('fa-sort', false); // Remove o ícone padrão se for para cima ou para baixo
+    });
+
+    // NOVO: Event listener para o cabeçalho do collapsible
+    registrarTransacaoCard.querySelector('.collapsible-header').addEventListener('click', () => {
+        registrarTransacaoCard.classList.toggle('expanded');
+    });
+
 
     // --- INICIALIZAÇÃO ---
     document.addEventListener('DOMContentLoaded', carregarDados);

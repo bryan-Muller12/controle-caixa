@@ -276,7 +276,7 @@ header h1 img {
   border: 1px solid var(--border-color-dark);
   box-shadow: 0 5px 15px var(--shadow-dark);
   margin-bottom: 30px;
-  overflow: hidden;
+  overflow: hidden; /* Importante para o collapsible */
   padding: 25px;
   color: var(--text-light); /* Texto do card claro */
 }
@@ -403,6 +403,23 @@ input:focus, select:focus {
   border: 1px solid var(--border-color-dark);
   box-shadow: 0 5px 15px var(--shadow-dark);
   overflow: hidden;
+}
+
+/* Novo estilo para o container da lista de transações com scroll */
+.transaction-list-container {
+    max-height: 400px; /* Altura máxima da lista */
+    overflow-y: auto; /* Adiciona scroll vertical quando o conteúdo excede a altura máxima */
+    border: 1px solid var(--border-color-dark); /* Borda para o container */
+    border-radius: var(--border-radius-sm);
+    margin-top: 15px; /* Espaçamento após os botões de filtro */
+}
+
+/* Ajusta o padding da ul interna para não ter borda dupla */
+.transaction-list {
+    border: none;
+    box-shadow: none;
+    margin-top: 0;
+    border-radius: 0;
 }
 
 .product-list li, .transaction-list li {
@@ -1027,4 +1044,164 @@ input[readonly] {
     main.content { margin-left: 0; padding-top: calc(var(--header-height) + 60px + 15px); max-width: 100%; }
     header { padding-left: 20px; }
     .main-footer { left: 0; width: 100%; }
+}
+
+/* Estilos para o pop-up customizado */
+.custom-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Fundo escuro semi-transparente */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.custom-popup-overlay:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.custom-popup-content {
+    background: var(--card-dark); /* Fundo escuro, similar aos cards */
+    padding: 30px;
+    border-radius: var(--border-radius-main);
+    box-shadow: 0 10px 25px var(--shadow-dark);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+    border: 1px solid var(--border-color-dark);
+    color: var(--text-light);
+}
+
+.custom-popup-overlay:not(.hidden) .custom-popup-content {
+    transform: scale(1);
+}
+
+.custom-popup-content h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    color: var(--primary-color); /* Título em verde vibrante */
+}
+
+.custom-popup-content p {
+    font-size: 1rem;
+    margin-bottom: 30px;
+    color: var(--text-light);
+}
+
+.custom-popup-actions button {
+    width: 100%;
+    /* Reutiliza estilos de botões existentes, por exemplo, btn-primary */
+}
+
+/* Estilos para o pop-up de Confirmação (custom-confirm) */
+.custom-confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.custom-confirm-overlay:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.custom-confirm-content {
+    background: var(--card-dark);
+    padding: 30px;
+    border-radius: var(--border-radius-main);
+    box-shadow: 0 10px 25px var(--shadow-dark);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+    border: 1px solid var(--border-color-dark);
+    color: var(--text-light);
+}
+
+.custom-confirm-overlay:not(.hidden) .custom-confirm-content {
+    transform: scale(1);
+}
+
+.custom-confirm-content h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    color: var(--warning-color); /* Laranja para confirmação/alerta */
+}
+
+.custom-confirm-content p {
+    font-size: 1rem;
+    margin-bottom: 30px;
+    color: var(--text-light);
+}
+
+.custom-confirm-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.custom-confirm-actions button {
+    flex-grow: 1;
+}
+
+/* Estilos para o cabeçalho do collapsible */
+.collapsible-card .card-header {
+    cursor: pointer;
+    padding-bottom: 15px; /* Ajuste para não parecer tão "grudado" no conteúdo */
+    margin-bottom: 0; /* Remove a margem inferior para o conteúdo ficar logo abaixo */
+    border-bottom: none; /* Remove a borda inferior para ser controlada pelo estado */
+    transition: border-bottom 0.3s ease;
+}
+
+.collapsible-card .card-header h2 {
+    flex-grow: 1;
+}
+
+.collapsible-card .card-header .toggle-icon {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+.collapsible-card.expanded .card-header .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.collapsible-card .collapsible-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+    padding: 0 25px; /* Padding horizontal igual ao card */
+}
+
+.collapsible-card.expanded .collapsible-content {
+    max-height: 500px; /* Um valor grande o suficiente para o conteúdo expandido */
+    padding-bottom: 25px; /* Padding inferior do card */
+}
+
+.collapsible-card.expanded .card-header {
+    border-bottom: 1px solid var(--border-color-dark); /* Adiciona a borda quando expandido */
+    margin-bottom: 20px; /* Adiciona margem após a borda */
 }

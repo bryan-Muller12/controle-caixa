@@ -94,7 +94,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         if (produto && produto.quantidade > 0) {
             exibirDetalhesProdutoEncontrado(produto);
         } else {
-            alert('Produto não encontrado ou sem estoque.');
+            showCustomPopup('Alerta', 'Produto não encontrado ou sem estoque.', 'warning');
             exibirDetalhesProdutoEncontrado(null);
             searchProdutoInput.value = '';
         }
@@ -113,7 +113,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
     function adicionarItemAoCarrinho() {
         if (!produtoEncontradoParaAdicionar) {
-            alert('Nenhum produto selecionado para adicionar.');
+            showCustomPopup('Erro', 'Nenhum produto selecionado para adicionar.', 'error');
             return;
         }
 
@@ -121,11 +121,11 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         const valorUnitario = parseFloat(valorUnitarioItemInput.value);
 
         if (isNaN(quantidadeAdicionar) || quantidadeAdicionar <= 0 || quantidadeAdicionar > produtoEncontradoParaAdicionar.quantidade) {
-            alert(`Quantidade inválida ou maior que o estoque disponível (${produtoEncontradoParaAdicionar.quantidade} unidades).`);
+            showCustomPopup('Erro', `Quantidade inválida ou maior que o estoque disponível (${produtoEncontradoParaAdicionar.quantidade} unidades).`, 'error');
             return;
         }
         if (isNaN(valorUnitario) || valorUnitario <= 0) {
-            alert('Valor unitário inválido.');
+            showCustomPopup('Erro', 'Valor unitário inválido.', 'error');
             return;
         }
 
@@ -134,7 +134,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         if (itemExistenteIndex !== -1) {
             const novaQuantidadeTotal = carrinho[itemExistenteIndex].quantidadeVendidaNoCarrinho + quantidadeAdicionar;
             if (novaQuantidadeTotal > produtoEncontradoParaAdicionar.quantidade) {
-                alert(`Não é possível adicionar essa quantidade. Excederia o estoque disponível para "${produtoEncontradoParaAdicionar.nome}".`);
+                showCustomPopup('Erro', `Não é possível adicionar essa quantidade. Excederia o estoque disponível para "${produtoEncontradoParaAdicionar.nome}".`, 'error');
                 return;
             }
             carrinho[itemExistenteIndex].quantidadeVendidaNoCarrinho = novaQuantidadeTotal;
@@ -203,11 +203,13 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         atualizarCarrinhoDisplay();
     }
 
-    function cancelarTodosItens() {
-        if (confirm('Tem certeza que deseja cancelar todos os itens da venda atual?')) {
+    async function cancelarTodosItens() {
+        const confirmCancel = await showCustomConfirm('Confirmação', 'Tem certeza que deseja cancelar todos os itens da venda atual?');
+        if (confirmCancel) {
             carrinho = [];
             atualizarCarrinhoDisplay();
             resetItemInputArea();
+            showCustomPopup('Sucesso', 'Todos os itens da venda foram cancelados.', 'success');
         }
     }
 
@@ -246,21 +248,39 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
     }
 
-    function finalizarVenda() {
+    async function finalizarVenda() {
+        console.log('--- Início da função finalizarVenda ---'); // Log 1
         if (carrinho.length === 0) {
-            alert('Não há itens no carrinho para finalizar a venda.');
+            showCustomPopup('Erro', 'Não há itens no carrinho para finalizar a venda.', 'error');
+            console.log('Carrinho vazio. Finalização abortada.'); // Log 2
             return;
         }
 
-        if (confirm('Confirmar finalização da venda?')) {
-            let totalDaVenda = parseFloat(totalSaleDisplay.textContent.replace('R$ ', '').replace(',', '.'));
+        console.log('Carrinho não está vazio. Exibindo confirmação...'); // Log 3
+        const confirmFinalize = await showCustomConfirm('Confirmação', 'Confirmar finalização da venda?');
+        console.log('Resultado da confirmação:', confirmFinalize); // Log 4
+
+        if (confirmFinalize) {
+            console.log('Confirmação aceita. Prosseguindo com a finalização.'); // Log 5
+
+            let totalDaVendaText = totalSaleDisplay.textContent;
+            console.log('Texto do total da venda na tela:', totalDaVendaText); // Log 6
+            let totalDaVenda = parseFloat(totalDaVendaText.replace('R$ ', '').replace(',', '.'));
+            console.log('Valor total da venda (parseFloat):', totalDaVenda); // Log 7
+
             let valorDescontoAplicado = aplicarDescontoCheckbox.checked ? (parseFloat(valorDescontoGlobalInput.value) || 0) : 0;
+            console.log('Valor do desconto aplicado:', valorDescontoAplicado); // Log 8
 
             let itensVendidosDetalhes = [];
+            console.log('Processando itens do carrinho e atualizando estoque...'); // Log 9
             carrinho.forEach(itemCarrinho => {
                 const produtoEstoqueIndex = produtos.findIndex(p => p.id === itemCarrinho.id);
                 if (produtoEstoqueIndex !== -1) {
+                    console.log(`Produto ${itemCarrinho.nomeProduto} (ID: ${itemCarrinho.id}) antes da atualização: ${produtos[produtoEstoqueIndex].quantidade}`); // Log 10
                     produtos[produtoEstoqueIndex].quantidade -= itemCarrinho.quantidadeVendidaNoCarrinho;
+                    console.log(`Produto ${itemCarrinho.nomeProduto} (ID: ${itemCarrinho.id}) depois da atualização: ${produtos[produtoEstoqueIndex].quantidade}`); // Log 11
+                } else {
+                    console.warn(`Produto com ID ${itemCarrinho.id} não encontrado no estoque ao finalizar venda.`); // Log 12
                 }
                 itensVendidosDetalhes.push({
                     produtoId: itemCarrinho.id,
@@ -272,6 +292,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     totalItem: itemCarrinho.totalItem
                 });
             });
+            console.log('Itens vendidos detalhes:', itensVendidosDetalhes); // Log 13
 
             const novaTransacao = {
                 id: Date.now(),
@@ -286,13 +307,20 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     itens: itensVendidosDetalhes
                 }
             };
+            console.log('Nova transação a ser adicionada:', novaTransacao); // Log 14
             historicoTransacoes.push(novaTransacao);
+            console.log('Histórico de transações atualizado em memória.'); // Log 15
 
             salvarDados();
-            alert('Venda finalizada com sucesso!');
+            console.log('Dados salvos no LocalStorage.'); // Log 16
+            showCustomPopup('Sucesso', 'Venda finalizada com sucesso!', 'success');
 
             resetVendaCompleta();
+            console.log('Venda completa resetada.'); // Log 17
+        } else {
+            console.log('Confirmação negada. Finalização abortada.'); // Log 18
         }
+        console.log('--- Fim da função finalizarVenda ---'); // Log 19
     }
 
     function resetVendaCompleta() {

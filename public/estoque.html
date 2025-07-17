@@ -12,7 +12,6 @@
         <div class="header-left">
             
             <h1>
-                 <img src="/logo_imasbento.png" alt="" style="height: 50px; vertical-align: middle;">
                  Controle de Estoque
             </h1>
         </div>
@@ -24,7 +23,7 @@
 
     <aside class="sidebar-nav">
         <div class="sidebar-logo">
-            <i class="fas fa-box-open"></i>
+            <i><img src="/mullersys.png" alt="" style="height: 80px; vertical-align: middle;"></i>
         </div>
         <ul>
             <li><a href="venda.html" title="Venda"><i class="fas fa-cash-register"></i><span>Venda</span></a></li>
@@ -117,6 +116,26 @@
         </div>
     </div>
 
+    <div class="custom-popup-overlay hidden" id="custom-popup-overlay">
+        <div class="custom-popup-content">
+            <h2 id="custom-popup-title"></h2>
+            <p id="custom-popup-message"></p>
+            <div class="custom-popup-actions">
+                <button id="custom-popup-close-btn" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="custom-confirm-overlay hidden" id="custom-confirm-overlay">
+        <div class="custom-confirm-content">
+            <h2 id="custom-confirm-title">Confirmação</h2>
+            <p id="custom-confirm-message">Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
+            <div class="custom-confirm-actions">
+                <button id="custom-confirm-yes-btn" class="btn-danger">Sim</button>
+                <button id="custom-confirm-no-btn" class="btn-secondary">Não</button>
+            </div>
+        </div>
+    </div>
    
 
     <script src="estoque.js"></script>

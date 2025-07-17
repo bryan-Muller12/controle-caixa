@@ -69,6 +69,94 @@ function logout() {
     window.location.href = 'index.html';
 }
 
+// Função para exibir um pop-up customizado (substitui alert())
+function showCustomPopup(title, message, type = 'info') {
+    const popupOverlay = document.getElementById('custom-popup-overlay');
+    const popupTitle = document.getElementById('custom-popup-title');
+    const popupMessage = document.getElementById('custom-popup-message');
+    const popupCloseBtn = document.getElementById('custom-popup-close-btn');
+
+    popupTitle.textContent = title;
+    popupMessage.textContent = message;
+
+    // Remove classes de tipo anteriores e adiciona a nova
+    popupTitle.classList.remove('success', 'error', 'warning'); // Exemplo de classes, ajuste conforme seu CSS
+    if (type === 'error') {
+        popupTitle.style.color = 'var(--danger-color)';
+    } else if (type === 'success') {
+        popupTitle.style.color = 'var(--success-color)';
+    } else if (type === 'warning') {
+        popupTitle.style.color = 'var(--warning-color)';
+    }
+    else {
+        popupTitle.style.color = 'var(--primary-color)'; // Default
+    }
+
+
+    popupOverlay.classList.remove('hidden');
+
+    const closePopup = () => {
+        popupOverlay.classList.add('hidden');
+        popupCloseBtn.removeEventListener('click', closePopup);
+        popupOverlay.removeEventListener('click', handleOverlayClick);
+    };
+
+    const handleOverlayClick = (e) => {
+        if (e.target === popupOverlay) {
+            closePopup();
+        }
+    };
+
+    popupCloseBtn.addEventListener('click', closePopup);
+    popupOverlay.addEventListener('click', handleOverlayClick);
+}
+
+// Função para exibir um pop-up de confirmação customizado (substitui confirm())
+function showCustomConfirm(title, message) {
+    return new Promise((resolve) => {
+        const confirmOverlay = document.getElementById('custom-confirm-overlay');
+        const confirmTitle = document.getElementById('custom-confirm-title');
+        const confirmMessage = document.getElementById('custom-confirm-message');
+        const confirmYesBtn = document.getElementById('custom-confirm-yes-btn');
+        const confirmNoBtn = document.getElementById('custom-confirm-no-btn');
+
+        confirmTitle.textContent = title;
+        confirmMessage.textContent = message;
+        confirmTitle.style.color = 'var(--warning-color)'; // Cor de destaque para confirmação
+
+        confirmOverlay.classList.remove('hidden');
+
+        const cleanup = () => {
+            confirmOverlay.classList.add('hidden');
+            confirmYesBtn.removeEventListener('click', onYes);
+            confirmNoBtn.removeEventListener('click', onNo);
+            confirmOverlay.removeEventListener('click', handleConfirmOverlayClick);
+        };
+
+        const onYes = () => {
+            cleanup();
+            resolve(true);
+        };
+
+        const onNo = () => {
+            cleanup();
+            resolve(false);
+        };
+
+        const handleConfirmOverlayClick = (e) => {
+            if (e.target === confirmOverlay) {
+                cleanup();
+                resolve(false); // Resolve como false se clicar fora
+            }
+        };
+
+        confirmYesBtn.addEventListener('click', onYes);
+        confirmNoBtn.addEventListener('click', onNo);
+        confirmOverlay.addEventListener('click', handleConfirmOverlayClick);
+    });
+}
+
+
 // --- EVENT LISTENERS COMUNS ---
 
 // Alterna a visibilidade do painel de notificações

@@ -100,7 +100,7 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
     const codProduto = addCodProdutoInput.value.trim();
 
     if (produtos.some(p => p.cod_produto === codProduto)) {
-        alert('Erro: Já existe um produto com este código. Por favor, insira um código único.');
+        showCustomPopup('Erro', 'Já existe um produto com este código. Por favor, insira um código único.', 'error');
         return;
     }
 
@@ -110,7 +110,7 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
       cod_produto: codProduto,
       quantidade: parseInt(addQuantidadeInput.value, 10),
       min_quantidade: parseInt(addMinQuantidadeInput.value, 10),
-      preco_unitario: parseFloat(addPrecoUnitarioInput.value) // NOVO: Captura o preço unitário
+      preco_unitario: parseFloat(addPrecoUnitarioInput.value)
     };
 
     if (novoProduto.nome && novoProduto.cod_produto && !isNaN(novoProduto.quantidade) && !isNaN(novoProduto.min_quantidade) && novoProduto.min_quantidade >= 0 && !isNaN(novoProduto.preco_unitario) && novoProduto.preco_unitario > 0) {
@@ -118,8 +118,9 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
       salvarProdutos();
       renderizarLista();
       closeModal(addModalOverlay);
+      showCustomPopup('Sucesso', 'Produto adicionado com sucesso!', 'success');
     } else {
-        alert('Por favor, preencha todos os campos corretamente e garanta que o preço unitário seja maior que zero.');
+        showCustomPopup('Erro', 'Por favor, preencha todos os campos corretamente e garanta que o preço unitário seja maior que zero.', 'error');
     }
   });
 
@@ -146,7 +147,7 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
         editCodProdutoInput.value = produto.cod_produto;
         editQuantidadeInput.value = produto.quantidade;
         editMinQuantidadeInput.value = produto.min_quantidade;
-        editPrecoUnitarioInput.value = produto.preco_unitario; // NOVO: Preenche o preço unitário
+        editPrecoUnitarioInput.value = produto.preco_unitario;
         openModal(editModalOverlay);
     }
   });
@@ -157,7 +158,7 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
     const produtoIndex = produtos.findIndex(p => p.id === id);
 
     if (produtoIndex === -1) {
-      alert("Produto não encontrado.");
+      showCustomPopup('Erro', "Produto não encontrado.", 'error');
       return;
     }
 
@@ -167,7 +168,7 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
         cod_produto: editCodProdutoInput.value.trim(),
         quantidade: parseInt(editQuantidadeInput.value, 10),
         min_quantidade: parseInt(editMinQuantidadeInput.value, 10),
-        preco_unitario: parseFloat(editPrecoUnitarioInput.value) // NOVO: Captura o preço unitário
+        preco_unitario: parseFloat(editPrecoUnitarioInput.value)
     };
 
     if (produtoAtualizado.nome && produtoAtualizado.cod_produto && !isNaN(produtoAtualizado.quantidade) && !isNaN(produtoAtualizado.min_quantidade) && produtoAtualizado.min_quantidade >= 0 && !isNaN(produtoAtualizado.preco_unitario) && produtoAtualizado.preco_unitario > 0) {
@@ -175,18 +176,21 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
         salvarProdutos();
         renderizarLista();
         closeModal(editModalOverlay);
+        showCustomPopup('Sucesso', 'Produto atualizado com sucesso!', 'success');
     } else {
-        alert('Por favor, preencha todos os campos corretamente e garanta que o preço unitário seja maior que zero.');
+        showCustomPopup('Erro', 'Por favor, preencha todos os campos corretamente e garanta que o preço unitário seja maior que zero.', 'error');
     }
   });
 
-  deleteBtn.addEventListener('click', () => {
-    if (confirm('Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.')) {
+  deleteBtn.addEventListener('click', async () => {
+    const confirmDelete = await showCustomConfirm('Confirmação', 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.');
+    if (confirmDelete) {
       const id = parseInt(editIdInput.value);
       produtos = produtos.filter(p => p.id !== id);
       salvarProdutos();
       renderizarLista();
       closeModal(editModalOverlay);
+      showCustomPopup('Sucesso', 'Produto excluído com sucesso!', 'success');
     }
   });
 
