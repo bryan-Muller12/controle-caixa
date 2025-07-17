@@ -29,23 +29,54 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
     const finalizeSaleBtn = document.getElementById('finalize-sale-btn');
     const cancelAllItemsBtn = document.getElementById('cancel-all-items-btn');
+    const printReceiptBtn = document.getElementById('print-receipt-btn');
+
+    // Elementos do DOM para o recibo
+    const receiptPrintArea = document.getElementById('receipt-print-area');
+    const receiptDate = document.getElementById('receipt-date');
+    const receiptTransactionId = document.getElementById('receipt-transaction-id');
+    const receiptItemsList = document.getElementById('receipt-items-list');
+    const receiptSubtotal = document.getElementById('receipt-subtotal');
+    const receiptDiscount = document.getElementById('receipt-discount');
+    const receiptTotal = document.getElementById('receipt-total');
+
 
     // --- ESTADO DA APLICAÇÃO ---
-    let produtos = [];
-    let historicoTransacoes = [];
-    let produtoEncontradoParaAdicionar = null;
+    let produtos = []; // Produtos carregados do banco de dados
     let carrinho = [];
+    let ultimaVendaFinalizada = null;
 
-    function carregarDados() {
-        produtos = JSON.parse(localStorage.getItem('produtos')) || [];
-        historicoTransacoes = JSON.parse(localStorage.getItem('historicoTransacoes')) || [];
-        atualizarNotificacoesComuns();
-        resetVendaCompleta();
+    // Função auxiliar para fazer requisições à API
+    async function fazerRequisicaoApi(url, method, data = {}) {
+        const options = {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        };
+        if (method !== 'GET' && method !== 'HEAD') {
+            options.body = JSON.stringify(data);
+        }
+
+        const response = await fetch(url, options);
+        // Tenta ler JSON, mas permite que a resposta seja vazia (ex: 204 No Content)
+        const responseData = await response.json().catch(() => null); 
+        
+        if (!response.ok) {
+            throw new Error(responseData?.error || `Erro na requisição ${method} ${url}: Status ${response.status}`);
+        }
+        return responseData;
     }
 
-    function salvarDados() {
-        localStorage.setItem('produtos', JSON.stringify(produtos));
-        localStorage.setItem('historicoTransacoes', JSON.stringify(historicoTransacoes));
+    // Carregar produtos do backend
+    async function carregarProdutos() {
+        try {
+            produtos = await fazerRequisicaoApi('/api/produtos', 'GET');
+            atualizarNotificacoesComuns(); // Atualiza as notificações com base nos produtos carregados
+        } catch (error) {
+            console.error('Erro ao carregar produtos:', error);
+            showCustomPopup('Erro', 'Não foi possível carregar os produtos do servidor.', 'error');
+        }
     }
 
     function exibirDetalhesProdutoEncontrado(produto) {
@@ -141,7 +172,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             carrinho[itemExistenteIndex].totalItem = novaQuantidadeTotal * valorUnitario;
         } else {
             carrinho.push({
-                id: produtoEncontradoParaAdicionar.id,
+                id: produtoEncontradoParaAdicionar.id, // ID do produto no banco
                 codProduto: produtoEncontradoParaAdicionar.cod_produto,
                 nomeProduto: produtoEncontradoParaAdicionar.nome,
                 quantidadeVendidaNoCarrinho: quantidadeAdicionar,
@@ -171,6 +202,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             emptyCartMessage.classList.remove('hidden');
             finalizeSaleBtn.disabled = true;
             cancelAllItemsBtn.disabled = true;
+            printReceiptBtn.classList.add('hidden');
             valorDescontoGlobalInput.value = '';
             aplicarDescontoCheckbox.checked = false;
         } else {
@@ -210,6 +242,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             atualizarCarrinhoDisplay();
             resetItemInputArea();
             showCustomPopup('Sucesso', 'Todos os itens da venda foram cancelados.', 'success');
+            printReceiptBtn.classList.add('hidden');
         }
     }
 
@@ -249,78 +282,109 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     }
 
     async function finalizarVenda() {
-        console.log('--- Início da função finalizarVenda ---'); // Log 1
         if (carrinho.length === 0) {
             showCustomPopup('Erro', 'Não há itens no carrinho para finalizar a venda.', 'error');
-            console.log('Carrinho vazio. Finalização abortada.'); // Log 2
             return;
         }
 
-        console.log('Carrinho não está vazio. Exibindo confirmação...'); // Log 3
         const confirmFinalize = await showCustomConfirm('Confirmação', 'Confirmar finalização da venda?');
-        console.log('Resultado da confirmação:', confirmFinalize); // Log 4
-
+        
         if (confirmFinalize) {
-            console.log('Confirmação aceita. Prosseguindo com a finalização.'); // Log 5
+            try {
+                let totalDaVendaText = totalSaleDisplay.textContent;
+                let totalDaVenda = parseFloat(totalDaVendaText.replace('R$ ', '').replace(',', '.'));
 
-            let totalDaVendaText = totalSaleDisplay.textContent;
-            console.log('Texto do total da venda na tela:', totalDaVendaText); // Log 6
-            let totalDaVenda = parseFloat(totalDaVendaText.replace('R$ ', '').replace(',', '.'));
-            console.log('Valor total da venda (parseFloat):', totalDaVenda); // Log 7
+                let valorDescontoAplicado = aplicarDescontoCheckbox.checked ? (parseFloat(valorDescontoGlobalInput.value) || 0) : 0;
 
-            let valorDescontoAplicado = aplicarDescontoCheckbox.checked ? (parseFloat(valorDescontoGlobalInput.value) || 0) : 0;
-            console.log('Valor do desconto aplicado:', valorDescontoAplicado); // Log 8
+                let itensVendidosParaTransacao = [];
+                let subtotalBruto = 0;
 
-            let itensVendidosDetalhes = [];
-            console.log('Processando itens do carrinho e atualizando estoque...'); // Log 9
-            carrinho.forEach(itemCarrinho => {
-                const produtoEstoqueIndex = produtos.findIndex(p => p.id === itemCarrinho.id);
-                if (produtoEstoqueIndex !== -1) {
-                    console.log(`Produto ${itemCarrinho.nomeProduto} (ID: ${itemCarrinho.id}) antes da atualização: ${produtos[produtoEstoqueIndex].quantidade}`); // Log 10
-                    produtos[produtoEstoqueIndex].quantidade -= itemCarrinho.quantidadeVendidaNoCarrinho;
-                    console.log(`Produto ${itemCarrinho.nomeProduto} (ID: ${itemCarrinho.id}) depois da atualização: ${produtos[produtoEstoqueIndex].quantidade}`); // Log 11
-                } else {
-                    console.warn(`Produto com ID ${itemCarrinho.id} não encontrado no estoque ao finalizar venda.`); // Log 12
+                // Prepara os itens para a transação e atualiza o estoque localmente (será atualizado no backend)
+                for (const itemCarrinho of carrinho) {
+                    const produtoEstoque = produtos.find(p => p.id === itemCarrinho.id);
+                    
+                    if (!produtoEstoque || produtoEstoque.quantidade < itemCarrinho.quantidadeVendidaNoCarrinho) {
+                        throw new Error(`Estoque insuficiente para ${itemCarrinho.nomeProduto}. Disponível: ${produtoEstoque ? produtoEstoque.quantidade : 0}`);
+                    }
+
+                    itensVendidosParaTransacao.push({
+                        produtoId: itemCarrinho.id,
+                        codProduto: itemCarrinho.codProduto,
+                        nomeProduto: itemCarrinho.nomeProduto,
+                        quantidadeVendida: itemCarrinho.quantidadeVendidaNoCarrinho,
+                        precoUnitarioOriginal: itemCarrinho.precoUnitarioOriginal,
+                        precoUnitarioVenda: itemCarrinho.precoUnitario,
+                        totalItem: itemCarrinho.totalItem
+                    });
+                    subtotalBruto += itemCarrinho.totalItem;
                 }
-                itensVendidosDetalhes.push({
-                    produtoId: itemCarrinho.id,
-                    codProduto: itemCarrinho.codProduto,
-                    nomeProduto: itemCarrinho.nomeProduto,
-                    quantidadeVendida: itemCarrinho.quantidadeVendidaNoCarrinho,
-                    precoUnitarioOriginal: itemCarrinho.precoUnitarioOriginal,
-                    precoUnitarioVenda: itemCarrinho.precoUnitario,
-                    totalItem: itemCarrinho.totalItem
-                });
-            });
-            console.log('Itens vendidos detalhes:', itensVendidosDetalhes); // Log 13
 
-            const novaTransacao = {
-                id: Date.now(),
-                tipo: 'entrada',
-                descricao: `Venda de múltiplos itens`,
-                valor: totalDaVenda,
-                data: new Date().toISOString().split('T')[0],
-                detalhesVenda: {
-                    totalBruto: itensVendidosDetalhes.reduce((sum, item) => sum + item.totalItem, 0).toFixed(2),
-                    valorDesconto: valorDescontoAplicado.toFixed(2),
-                    totalFinal: totalDaVenda.toFixed(2),
-                    itens: itensVendidosDetalhes
-                }
-            };
-            console.log('Nova transação a ser adicionada:', novaTransacao); // Log 14
-            historicoTransacoes.push(novaTransacao);
-            console.log('Histórico de transações atualizado em memória.'); // Log 15
+                // Cria o objeto da transação para enviar ao backend
+                const novaTransacaoData = {
+                    tipo: 'entrada', // Tipo de transação para vendas
+                    descricao: `Venda de múltiplos itens`,
+                    valor: totalDaVenda, // Valor final da venda
+                    data: new Date().toISOString().split('T')[0], // Data atual no formato YYYY-MM-DD
+                    detalhesVenda: {
+                        totalBruto: subtotalBruto.toFixed(2),
+                        valorDesconto: valorDescontoAplicado.toFixed(2),
+                        totalFinal: totalDaVenda.toFixed(2),
+                        itens: itensVendidosParaTransacao
+                    }
+                };
 
-            salvarDados();
-            console.log('Dados salvos no LocalStorage.'); // Log 16
-            showCustomPopup('Sucesso', 'Venda finalizada com sucesso!', 'success');
+                // Envia a transação para a API de transações
+                const responseTransacao = await fazerRequisicaoApi('/api/transacoes', 'POST', novaTransacaoData);
+                
+                // Recarrega os produtos para refletir as atualizações de estoque feitas na API de transações
+                await carregarProdutos(); 
 
-            resetVendaCompleta();
-            console.log('Venda completa resetada.'); // Log 17
-        } else {
-            console.log('Confirmação negada. Finalização abortada.'); // Log 18
+                showCustomPopup('Sucesso', 'Venda finalizada com sucesso!', 'success');
+                
+                ultimaVendaFinalizada = responseTransacao; // Armazena a transação retornada pela API para o recibo
+                printReceiptBtn.classList.remove('hidden');
+                printReceiptBtn.disabled = false;
+
+            } catch (error) {
+                console.error('Erro ao finalizar venda:', error);
+                showCustomPopup('Erro', error.message || 'Não foi possível finalizar a venda.', 'error');
+            }
         }
-        console.log('--- Fim da função finalizarVenda ---'); // Log 19
+    }
+
+    // Função para gerar o conteúdo do recibo
+    function gerarReciboParaImpressao() {
+        if (!ultimaVendaFinalizada) {
+            showCustomPopup('Erro', 'Nenhuma venda para gerar recibo.', 'error');
+            return;
+        }
+
+        // Popula os elementos do recibo
+        receiptDate.textContent = new Date(ultimaVendaFinalizada.data).toLocaleDateString('pt-BR');
+        // Usamos o ID retornado pela API para a transação
+        receiptTransactionId.textContent = ultimaVendaFinalizada.id; 
+        
+        // Detalhes da venda agora vêm do objeto retornado pela API
+        receiptSubtotal.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.totalBruto).toFixed(2);
+        receiptDiscount.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.valorDesconto).toFixed(2);
+        receiptTotal.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.totalFinal).toFixed(2);
+
+        receiptItemsList.innerHTML = '';
+        if (ultimaVendaFinalizada.detalhesVenda && ultimaVendaFinalizada.detalhesVenda.itens) {
+            ultimaVendaFinalizada.detalhesVenda.itens.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>- ${item.nomeProduto} (${item.codProduto})</span>
+                    <span>${item.quantidadeVendida} x R$ ${item.precoUnitarioVenda.toFixed(2)}</span>
+                    <span>R$ ${item.totalItem.toFixed(2)}</span>
+                `;
+                receiptItemsList.appendChild(li);
+            });
+        }
+        
+        window.print();
+        
+        resetVendaCompleta();
     }
 
     function resetVendaCompleta() {
@@ -332,6 +396,10 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         valorDescontoGlobalInput.value = '';
         searchProdutoInput.value = '';
         productNameDisplay.textContent = 'Produto Selecionado';
+        printReceiptBtn.classList.add('hidden');
+        printReceiptBtn.disabled = true;
+        ultimaVendaFinalizada = null;
+        carregarProdutos(); // Recarrega os produtos após o reset da venda para garantir estoque atualizado
     }
 
     searchProdutoInput.addEventListener('keypress', (e) => {
@@ -359,6 +427,8 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
     finalizeSaleBtn.addEventListener('click', finalizarVenda);
     cancelAllItemsBtn.addEventListener('click', cancelarTodosItens);
+    printReceiptBtn.addEventListener('click', gerarReciboParaImpressao);
 
-    document.addEventListener('DOMContentLoaded', carregarDados);
+
+    document.addEventListener('DOMContentLoaded', carregarProdutos);
 }

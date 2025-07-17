@@ -16,7 +16,7 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
   const addCodProdutoInput = document.getElementById('add-cod-produto');
   const addQuantidadeInput = document.getElementById('add-quantidade');
   const addMinQuantidadeInput = document.getElementById('add-min-quantidade');
-  const addPrecoUnitarioInput = document.getElementById('add-preco-unitario'); // NOVO: Campo de Preço Unitário
+  const addPrecoUnitarioInput = document.getElementById('add-preco-unitario');
   const cancelAddBtn = document.getElementById('cancel-add-btn');
 
   const editModalOverlay = document.getElementById('edit-modal-overlay');
@@ -26,7 +26,7 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
   const editCodProdutoInput = document.getElementById('edit-cod-produto');
   const editQuantidadeInput = document.getElementById('edit-quantidade');
   const editMinQuantidadeInput = document.getElementById('edit-min-quantidade');
-  const editPrecoUnitarioInput = document.getElementById('edit-preco-unitario'); // NOVO: Campo de Preço Unitário
+  const editPrecoUnitarioInput = document.getElementById('edit-preco-unitario');
   const cancelEditBtn = document.getElementById('cancel-edit-btn');
   const deleteBtn = document.getElementById('delete-btn');
 
@@ -35,9 +35,8 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
 
   // --- FUNÇÕES DE ESTOQUE ---
 
-  function atualizarNotificacoes() {
-    renderizarNotificacoesComuns(); // Chama a função global de common.js
-  }
+  // Não precisamos mais de 'atualizarNotificacoes' separada aqui,
+  // pois 'renderizarNotificacoesComuns' é chamada após o carregamento/renderização da lista.
 
   function renderizarLista() {
     listaProdutos.innerHTML = '';
@@ -72,17 +71,45 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
       `;
       listaProdutos.appendChild(li);
     });
-    atualizarNotificacoes();
+    // Atualiza as notificações comuns com base nos dados que acabaram de ser renderizados
+    renderizarNotificacoesComuns();
   }
 
-  function carregarProdutos() {
-    const produtosSalvos = localStorage.getItem('produtos');
-    produtos = produtosSalvos ? JSON.parse(produtosSalvos) : [];
-    renderizarLista();
+  // Função para carregar produtos da API
+  async function carregarProdutos() {
+    try {
+      const response = await fetch('/api/produtos');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      produtos = await response.json();
+      renderizarLista();
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+      showCustomPopup('Erro', 'Não foi possível carregar os produtos do servidor.', 'error');
+    }
   }
 
-  function salvarProdutos() {
-    localStorage.setItem('produtos', JSON.stringify(produtos));
+  // Função auxiliar para fazer requisições à API
+  async function fazerRequisicaoProduto(method, data = {}, id = '') {
+    const options = {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    };
+
+    const url = id ? `/api/produtos?id=${id}` : '/api/produtos';
+
+    const response = await fetch(url, options);
+    const responseData = await response.json().catch(() => ({})); // Tenta ler JSON, ou retorna objeto vazio se não houver
+    
+    if (!response.ok) {
+        // Se a resposta não for OK, lança um erro com a mensagem do backend
+        throw new Error(responseData.error || `Erro na requisição: ${response.status}`);
+    }
+    return responseData;
   }
 
   const openModal = (overlay) => overlay.classList.remove('hidden');
@@ -94,37 +121,36 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
 
   // --- EVENT LISTENERS DE ESTOQUE ---
 
-  addForm.addEventListener('submit', (e) => {
+  addForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    const nome = addNomeInput.value.trim();
     const codProduto = addCodProdutoInput.value.trim();
+    const quantidade = parseInt(addQuantidadeInput.value, 10);
+    const minQuantidade = parseInt(addMinQuantidadeInput.value, 10);
+    const precoUnitario = parseFloat(addPrecoUnitarioInput.value);
 
-    if (produtos.some(p => p.cod_produto === codProduto)) {
-        showCustomPopup('Erro', 'Já existe um produto com este código. Por favor, insira um código único.', 'error');
+    // Validação básica do formulário
+    if (!nome || !codProduto || isNaN(quantidade) || isNaN(minQuantidade) || minQuantidade < 0 || isNaN(precoUnitario) || precoUnitario <= 0) {
+        showCustomPopup('Erro', 'Por favor, preencha todos os campos corretamente e garanta que o preço unitário seja maior que zero.', 'error');
         return;
     }
 
-    const novoProduto = {
-      id: Date.now(),
-      nome: addNomeInput.value.trim(),
-      cod_produto: codProduto,
-      quantidade: parseInt(addQuantidadeInput.value, 10),
-      min_quantidade: parseInt(addMinQuantidadeInput.value, 10),
-      preco_unitario: parseFloat(addPrecoUnitarioInput.value)
-    };
-
-    if (novoProduto.nome && novoProduto.cod_produto && !isNaN(novoProduto.quantidade) && !isNaN(novoProduto.min_quantidade) && novoProduto.min_quantidade >= 0 && !isNaN(novoProduto.preco_unitario) && novoProduto.preco_unitario > 0) {
-      produtos.push(novoProduto);
-      salvarProdutos();
-      renderizarLista();
+    try {
+      // Faz a requisição POST para a API
+      const novoProduto = await fazerRequisicaoProduto('POST', { nome, codProduto, quantidade, minQuantidade, precoUnitario });
+      
+      // Se a requisição for bem-sucedida, recarrega os produtos e mostra sucesso
+      await carregarProdutos(); // Recarrega todos os produtos para atualizar a lista
       closeModal(addModalOverlay);
       showCustomPopup('Sucesso', 'Produto adicionado com sucesso!', 'success');
-    } else {
-        showCustomPopup('Erro', 'Por favor, preencha todos os campos corretamente e garanta que o preço unitário seja maior que zero.', 'error');
+    } catch (error) {
+      console.error('Erro ao adicionar produto:', error);
+      showCustomPopup('Erro', error.message || 'Não foi possível adicionar o produto.', 'error');
     }
   });
 
-  listaProdutos.addEventListener('click', (e) => {
+  listaProdutos.addEventListener('click', async (e) => {
     const targetButton = e.target.closest('.btn-action');
     if (!targetButton) return;
 
@@ -133,52 +159,72 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
     if (produtoIndex === -1) return;
 
     if (targetButton.classList.contains('btn-quantity-decrease') || targetButton.classList.contains('btn-quantity-increase')) {
-      if (targetButton.classList.contains('btn-quantity-increase')) {
-        produtos[produtoIndex].quantidade++;
-      } else {
-        produtos[produtoIndex].quantidade = Math.max(0, produtos[produtoIndex].quantidade - 1);
-      }
-      salvarProdutos();
-      renderizarLista();
+        const produto = produtos[produtoIndex];
+        let novaQuantidade = produto.quantidade;
+
+        if (targetButton.classList.contains('btn-quantity-increase')) {
+            novaQuantidade++;
+        } else {
+            novaQuantidade = Math.max(0, produto.quantidade - 1);
+        }
+
+        try {
+            // Requisição PUT para atualizar apenas a quantidade
+            await fazerRequisicaoProduto('PUT', {
+                nome: produto.nome, // Envia o nome, pois é um campo obrigatório na API
+                quantidade: novaQuantidade,
+                min_quantidade: produto.min_quantidade, // Envia min_quantidade
+                preco_unitario: produto.preco_unitario // Envia preco_unitario
+            }, id);
+            
+            await carregarProdutos(); // Recarrega para refletir a mudança
+            showCustomPopup('Sucesso', 'Quantidade atualizada!', 'success');
+        } catch (error) {
+            console.error('Erro ao atualizar quantidade:', error);
+            showCustomPopup('Erro', error.message || 'Não foi possível atualizar a quantidade.', 'error');
+        }
     } else if (targetButton.classList.contains('btn-edit')) {
         const produto = produtos[produtoIndex];
         editIdInput.value = produto.id;
         editNomeInput.value = produto.nome;
-        editCodProdutoInput.value = produto.cod_produto;
+        editCodProdutoInput.value = produto.cod_produto; // Preenche o código do produto
         editQuantidadeInput.value = produto.quantidade;
         editMinQuantidadeInput.value = produto.min_quantidade;
-        editPrecoUnitarioInput.value = produto.preco_unitario;
+        editPrecoUnitarioInput.value = produto.preco_unitario; // Preenche o preço unitário
         openModal(editModalOverlay);
     }
   });
 
-  editForm.addEventListener('submit', (e) => {
+  editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = parseInt(editIdInput.value);
-    const produtoIndex = produtos.findIndex(p => p.id === id);
+    
+    const nome = editNomeInput.value.trim();
+    const quantidade = parseInt(editQuantidadeInput.value, 10);
+    const minQuantidade = parseInt(editMinQuantidadeInput.value, 10);
+    const precoUnitario = parseFloat(editPrecoUnitarioInput.value); // Captura o preço unitário
 
-    if (produtoIndex === -1) {
-      showCustomPopup('Erro', "Produto não encontrado.", 'error');
-      return;
+    // Validação básica
+    if (!nome || isNaN(quantidade) || isNaN(minQuantidade) || minQuantidade < 0 || isNaN(precoUnitario) || precoUnitario <= 0) {
+        showCustomPopup('Erro', 'Por favor, preencha todos os campos corretamente e garanta que o preço unitário seja maior que zero.', 'error');
+        return;
     }
 
-    const produtoAtualizado = {
-        id: id,
-        nome: editNomeInput.value.trim(),
-        cod_produto: editCodProdutoInput.value.trim(),
-        quantidade: parseInt(editQuantidadeInput.value, 10),
-        min_quantidade: parseInt(editMinQuantidadeInput.value, 10),
-        preco_unitario: parseFloat(editPrecoUnitarioInput.value)
-    };
+    try {
+        // Envia os dados para a API via PUT
+        await fazerRequisicaoProduto('PUT', { 
+            nome: nome, 
+            quantidade: quantidade, 
+            min_quantidade: minQuantidade, 
+            preco_unitario: precoUnitario 
+        }, id);
 
-    if (produtoAtualizado.nome && produtoAtualizado.cod_produto && !isNaN(produtoAtualizado.quantidade) && !isNaN(produtoAtualizado.min_quantidade) && produtoAtualizado.min_quantidade >= 0 && !isNaN(produtoAtualizado.preco_unitario) && produtoAtualizado.preco_unitario > 0) {
-        produtos[produtoIndex] = produtoAtualizado;
-        salvarProdutos();
-        renderizarLista();
+        await carregarProdutos(); // Recarrega a lista
         closeModal(editModalOverlay);
         showCustomPopup('Sucesso', 'Produto atualizado com sucesso!', 'success');
-    } else {
-        showCustomPopup('Erro', 'Por favor, preencha todos os campos corretamente e garanta que o preço unitário seja maior que zero.', 'error');
+    } catch (error) {
+        console.error('Erro ao atualizar produto:', error);
+        showCustomPopup('Erro', error.message || 'Não foi possível atualizar o produto.', 'error');
     }
   });
 
@@ -186,11 +232,15 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
     const confirmDelete = await showCustomConfirm('Confirmação', 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.');
     if (confirmDelete) {
       const id = parseInt(editIdInput.value);
-      produtos = produtos.filter(p => p.id !== id);
-      salvarProdutos();
-      renderizarLista();
-      closeModal(editModalOverlay);
-      showCustomPopup('Sucesso', 'Produto excluído com sucesso!', 'success');
+      try {
+        await fazerRequisicaoProduto('DELETE', {}, id); // DELETE não precisa de body
+        await carregarProdutos(); // Recarrega a lista
+        closeModal(editModalOverlay);
+        showCustomPopup('Sucesso', 'Produto excluído com sucesso!', 'success');
+      } catch (error) {
+        console.error('Erro ao excluir produto:', error);
+        showCustomPopup('Erro', error.message || 'Não foi possível excluir o produto.', 'error');
+      }
     }
   });
 
