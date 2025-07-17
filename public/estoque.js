@@ -35,10 +35,8 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
 
   // --- FUNÇÕES DE ESTOQUE ---
 
-  // Não precisamos mais de 'atualizarNotificacoes' separada aqui,
-  // pois 'renderizarNotificacoesComuns' é chamada após o carregamento/renderização da lista.
-
   function renderizarLista() {
+    console.log('[renderizarLista] Iniciando renderização da lista.'); // LOG: Início da renderização
     listaProdutos.innerHTML = '';
     const filtro = filtroInput.value.toLowerCase();
     const produtosFiltrados = produtos.filter(p =>
@@ -48,6 +46,11 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
 
     if (produtosFiltrados.length === 0) {
       listaProdutos.innerHTML = `<li style="justify-content: center; color: var(--text-light-color);">${filtro ? 'Nenhum produto encontrado.' : 'Seu estoque está vazio.'}</li>`;
+      console.log('[renderizarLista] Estoque vazio ou nenhum produto encontrado após filtro.'); // LOG: Estoque vazio
+      // Tentar atualizar notificações mesmo se lista vazia, caso haja produtos com estoque baixo que não apareceram devido a filtro
+      if (typeof atualizarNotificacoesComuns === 'function') {
+        atualizarNotificacoesComuns(produtos); // Passa a lista COMPLETA de produtos
+      }
       return;
     }
 
@@ -72,26 +75,38 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
       listaProdutos.appendChild(li);
     });
     // Atualiza as notificações comuns com base nos dados que acabaram de ser renderizados
-    renderizarNotificacoesComuns();
+    if (typeof atualizarNotificacoesComuns === 'function') {
+      atualizarNotificacoesComuns(produtos); // Passa a lista COMPLETA de produtos
+      console.log('[renderizarLista] Notificações comuns atualizadas.'); // LOG: Notificações atualizadas
+    } else {
+      console.error('[renderizarLista] Erro: atualizarNotificacoesComuns não está definida. common.js pode não ter carregado corretamente.'); // ERRO: Função não definida
+    }
   }
 
   // Função para carregar produtos da API
   async function carregarProdutos() {
+    console.log('[carregarProdutos] Iniciando carregamento de produtos da API...'); // LOG: Início do carregamento
     try {
       const response = await fetch('/api/produtos');
+      console.log(`[carregarProdutos] Resposta da API /api/produtos: Status ${response.status}`); // LOG: Status da resposta
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || `HTTP error! status: ${response.status}`);
       }
       produtos = await response.json();
+      console.log('[carregarProdutos] Produtos recebidos da API:', produtos); // LOG: Produtos recebidos
       renderizarLista();
     } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
-      showCustomPopup('Erro', 'Não foi possível carregar os produtos do servidor.', 'error');
+      console.error('[carregarProdutos] Erro ao carregar produtos:', error); // LOG: Erro no carregamento
+      showCustomPopup('Erro', error.message || 'Não foi possível carregar os produtos do servidor.', 'error');
     }
   }
 
-  // Função auxiliar para fazer requisições à API
+  // Função auxiliar para fazer requisições à API (já existe no common.js, mas aqui para visibilidade)
+  // Certifique-se de que a `fazerRequisicaoApi` do `common.js` está sendo usada ou que esta versão local não conflita.
+  // Idealmente, `fazerRequisicaoApi` deveria ser movida para common.js e ser global.
   async function fazerRequisicaoProduto(method, data = {}, id = '') {
+    console.log(`[fazerRequisicaoProduto] Chamando API: ${method} /api/produtos${id ? '?id='+id : ''}`, data); // LOG: Requisição produto
     const options = {
       method: method,
       headers: {
@@ -103,12 +118,13 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
     const url = id ? `/api/produtos?id=${id}` : '/api/produtos';
 
     const response = await fetch(url, options);
-    const responseData = await response.json().catch(() => ({})); // Tenta ler JSON, ou retorna objeto vazio se não houver
+    const responseData = await response.json().catch(() => ({}));
     
     if (!response.ok) {
-        // Se a resposta não for OK, lança um erro com a mensagem do backend
+        console.error(`[fazerRequisicaoProduto] Erro da API para /api/produtos:`, responseData.error || `Status ${response.status}`); // LOG: Erro da API
         throw new Error(responseData.error || `Erro na requisição: ${response.status}`);
     }
+    console.log(`[fazerRequisicaoProduto] Resposta de /api/produtos:`, responseData); // LOG: Resposta da API
     return responseData;
   }
 
@@ -123,6 +139,7 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
 
   addForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    console.log('[addForm] Tentando adicionar novo produto...'); // LOG: Adicionar produto
 
     const nome = addNomeInput.value.trim();
     const codProduto = addCodProdutoInput.value.trim();
@@ -130,22 +147,20 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
     const minQuantidade = parseInt(addMinQuantidadeInput.value, 10);
     const precoUnitario = parseFloat(addPrecoUnitarioInput.value);
 
-    // Validação básica do formulário
     if (!nome || !codProduto || isNaN(quantidade) || isNaN(minQuantidade) || minQuantidade < 0 || isNaN(precoUnitario) || precoUnitario <= 0) {
         showCustomPopup('Erro', 'Por favor, preencha todos os campos corretamente e garanta que o preço unitário seja maior que zero.', 'error');
         return;
     }
 
     try {
-      // Faz a requisição POST para a API
       const novoProduto = await fazerRequisicaoProduto('POST', { nome, codProduto, quantidade, minQuantidade, precoUnitario });
+      console.log('[addForm] Produto adicionado via API:', novoProduto); // LOG: Produto adicionado
       
-      // Se a requisição for bem-sucedida, recarrega os produtos e mostra sucesso
-      await carregarProdutos(); // Recarrega todos os produtos para atualizar a lista
+      await carregarProdutos();
       closeModal(addModalOverlay);
       showCustomPopup('Sucesso', 'Produto adicionado com sucesso!', 'success');
     } catch (error) {
-      console.error('Erro ao adicionar produto:', error);
+      console.error('[addForm] Erro ao adicionar produto:', error); // LOG: Erro ao adicionar
       showCustomPopup('Erro', error.message || 'Não foi possível adicionar o produto.', 'error');
     }
   });
@@ -159,6 +174,7 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
     if (produtoIndex === -1) return;
 
     if (targetButton.classList.contains('btn-quantity-decrease') || targetButton.classList.contains('btn-quantity-increase')) {
+        console.log('[listaProdutos] Atualizando quantidade do produto ID:', id); // LOG: Atualizar quantidade
         const produto = produtos[produtoIndex];
         let novaQuantidade = produto.quantidade;
 
@@ -169,76 +185,79 @@ if (document.body.id === 'page-estoque' || location.pathname.includes('estoque.h
         }
 
         try {
-            // Requisição PUT para atualizar apenas a quantidade
             await fazerRequisicaoProduto('PUT', {
-                nome: produto.nome, // Envia o nome, pois é um campo obrigatório na API
+                nome: produto.nome, 
                 quantidade: novaQuantidade,
-                min_quantidade: produto.min_quantidade, // Envia min_quantidade
-                preco_unitario: produto.preco_unitario // Envia preco_unitario
+                min_quantidade: produto.min_quantidade, 
+                preco_unitario: produto.preco_unitario 
             }, id);
+            console.log('[listaProdutos] Quantidade atualizada via API para ID:', id, 'Nova Qtd:', novaQuantidade); // LOG: Quantidade atualizada
             
-            await carregarProdutos(); // Recarrega para refletir a mudança
+            await carregarProdutos();
             showCustomPopup('Sucesso', 'Quantidade atualizada!', 'success');
         } catch (error) {
-            console.error('Erro ao atualizar quantidade:', error);
+            console.error('[listaProdutos] Erro ao atualizar quantidade:', error); // LOG: Erro atualizar quantidade
             showCustomPopup('Erro', error.message || 'Não foi possível atualizar a quantidade.', 'error');
         }
     } else if (targetButton.classList.contains('btn-edit')) {
+        console.log('[listaProdutos] Abrindo edição para produto ID:', id); // LOG: Abrir edição
         const produto = produtos[produtoIndex];
         editIdInput.value = produto.id;
         editNomeInput.value = produto.nome;
-        editCodProdutoInput.value = produto.cod_produto; // Preenche o código do produto
+        editCodProdutoInput.value = produto.cod_produto; 
         editQuantidadeInput.value = produto.quantidade;
         editMinQuantidadeInput.value = produto.min_quantidade;
-        editPrecoUnitarioInput.value = produto.preco_unitario; // Preenche o preço unitário
+        editPrecoUnitarioInput.value = produto.preco_unitario; 
         openModal(editModalOverlay);
     }
   });
 
   editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    console.log('[editForm] Tentando salvar alterações do produto...'); // LOG: Salvar edição
     const id = parseInt(editIdInput.value);
     
     const nome = editNomeInput.value.trim();
     const quantidade = parseInt(editQuantidadeInput.value, 10);
     const minQuantidade = parseInt(editMinQuantidadeInput.value, 10);
-    const precoUnitario = parseFloat(editPrecoUnitarioInput.value); // Captura o preço unitário
+    const precoUnitario = parseFloat(editPrecoUnitarioInput.value); 
 
-    // Validação básica
     if (!nome || isNaN(quantidade) || isNaN(minQuantidade) || minQuantidade < 0 || isNaN(precoUnitario) || precoUnitario <= 0) {
         showCustomPopup('Erro', 'Por favor, preencha todos os campos corretamente e garanta que o preço unitário seja maior que zero.', 'error');
         return;
     }
 
     try {
-        // Envia os dados para a API via PUT
         await fazerRequisicaoProduto('PUT', { 
             nome: nome, 
             quantidade: quantidade, 
             min_quantidade: minQuantidade, 
             preco_unitario: precoUnitario 
         }, id);
+        console.log('[editForm] Produto atualizado via API para ID:', id); // LOG: Produto atualizado
 
-        await carregarProdutos(); // Recarrega a lista
+        await carregarProdutos();
         closeModal(editModalOverlay);
         showCustomPopup('Sucesso', 'Produto atualizado com sucesso!', 'success');
     } catch (error) {
-        console.error('Erro ao atualizar produto:', error);
+        console.error('[editForm] Erro ao atualizar produto:', error); // LOG: Erro ao atualizar
         showCustomPopup('Erro', error.message || 'Não foi possível atualizar o produto.', 'error');
     }
   });
 
   deleteBtn.addEventListener('click', async () => {
+    console.log('[deleteBtn] Tentando excluir produto...'); // LOG: Excluir produto
     const confirmDelete = await showCustomConfirm('Confirmação', 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.');
     if (confirmDelete) {
       const id = parseInt(editIdInput.value);
       try {
-        await fazerRequisicaoProduto('DELETE', {}, id); // DELETE não precisa de body
-        await carregarProdutos(); // Recarrega a lista
+        await fazerRequisicaoProduto('DELETE', {}, id);
+        console.log('[deleteBtn] Produto excluído via API para ID:', id); // LOG: Produto excluído
+        await carregarProdutos();
         closeModal(editModalOverlay);
         showCustomPopup('Sucesso', 'Produto excluído com sucesso!', 'success');
       } catch (error) {
-        console.error('Erro ao excluir produto:', error);
+        console.error('[deleteBtn] Erro ao excluir produto:', error); // LOG: Erro ao excluir
         showCustomPopup('Erro', error.message || 'Não foi possível excluir o produto.', 'error');
       }
     }
