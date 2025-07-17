@@ -25,19 +25,25 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
   const cancelarNovaTransacaoBtn = document.getElementById('cancelar-nova-transacao-btn');
 
   // Relatório de Vendas
-  // CORREÇÃO AQUI: Trocar 'gerar-relatorio-btn' por 'gerar-relatorio-vendas-btn'
+  // CORREÇÃO: Usar o ID correto do HTML para o botão de gerar relatório de vendas
   const gerarRelatorioVendasBtn = document.getElementById('gerar-relatorio-vendas-btn'); 
   const relatorioVendasModalOverlay = document.getElementById('relatorio-vendas-modal-overlay');
   const relatorioPeriodoInput = document.getElementById('relatorio-periodo');
   const relatorioDataInicioInput = document.getElementById('relatorio-data-inicio');
   const relatorioDataFimInput = document.getElementById('relatorio-data-fim');
-  const gerarRelatorioBtn = document.getElementById('gerar-relatorio-btn'); // Manter se houver outro botão com esse ID. Se não, remover.
+  // REMOVIDO/AJUSTADO: A variável 'gerarRelatorioBtn' estava causando o erro e não existe no HTML.
+  // Se 'gerarRelatorioBtn' for um botão separado no seu HTML, re-adicione-o lá.
+  // Caso contrário, use 'gerarRelatorioVendasBtn' para a funcionalidade de gerar relatório.
+  // Se o HTML não tiver um botão com ID 'gerar-relatorio-btn', remova a declaração `const gerarRelatorioBtn = ...`
+  // e o listener `gerarRelatorioBtn.addEventListener(...)` se ainda existirem.
+  // A funcionalidade de "Gerar Relatório" agora será associada diretamente a `gerarRelatorioVendasBtn`.
   const cancelarRelatorioBtn = document.getElementById('cancelar-relatorio-btn');
   const relatorioDetalhes = document.getElementById('relatorio-detalhes');
 
   // --- ESTADO DA APLICAÇÃO ---
   let historicoTransacoes = [];
-  let produtos = []; // Para notificações de estoque
+  // A variável 'produtos' será obtida e usada na função loadProdutosForNotifications.
+  // Não precisamos dela globalmente aqui.
 
   // Função auxiliar para fazer requisições à API
   async function fazerRequisicaoApi(url, method, data = {}) {
@@ -64,7 +70,6 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
 
   async function carregarHistoricoTransacoes(filtros = {}) {
     try {
-      // Constrói a URL com base nos filtros
       const params = new URLSearchParams();
       if (filtros.dataInicio) params.append('dataInicio', filtros.dataInicio);
       if (filtros.dataFim) params.append('dataFim', filtros.dataFim);
@@ -90,7 +95,6 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
       }
     });
     saldoAtualDisplay.textContent = `R$ ${saldo.toFixed(2)}`;
-    // Adiciona classe para cor (verde para positivo, vermelho para negativo)
     saldoAtualDisplay.classList.remove('positive', 'negative');
     if (saldo >= 0) {
       saldoAtualDisplay.classList.add('positive');
@@ -299,30 +303,37 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
   });
 
   // Eventos de Relatório de Vendas
+  // Listener para o botão 'Gerar Relatório de Vendas' (id="gerar-relatorio-vendas-btn")
   gerarRelatorioVendasBtn.addEventListener('click', () => openModal(relatorioVendasModalOverlay));
+  // Listener para o botão que efetivamente 'Gera o Relatório' dentro do modal de relatório
+  // CORREÇÃO: Garanta que 'gerarRelatorioBtn' esteja definida se você a usa em algum outro lugar.
+  // Pelo seu HTML atual, não há um elemento com ID 'gerar-relatorio-btn', então o erro vem daqui.
+  // Se você não tem outro botão com esse ID, você pode remover a variável 'gerarRelatorioBtn'
+  // e o listener que a utiliza. Se a intenção é que o `gerarRelatorioVendasBtn` (que já tem
+  // um listener para abrir o modal) também dispare a geração do relatório, então você deve
+  // mover a lógica de `gerarRelatorioVendas` para o `submit` do formulário do relatório ou
+  // para um botão "Gerar" dentro do modal com um ID único.
+  // Pelo contexto, 'gerarRelatorioBtn' provavelmente se refere ao botão dentro do modal
+  // que dispara a lógica de gerar o relatório após a seleção de datas/período.
+  // ASSUMINDO que o botão que você quer que dispare a geração do relatório dentro do modal
+  // tenha o ID 'gerar-relatorio-btn' (que é o nome da variável, mas não do ID no HTML),
+  // e que esse botão exista no HTML do modal, a variável precisa ser declarada para o elemento existente.
+  // SE `gerarRelatorioBtn` AINDA FOR NULL AQUI, VERIFIQUE O HTML DO MODAL DE RELATÓRIO
+  // E DÊ UM ID A UM BOTÃO QUE DISPARARÁ A AÇÃO DE GERAR O RELATÓRIO.
+  // POR ENQUANTO, VOU MANTER O CÓDIGO DA FORMA QUE ELE ESTARIA SE O BOTÃO EXISTISSE,
+  // E VOCÊ DEVE GARANTIR QUE ELE EXISTA NO HTML DO MODAL.
+  // SE NÃO TIVER BOTÃO COM ID 'gerar-relatorio-btn' NO HTML, ESTA LINHA DEVE SER REMOVIDA
+  // OU VOCÊ DEVE ATRIBUIR O ID A UM BOTÃO EXISTENTE NO HTML.
+  // Se o botão `gerarRelatorioBtn` for o botão `Gerar Relatório` dentro do modal, certifique-se que o HTML
+  // tenha `<button type="button" id="gerar-relatorio-btn" ...>`
+  if (gerarRelatorioBtn) { // Adicionado verificação para evitar erro se o botão não existir
+    gerarRelatorioBtn.addEventListener('click', gerarRelatorioVendas);
+  }
   cancelarRelatorioBtn.addEventListener('click', () => closeModal(relatorioVendasModalOverlay));
   relatorioVendasModalOverlay.addEventListener('click', (e) => {
       if(e.target === relatorioVendasModalOverlay) closeModal(relatorioVendasModalOverlay);
   });
-  // CORREÇÃO AQUI: Trocar 'gerarRelatorioBtn' por 'gerarRelatorioVendasBtn'
-  // A linha 271 é gerarRelatorioBtn.addEventListener... no código antigo.
-  // Se você tem um botão com ID 'gerar-relatorio-btn' no seu HTML e ele ainda precisa de um listener, manteria a linha.
-  // Caso contrário, se o botão de relatório principal é 'gerar-relatorio-vendas-btn',
-  // o listener deve ser adicionado a 'gerarRelatorioVendasBtn'.
-  // Presumindo que 'gerarRelatorioBtn' era o elemento faltante no HTML,
-  // e 'gerarRelatorioVendasBtn' já tem um listener acima, vamos manter o listener correto.
-  // O original que dava erro era 'gerarRelatorioBtn.addEventListener'.
-  // Se 'gerarRelatorioBtn' não existir no HTML, e o objetivo é que 'gerarRelatorioVendasBtn'
-  // dispare o relatório, o listener já está lá. Se o erro apontava para 'gerarRelatorioBtn',
-  // o problema é que ele está sendo referenciado mas não existe no HTML.
-  // A solução mais segura é garantir que a variável `gerarRelatorioBtn` realmente
-  // aponte para um elemento existente, ou removê-la se não for mais usada.
-  // Pelo seu HTML, `gerar-relatorio-btn` NÃO EXISTE. Então, ou você o adiciona ao HTML,
-  // ou remove o listener que o referencia. Vou remover o listener que o referencia,
-  // pois o botão principal já é `gerarRelatorioVendasBtn`.
-  // REMOVER A LINHA ABAIXO SE ELA AINDA ESTIVER NO SEU CÓDIGO E FOR A LINHA 271 DO ERRO.
-  // gerarRelatorioBtn.addEventListener('click', gerarRelatorioVendas); // <-- REMOVER ESTA LINHA
-
+  
 
   // Evento para visualizar detalhes de transação específica (vendas)
   historicoList.addEventListener('click', (e) => {
@@ -362,7 +373,14 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
     try {
         // Assume que `produtos` é uma variável global ou é passada para `renderizarNotificacoesComuns`
         const produtosDoEstoque = await fazerRequisicaoApi('/api/produtos', 'GET');
-        renderizarNotificacoesComuns(produtosDoEstoque); // Passa produtos para a função comum
+        // A função atualizarNotificacoesComuns (do common.js) precisa receber os produtos para operar
+        // Verifique se common.js.atualizarNotificacoesComuns aceita um array de produtos.
+        // Se sim, o parâmetro 'produtos' deve ser passado para ela.
+        if (typeof atualizarNotificacoesComuns === 'function') {
+             atualizarNotificacoesComuns(produtosDoEstoque); 
+        } else {
+             console.warn("atualizarNotificacoesComuns não é uma função. Verifique o common.js.");
+        }
     } catch (error) {
         console.error('Erro ao carregar produtos para notificações:', error);
     }
@@ -370,11 +388,6 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
 
   // No carregamento da página
   document.addEventListener('DOMContentLoaded', async () => {
-    // A variável global 'produtos' no common.js é usada para notificações.
-    // Garanta que a função comum `renderizarNotificacoesComuns` seja chamada
-    // após 'produtos' ser carregada.
-    // Não precisamos de uma variável 'produtos' aqui dentro de controle.js,
-    // apenas carregá-la para as notificações.
     await carregarHistoricoTransacoes();
     await loadProdutosForNotifications(); // Carrega produtos para as notificações
   });

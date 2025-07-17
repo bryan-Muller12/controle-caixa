@@ -1,31 +1,8 @@
 // public/common.js
 // Lógica de verificação de login, logout e notificações (compartilhada entre todas as páginas)
 
-// --- VERIFICAÇÃO DE LOGIN ---
-
-// Verifica se o usuário está logado usando sessionStorage (para "não manter conectado")
-// ou localStorage (para "manter conectado").
-let usuarioLogado = sessionStorage.getItem('usuarioLogado');
-
-// Se não estiver em sessionStorage, tenta localStorage
-if (!usuarioLogado) {
-    usuarioLogado = localStorage.getItem('usuarioLogado');
-    // Se encontrou no localStorage, mas não no sessionStorage (ex: primeira carga após fechar navegador)
-    // então copia para sessionStorage para gerenciar a sessão ativa.
-    if (usuarioLogado) {
-        sessionStorage.setItem('usuarioLogado', usuarioLogado);
-    }
-}
-
-
-if (!usuarioLogado) {
-    // Se não encontrou em nenhum dos dois, redireciona para a tela de login
-    window.location.href = 'index.html';
-}
-
-// O restante do seu common.js segue aqui...
-
 // --- ELEMENTOS DO DOM (comuns) ---
+// Declaração de elementos DOM deve vir antes de seu uso em funções.
 const notificationsBtn = document.getElementById('notifications-btn');
 const notificationsTab = document.getElementById('notifications-tab');
 const notificationsList = document.getElementById('notifications-list');
@@ -33,12 +10,29 @@ const notificationsBadge = document.getElementById('notifications-badge');
 const clearNotificationsBtn = document.getElementById('clear-notifications-btn');
 const logoutBtn = document.getElementById('logout-btn');
 
+// Elementos de pop-up (declarados globalmente para showCustomPopup e showCustomConfirm)
+const customPopupOverlay = document.getElementById('custom-popup-overlay');
+const customPopupTitle = document.getElementById('custom-popup-title');
+const customPopupMessage = document.getElementById('custom-popup-message');
+const customPopupCloseBtn = document.getElementById('custom-popup-close-btn');
+
+const customConfirmOverlay = document.getElementById('custom-confirm-overlay');
+const customConfirmTitle = document.getElementById('custom-confirm-title');
+const customConfirmMessage = document.getElementById('custom-confirm-message');
+const customConfirmYesBtn = document.getElementById('custom-confirm-yes-btn');
+const customConfirmNoBtn = document.getElementById('custom-confirm-no-btn');
+
+
 // --- FUNÇÕES COMUNS ---
 
-// Função para renderizar notificações (agora buscará produtos de qualquer página)
-function renderizarNotificacoesComuns() {
-    let produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+// Função para renderizar notificações (agora aceita produtosArray como parâmetro)
+// Esta função é chamada como 'atualizarNotificacoesComuns' em outros scripts.
+function atualizarNotificacoesComuns(produtosArray) {
     let notifications = [];
+
+    // Se produtosArray não for fornecido (fallback ou chamada sem parâmetro),
+    // tenta carregar de localStorage como último recurso, embora o ideal seja passar da API.
+    const produtos = produtosArray || JSON.parse(localStorage.getItem('produtos')) || [];
 
     produtos.forEach(produto => {
         if (produto.quantidade < produto.min_quantidade) {
@@ -47,90 +41,89 @@ function renderizarNotificacoesComuns() {
         }
     });
 
-    notificationsList.innerHTML = '';
-    if (notifications.length > 0) {
-        notifications.forEach(notificacao => {
-            const li = document.createElement('li');
-            li.innerHTML = notificacao;
-            notificationsList.appendChild(li);
-        });
-        notificationsBadge.textContent = notifications.length;
-        notificationsBadge.classList.remove('hidden');
-    } else {
-        notificationsList.innerHTML = '<li>Nenhuma notificação.</li>';
-        notificationsBadge.classList.add('hidden');
+    if (notificationsList) { // Verifica se o elemento existe antes de manipular
+        notificationsList.innerHTML = '';
+        if (notifications.length > 0) {
+            notifications.forEach(notificacao => {
+                const li = document.createElement('li');
+                li.innerHTML = notificacao;
+                notificationsList.appendChild(li);
+            });
+            notificationsBadge.textContent = notifications.length;
+            notificationsBadge.classList.remove('hidden');
+        } else {
+            notificationsList.innerHTML = '<li>Nenhuma notificação.</li>';
+            notificationsBadge.classList.add('hidden');
+        }
     }
 }
 
+// Função de Logout
 function logout() {
-    // Ao deslogar, remove de ambos para garantir que não haja persistência indesejada
     localStorage.removeItem('usuarioLogado');
     sessionStorage.removeItem('usuarioLogado');
-    window.location.href = 'index.html';
+    // Em uma aplicação real com DB, você faria uma chamada à API para invalidar a sessão no backend
+    showCustomPopup('Logout', 'Você foi desconectado.', 'info');
+    setTimeout(() => {
+        window.location.href = 'index.html';
+    }, 1000);
 }
 
 // Função para exibir um pop-up customizado (substitui alert())
 function showCustomPopup(title, message, type = 'info') {
-    const popupOverlay = document.getElementById('custom-popup-overlay');
-    const popupTitle = document.getElementById('custom-popup-title');
-    const popupMessage = document.getElementById('custom-popup-message');
-    const popupCloseBtn = document.getElementById('custom-popup-close-btn');
+    if (!customPopupOverlay) return; // Garante que os elementos do pop-up existem
 
-    popupTitle.textContent = title;
-    popupMessage.textContent = message;
+    customPopupTitle.textContent = title;
+    customPopupMessage.textContent = message;
 
-    // Remove classes de tipo anteriores e adiciona a nova
-    popupTitle.classList.remove('success', 'error', 'warning'); // Exemplo de classes, ajuste conforme seu CSS
+    customPopupTitle.classList.remove('success', 'error', 'warning');
     if (type === 'error') {
-        popupTitle.style.color = 'var(--danger-color)';
+        customPopupTitle.style.color = 'var(--danger-color)';
     } else if (type === 'success') {
-        popupTitle.style.color = 'var(--success-color)';
+        customPopupTitle.style.color = 'var(--success-color)';
     } else if (type === 'warning') {
-        popupTitle.style.color = 'var(--warning-color)';
-    }
-    else {
-        popupTitle.style.color = 'var(--primary-color)'; // Default
+        customPopupTitle.style.color = 'var(--warning-color)';
+    } else {
+        customPopupTitle.style.color = 'var(--primary-color)';
     }
 
-
-    popupOverlay.classList.remove('hidden');
+    customPopupOverlay.classList.remove('hidden');
 
     const closePopup = () => {
-        popupOverlay.classList.add('hidden');
-        popupCloseBtn.removeEventListener('click', closePopup);
-        popupOverlay.removeEventListener('click', handleOverlayClick);
+        customPopupOverlay.classList.add('hidden');
+        customPopupCloseBtn.removeEventListener('click', closePopup);
+        customPopupOverlay.removeEventListener('click', handleOverlayClick);
     };
 
     const handleOverlayClick = (e) => {
-        if (e.target === popupOverlay) {
+        if (e.target === customPopupOverlay) {
             closePopup();
         }
     };
 
-    popupCloseBtn.addEventListener('click', closePopup);
-    popupOverlay.addEventListener('click', handleOverlayClick);
+    customPopupCloseBtn.addEventListener('click', closePopup);
+    customPopupOverlay.addEventListener('click', handleOverlayClick);
 }
 
 // Função para exibir um pop-up de confirmação customizado (substitui confirm())
 function showCustomConfirm(title, message) {
     return new Promise((resolve) => {
-        const confirmOverlay = document.getElementById('custom-confirm-overlay');
-        const confirmTitle = document.getElementById('custom-confirm-title');
-        const confirmMessage = document.getElementById('custom-confirm-message');
-        const confirmYesBtn = document.getElementById('custom-confirm-yes-btn');
-        const confirmNoBtn = document.getElementById('custom-confirm-no-btn');
+        if (!customConfirmOverlay) { // Garante que os elementos do pop-up existem
+            resolve(false); // Retorna falso se o overlay não estiver pronto
+            return;
+        }
 
-        confirmTitle.textContent = title;
-        confirmMessage.textContent = message;
-        confirmTitle.style.color = 'var(--warning-color)'; // Cor de destaque para confirmação
+        customConfirmTitle.textContent = title;
+        customConfirmMessage.textContent = message;
+        customConfirmTitle.style.color = 'var(--warning-color)';
 
-        confirmOverlay.classList.remove('hidden');
+        customConfirmOverlay.classList.remove('hidden');
 
         const cleanup = () => {
-            confirmOverlay.classList.add('hidden');
-            confirmYesBtn.removeEventListener('click', onYes);
-            confirmNoBtn.removeEventListener('click', onNo);
-            confirmOverlay.removeEventListener('click', handleConfirmOverlayClick);
+            customConfirmOverlay.classList.add('hidden');
+            customConfirmYesBtn.removeEventListener('click', onYes);
+            customConfirmNoBtn.removeEventListener('click', onNo);
+            customConfirmOverlay.removeEventListener('click', handleConfirmOverlayClick);
         };
 
         const onYes = () => {
@@ -144,51 +137,76 @@ function showCustomConfirm(title, message) {
         };
 
         const handleConfirmOverlayClick = (e) => {
-            if (e.target === confirmOverlay) {
+            if (e.target === customConfirmOverlay) {
                 cleanup();
-                resolve(false); // Resolve como false se clicar fora
+                resolve(false);
             }
         };
 
-        confirmYesBtn.addEventListener('click', onYes);
-        confirmNoBtn.addEventListener('click', onNo);
-        confirmOverlay.addEventListener('click', handleConfirmOverlayClick);
+        customConfirmYesBtn.addEventListener('click', onYes);
+        customConfirmNoBtn.addEventListener('click', onNo);
+        customConfirmOverlay.addEventListener('click', handleConfirmOverlayClick);
     });
 }
 
+// --- VERIFICAÇÃO DE LOGIN ---
+// A verificação de login agora é uma função e é chamada no DOMContentLoaded
+function checkLoginStatus() {
+    let usuarioLogado = sessionStorage.getItem('usuarioLogado');
 
-// --- EVENT LISTENERS COMUNS ---
-
-// Alterna a visibilidade do painel de notificações
-notificationsBtn.addEventListener('click', (e) => {
-    e.stopPropagation(); // Impede que o clique no botão se propague para o document e feche imediatamente
-    notificationsTab.classList.toggle('hidden');
-});
-
-// Adiciona um event listener para impedir a propagação de cliques dentro do painel de notificação
-notificationsTab.addEventListener('click', (e) => {
-    e.stopPropagation();
-});
-
-clearNotificationsBtn.addEventListener('click', () => {
-    notificationsList.innerHTML = '<li>Nenhuma notificação.</li>';
-    notificationsBadge.classList.add('hidden');
-});
-
-// Fecha a notificação se clicar em qualquer lugar FORA do painel de notificação e FORA do botão de notificação
-document.addEventListener('click', (e) => {
-    // Se o painel de notificação estiver visível
-    if (!notificationsTab.classList.contains('hidden')) {
-        // E o clique não foi dentro do painel de notificação E o clique não foi dentro do botão de notificação
-        // Com o stopPropagation no notificationsTab, este `if` será true apenas se o clique for fora de ambos.
-        if (!notificationsTab.contains(e.target) && !notificationsBtn.contains(e.target)) {
-            notificationsTab.classList.add('hidden');
+    if (!usuarioLogado) {
+        usuarioLogado = localStorage.getItem('usuarioLogado');
+        if (usuarioLogado) {
+            sessionStorage.setItem('usuarioLogado', usuarioLogado);
         }
     }
+
+    // Se o usuário não está logado E a página atual NÃO é a de login (index.html)
+    if (!usuarioLogado && (window.location.pathname !== '/' && !window.location.pathname.includes('index.html'))) {
+        window.location.href = 'index.html'; // Redireciona para a tela de login
+        return false;
+    }
+    // Se o usuário está logado E a página atual É a de login, redireciona para a página de venda
+    if (usuarioLogado && (window.location.pathname === '/' || window.location.pathname.includes('index.html'))) {
+        window.location.href = 'venda.html';
+        return true;
+    }
+    return !!usuarioLogado; // Retorna true se logado, false caso contrário
+}
+
+
+// --- EVENT LISTENERS COMUNS (adicionados apenas após o DOM estar carregado) ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Garante que os elementos do cabeçalho existem antes de adicionar listeners
+    if (notificationsBtn && notificationsTab && notificationsList && notificationsBadge && clearNotificationsBtn && logoutBtn) {
+        notificationsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationsTab.classList.toggle('hidden');
+        });
+
+        notificationsTab.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        clearNotificationsBtn.addEventListener('click', () => {
+            notificationsList.innerHTML = '<li>Nenhuma notificação.</li>';
+            notificationsBadge.classList.add('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!notificationsTab.classList.contains('hidden')) {
+                if (!notificationsTab.contains(e.target) && !notificationsBtn.contains(e.target)) {
+                    notificationsTab.classList.add('hidden');
+                }
+            }
+        });
+
+        logoutBtn.addEventListener('click', logout);
+    }
+    
+    // Chama a verificação de login uma vez que o DOM esteja carregado
+    checkLoginStatus();
+
+    // NOTA: renderizarNotificacoesComuns será chamada por cada script de página (venda.js, estoque.js, controle.js)
+    // após eles carregarem seus próprios dados de produtos da API.
 });
-
-
-logoutBtn.addEventListener('click', logout);
-
-// --- INICIALIZAÇÃO COMUM ---
-document.addEventListener('DOMContentLoaded', renderizarNotificacoesComuns);
