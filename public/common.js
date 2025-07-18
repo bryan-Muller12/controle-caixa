@@ -174,6 +174,50 @@ function checkLoginStatus() {
     return !!usuarioLogado; // Retorna true se logado, false caso contrário
 }
 
+// --- LÓGICA DE TEMA CLARO/ESCURO ---
+const themeToggleBtn = document.getElementById('theme-toggle-btn');
+
+function applyTheme(theme) {
+    document.body.classList.toggle('light-mode', theme === 'light');
+    // Atualiza o ícone do botão com base no tema
+    if (themeToggleBtn) {
+        themeToggleBtn.querySelector('i').classList.toggle('fa-sun', theme === 'dark');
+        themeToggleBtn.querySelector('i').classList.toggle('fa-moon', theme === 'light');
+    }
+}
+
+function loadUserThemePreference() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        applyTheme(savedTheme);
+    } else {
+        // Padrão para tema escuro se não houver preferência salva
+        applyTheme('dark'); 
+    }
+}
+
+function toggleTheme() {
+    const isLightMode = document.body.classList.contains('light-mode');
+    const newTheme = isLightMode ? 'dark' : 'light';
+    applyTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+}
+
+// --- EVENT LISTENERS COMUNS (adicionados apenas após o DOM estar carregado) ---
+document.addEventListener('DOMContentLoaded', () => {
+    // ... seu código existente ...
+
+    // Adiciona listener para o botão de alternar tema
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', toggleTheme);
+    }
+    
+    // Carrega a preferência de tema do usuário ao carregar a página
+    loadUserThemePreference();
+
+    // NOTA: renderizarNotificacoesComuns será chamada por cada script de página (venda.js, estoque.js, controle.js)
+    // após eles carregarem seus próprios dados de produtos da API.
+});
 
 // --- EVENT LISTENERS COMUNS (adicionados apenas após o DOM estar carregado) ---
 document.addEventListener('DOMContentLoaded', () => {
