@@ -3,379 +3,369 @@
 
 // Garante que o código só rode na página de controle
 if (document.body.id === 'page-controle' || location.pathname.includes('controle.html')) {
-  // --- ELEMENTOS DO DOM ---
-  const saldoAtualDisplay = document.getElementById('saldo-atual');
-  const historicoList = document.getElementById('historico-list');
-  const emptyHistoryMessage = document.querySelector('.empty-history-message');
+    // --- ELEMENTOS DO DOM ---
+    const saldoAtualDisplay = document.getElementById('saldo-atual');
+    // CORREÇÃO: Usando o ID correto do HTML 'lista-transacoes'
+    const listaTransacoes = document.getElementById('lista-transacoes'); 
+    const filterButtons = document.querySelectorAll('.transaction-type-filter button');
+    const outraTransacaoForm = document.getElementById('outra-transacao-form');
+    const tipoTransacaoSelect = document.getElementById('tipo-transacao');
+    const descricaoTransacaoInput = document.getElementById('descricao-transacao');
+    const valorTransacaoInput = document.getElementById('valor-transacao');
+    const dataTransacaoInput = document.getElementById('data-transacao');
 
-  // Filtros
-  const filtroTipoTransacao = document.getElementById('filtro-tipo-transacao');
-  const dataInicioInput = document.getElementById('data-inicio');
-  const dataFimInput = document.getElementById('data-fim');
-  const aplicarFiltrosBtn = document.getElementById('aplicar-filtros-btn');
-  const limparFiltrosBtn = document.getElementById('limpar-filtros-btn');
+    // Elementos do DOM para Relatórios de Vendas
+    const dataInicioVendasInput = document.getElementById('data-inicio-vendas');
+    const dataFimVendasInput = document.getElementById('data-fim-vendas');
+    const gerarRelatorioVendasBtn = document.getElementById('gerar-relatorio-vendas-btn');
+    const relatorioVendasOutput = document.getElementById('relatorio-vendas-output');
 
-  // Nova Transação
-  const openNovaTransacaoModalBtn = document.getElementById('open-nova-transacao-modal-btn');
-  const novaTransacaoModalOverlay = document.getElementById('nova-transacao-modal-overlay');
-  const novaTransacaoForm = document.getElementById('nova-transacao-form');
-  const transacaoTipoInput = document.getElementById('transacao-tipo');
-  const transacaoDescricaoInput = document.getElementById('transacao-descricao');
-  const transacaoValorInput = document.getElementById('transacao-valor');
-  const cancelarNovaTransacaoBtn = document.getElementById('cancelar-nova-transacao-btn');
+    // Elementos do DOM para Ordenação e Collapsible
+    const toggleSortBtn = document.getElementById('toggle-sort-btn');
+    const registrarTransacaoCard = document.getElementById('registrar-transacao-card');
 
-  // Relatório de Vendas
-  const gerarRelatorioVendasBtn = document.getElementById('gerar-relatorio-vendas-btn'); // Botão "Gerar Relatório de Vendas" principal
-  const relatorioVendasModalOverlay = document.getElementById('relatorio-vendas-modal-overlay');
-  const relatorioPeriodoInput = document.getElementById('relatorio-periodo');
-  const relatorioDataInicioInput = document.getElementById('relatorio-data-inicio');
-  const relatorioDataFimInput = document.getElementById('relatorio-data-fim');
-  
-  // REMOVIDO: A variável 'gerarRelatorioBtn' e seu listener, pois não há elemento com esse ID no HTML.
-  // const gerarRelatorioBtn = document.getElementById('gerar-relatorio-btn'); // <-- REMOVIDO
-  const cancelarRelatorioBtn = document.getElementById('cancelar-relatorio-btn');
-  const relatorioDetalhes = document.getElementById('relatorio-detalhes');
 
-  // --- ESTADO DA APLICAÇÃO ---
-  let historicoTransacoes = [];
-  // A variável 'produtos' será obtida e usada na função loadProdutosForNotifications.
+    // --- ESTADO DA APLICAÇÃO ---
+    let historicoTransacoes = []; // Será preenchido pela API
+    let saldoAtual = 0;
+    let filtroAtual = 'all'; // 'all', 'entrada', 'saida'
+    let sortOrder = 'desc'; // 'desc' (mais recente) ou 'asc' (mais antigo)
 
-  // Função auxiliar para fazer requisições à API
-  async function fazerRequisicaoApi(url, method, data = {}) {
-    const options = {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    };
-    if (method !== 'GET' && method !== 'HEAD') {
-      options.body = JSON.stringify(data);
-    }
 
-    const response = await fetch(url, options);
-    const responseData = await response.json().catch(() => null); 
-    
-    if (!response.ok) {
-        throw new Error(responseData?.error || `Erro na requisição ${method} ${url}: Status ${response.status}`);
-    }
-    return responseData;
-  }
+    // --- FUNÇÕES ---
 
-  // --- FUNÇÕES DE CONTROLE DE CAIXA ---
+    // Função auxiliar para fazer requisições à API
+    async function fazerRequisicaoApi(url, method, data = {}) {
+        const options = {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        };
+        if (method !== 'GET' && method !== 'HEAD') {
+            options.body = JSON.stringify(data);
+        }
 
-  async function carregarHistoricoTransacoes(filtros = {}) {
-    try {
-      const params = new URLSearchParams();
-      if (filtros.dataInicio) params.append('dataInicio', filtros.dataInicio);
-      if (filtros.dataFim) params.append('dataFim', filtros.dataFim);
-      if (filtros.tipo) params.append('tipo', filtros.tipo);
-      
-      const url = `/api/transacoes?${params.toString()}`;
-      historicoTransacoes = await fazerRequisicaoApi(url, 'GET');
-      renderizarHistorico();
-      calcularSaldoAtual();
-    } catch (error) {
-      console.error('Erro ao carregar histórico de transações:', error);
-      showCustomPopup('Erro', 'Não foi possível carregar o histórico de transações.', 'error');
-    }
-  }
-
-  function calcularSaldoAtual() {
-    let saldo = 0;
-    historicoTransacoes.forEach(transacao => {
-      if (transacao.tipo === 'entrada') {
-        saldo += transacao.valor;
-      } else if (transacao.tipo === 'saida') {
-        saldo -= transacao.valor;
-      }
-    });
-    saldoAtualDisplay.textContent = `R$ ${saldo.toFixed(2)}`;
-    saldoAtualDisplay.classList.remove('positive', 'negative');
-    if (saldo >= 0) {
-      saldoAtualDisplay.classList.add('positive');
-    } else {
-      saldoAtualDisplay.classList.add('negative');
-    }
-  }
-
-  function renderizarHistorico() {
-    historicoList.innerHTML = '';
-    if (historicoTransacoes.length === 0) {
-      emptyHistoryMessage.classList.remove('hidden');
-      return;
-    } else {
-      emptyHistoryMessage.classList.add('hidden');
-    }
-
-    historicoTransacoes.forEach(transacao => {
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <div class="transaction-info">
-          <span class="transaction-description">${transacao.descricao}</span>
-          <span class="transaction-date">${new Date(transacao.data).toLocaleDateString('pt-BR')}</span>
-        </div>
-        <div class="transaction-details">
-          <span class="transaction-value ${transacao.tipo === 'entrada' ? 'positive' : 'negative'}">R$ ${transacao.valor.toFixed(2)}</span>
-          ${transacao.detalhesVenda ? `<button class="btn-action btn-view-details" data-id="${transacao.id}" title="Ver Detalhes"><i class="fas fa-info-circle"></i></button>` : ''}
-        </div>
-      `;
-      historicoList.appendChild(li);
-    });
-  }
-
-  async function registrarOutraTransacao() {
-    const tipo = transacaoTipoInput.value;
-    const descricao = transacaoDescricaoInput.value.trim();
-    const valor = parseFloat(transacaoValorInput.value);
-
-    if (!tipo || !descricao || isNaN(valor) || valor <= 0) {
-      showCustomPopup('Erro', 'Por favor, preencha todos os campos e garanta que o valor seja positivo.', 'error');
-      return;
-    }
-
-    const confirmAdd = await showCustomConfirm('Confirmação', `Confirmar a ${tipo} de R$ ${valor.toFixed(2)}?`);
-    if (!confirmAdd) {
-        return;
-    }
-
-    try {
-      const novaTransacao = {
-        tipo: tipo,
-        descricao: descricao,
-        valor: valor,
-        data: new Date().toISOString().split('T')[0], // Formato YYYY-MM-DD
-        total_bruto: valor, // Para outras transações, bruto é igual ao valor
-        valor_desconto: 0 // Para outras transações, não há desconto
-      };
-
-      await fazerRequisicaoApi('/api/transacoes', 'POST', novaTransacao);
-      
-      closeModal(novaTransacaoModalOverlay);
-      await carregarHistoricoTransacoes(); // Recarrega o histórico após adicionar
-      showCustomPopup('Sucesso', 'Transação registrada com sucesso!', 'success');
-    } catch (error) {
-      console.error('Erro ao registrar transação:', error);
-      showCustomPopup('Erro', error.message || 'Não foi possível registrar a transação.', 'error');
-    }
-  }
-
-  // --- FUNÇÕES DE RELATÓRIO ---
-
-  async function gerarRelatorioVendas() {
-    const periodo = relatorioPeriodoInput.value;
-    let dataInicio = relatorioDataInicioInput.value;
-    let dataFim = relatorioDataFimInput.value;
-
-    const hoje = new Date();
-    const umMesAtras = new Date(hoje.getFullYear(), hoje.getMonth() - 1, hoje.getDate());
-    const umaSemanaAtras = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 7);
-
-    // Ajusta as datas com base no período selecionado, se as datas não foram preenchidas manualmente
-    if (!dataInicio && !dataFim) {
-      if (periodo === 'semanal') {
-        dataInicio = umaSemanaAtras.toISOString().split('T')[0];
-        dataFim = hoje.toISOString().split('T')[0];
-      } else if (periodo === 'mensal') {
-        dataInicio = umMesAtras.toISOString().split('T')[0];
-        dataFim = hoje.toISOString().split('T')[0];
-      } else if (periodo === 'diario') {
-        dataInicio = hoje.toISOString().split('T')[0];
-        dataFim = hoje.toISOString().split('T')[0];
-      }
-    }
-    
-    // Validação de datas
-    if (dataInicio && dataFim && new Date(dataInicio) > new Date(dataFim)) {
-      showCustomPopup('Erro', 'A data de início não pode ser posterior à data de fim.', 'error');
-      return;
-    }
-
-    try {
-      const params = new URLSearchParams();
-      if (dataInicio) params.append('dataInicio', dataInicio);
-      if (dataFim) params.append('dataFim', dataFim);
-      params.append('tipo', 'entrada'); // Relatório de VENDAS (entradas)
-
-      const url = `/api/transacoes?${params.toString()}`;
-      const vendasNoPeriodo = await fazerRequisicaoApi(url, 'GET');
-
-      let totalVendas = 0;
-      let totalDescontos = 0;
-      let totalBrutoVendas = 0;
-
-      relatorioDetalhes.innerHTML = ''; // Limpa antes de preencher
-
-      if (vendasNoPeriodo.length === 0) {
-        relatorioDetalhes.innerHTML = '<p>Nenhuma venda encontrada para o período selecionado.</p>';
-        return;
-      }
-
-      vendasNoPeriodo.forEach(venda => {
-        totalVendas += venda.valor;
-        totalBrutoVendas += venda.detalhesVenda ? parseFloat(venda.detalhesVenda.totalBruto) : 0;
-        totalDescontos += venda.detalhesVenda ? parseFloat(venda.detalhesVenda.valorDesconto) : 0;
+        const response = await fetch(url, options);
+        // Tenta parsear a resposta como JSON, mas não falha se não for JSON (ex: 204 No Content)
+        const responseData = await response.json().catch(() => null); 
         
-        // Exibe os detalhes de cada venda
-        const vendaDiv = document.createElement('div');
-        vendaDiv.classList.add('relatorio-venda-item');
-        vendaDiv.innerHTML = `
-            <h4>Venda ID: ${venda.id} - ${new Date(venda.data).toLocaleDateString('pt-BR')}</h4>
-            <p><strong>Total Bruto:</strong> R$ ${parseFloat(venda.detalhesVenda.totalBruto).toFixed(2)}</p>
-            <p><strong>Desconto Aplicado:</strong> R$ ${parseFloat(venda.detalhesVenda.valorDesconto).toFixed(2)}</p>
-            <p><strong>Total Final:</strong> R$ ${parseFloat(venda.detalhesVenda.totalFinal).toFixed(2)}</p>
-            <h5>Itens Vendidos:</h5>
-            <ul>
-                ${venda.detalhesVenda.itens ? venda.detalhesVenda.itens.map(item => `
-                    <li>- ${item.nomeProduto} (${item.codProduto}): ${item.quantidadeVendida} x R$ ${item.precoUnitarioVenda.toFixed(2)} = R$ ${item.totalItem.toFixed(2)}</li>
-                `).join('') : '<li>Nenhum item detalhado.</li>'}
-            </ul>
-        `;
-        relatorioDetalhes.appendChild(vendaDiv);
-      });
-
-      // Resumo final do relatório
-      const resumoDiv = document.createElement('div');
-      resumoDiv.classList.add('relatorio-resumo');
-      resumoDiv.innerHTML = `
-          <h3>Resumo do Período</h3>
-          <p><strong>Total de Vendas Brutas:</strong> R$ ${totalBrutoVendas.toFixed(2)}</p>
-          <p><strong>Total de Descontos Concedidos:</strong> R$ ${totalDescontos.toFixed(2)}</p>
-          <p><strong>Total Líquido de Vendas:</strong> R$ ${totalVendas.toFixed(2)}</p>
-      `;
-      relatorioDetalhes.prepend(resumoDiv); // Adiciona no início
-    } catch (error) {
-      console.error('Erro ao gerar relatório de vendas:', error);
-      relatorioDetalhes.innerHTML = '<p style="color: var(--danger-color);">Erro ao carregar o relatório de vendas.</p>';
-      showCustomPopup('Erro', error.message || 'Não foi possível gerar o relatório de vendas.', 'error');
+        if (!response.ok) {
+            // Se a resposta não for OK, lança um erro com a mensagem do backend ou um genérico
+            throw new Error(responseData?.error || `Erro na requisição ${method} ${url}: Status ${response.status}`);
+        }
+        return responseData;
     }
-  }
 
-  // --- FUNÇÕES DE UTILIDADE DE MODAL (comuns) ---
-  const openModal = (overlay) => overlay.classList.remove('hidden');
-  const closeModal = (overlay) => {
-    overlay.classList.add('hidden');
-    // Resets para formulários específicos se necessário
-    novaTransacaoForm.reset();
-    relatorioVendasModalOverlay.classList.add('hidden'); // Garante que o modal de relatório seja fechado
-    // Limpa os campos do relatório ao fechar o modal
-    relatorioPeriodoInput.value = 'nenhum';
-    relatorioDataInicioInput.value = '';
-    relatorioDataFimInput.value = '';
-    relatorioDetalhes.innerHTML = ''; // Limpa o conteúdo do relatório
-  };
+    // REMOVIDA: function carregarDados() - Agora usamos carregarHistoricoTransacoes da API
+    // REMOVIDA: function salvarDados() - Não há mais necessidade de salvar no localStorage
 
+    // NOVA FUNÇÃO: Carrega o histórico de transações do backend
+    async function carregarHistoricoTransacoes(filtros = {}) {
+        try {
+            const params = new URLSearchParams();
+            if (filtros.dataInicio) params.append('dataInicio', filtros.dataInicio);
+            if (filtros.dataFim) params.append('dataFim', filtros.dataFim);
+            if (filtros.tipo && filtros.tipo !== 'todos') params.append('tipo', filtros.tipo); // 'todos' não é um filtro de API
 
-  // --- EVENT LISTENERS DE CONTROLE DE CAIXA ---
+            const url = `/api/transacoes?${params.toString()}`;
+            const data = await fazerRequisicaoApi(url, 'GET');
+            historicoTransacoes = data; // Atualiza a variável global
 
-  // Eventos de filtro
-  filtroTipoTransacao.addEventListener('change', () => carregarHistoricoTransacoes({
-    dataInicio: dataInicioInput.value,
-    dataFim: dataFimInput.value,
-    tipo: filtroTipoTransacao.value
-  }));
-  aplicarFiltrosBtn.addEventListener('click', () => carregarHistoricoTransacoes({
-    dataInicio: dataInicioInput.value,
-    dataFim: dataFimInput.value,
-    tipo: filtroTipoTransacao.value
-  }));
-  limparFiltrosBtn.addEventListener('click', () => {
-    filtroTipoTransacao.value = 'todos';
-    dataInicioInput.value = '';
-    dataFimInput.value = '';
-    carregarHistoricoTransacoes(); // Recarrega sem filtros
-  });
+            calcularESetarSaldo();
+            renderizarHistorico();
+            // atualizarNotificacoesComuns(); // Esta chamada agora está em loadProdutosForNotifications
+        } catch (error) {
+            console.error('Erro ao carregar histórico de transações:', error);
+            showCustomPopup('Erro', 'Não foi possível carregar o histórico de transações. ' + error.message, 'error');
+        }
+    }
 
+    function calcularESetarSaldo() {
+        saldoAtual = historicoTransacoes.reduce((acc, transacao) => {
+            if (transacao.tipo === 'entrada') {
+                return acc + transacao.valor;
+            } else if (transacao.tipo === 'saida') {
+                return acc - transacao.valor;
+            }
+            return acc;
+        }, 0);
+        saldoAtualDisplay.textContent = `R$ ${saldoAtual.toFixed(2)}`;
+        // Adiciona classes para estilo visual (positivo/negativo)
+        saldoAtualDisplay.classList.remove('positive', 'negative');
+        if (saldoAtual >= 0) {
+            saldoAtualDisplay.classList.add('positive');
+        } else {
+            saldoAtualDisplay.classList.add('negative');
+        }
+    }
 
-  // Eventos de Nova Transação
-  openNovaTransacaoModalBtn.addEventListener('click', () => openModal(novaTransacaoModalOverlay));
-  cancelarNovaTransacaoBtn.addEventListener('click', () => closeModal(novaTransacaoModalOverlay));
-  novaTransacaoModalOverlay.addEventListener('click', (e) => {
-      if(e.target === novaTransacaoModalOverlay) closeModal(novaTransacaoModalOverlay);
-  });
-  novaTransacaoForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    await registrarOutraTransacao();
-  });
-
-  // Eventos de Relatório de Vendas
-  // Listener para o botão 'Gerar Relatório de Vendas' principal (id="gerar-relatorio-vendas-btn")
-  if (gerarRelatorioVendasBtn) { // Adicionada verificação de existência para evitar erro
-    gerarRelatorioVendasBtn.addEventListener('click', () => openModal(relatorioVendasModalOverlay));
-  }
-  // Listener para o botão que efetivamente 'Gera o Relatório' dentro do modal de relatório
-  // CORREÇÃO: Removido o listener para 'gerarRelatorioBtn' se ele não existe no HTML do modal.
-  // Se você tiver um botão com ID `gerar-relatorio-btn` no modal e quiser que ele dispare o relatório,
-  // adicione o listener a ele. Caso contrário, remova a variável e seu listener.
-  // Assumindo que o erro da linha 276/272 se referia a `gerarRelatorioBtn`,
-  // esta linha (ou sua equivalente) deve ser removida se o botão não existir no HTML do modal.
-  // Se o botão para disparar o relatório dentro do modal for outro, certifique-se de que ele tem o ID correto
-  // e o listener está apontando para ele.
-
-  // Verifique qual botão dentro do modal deve chamar gerarRelatorioVendas.
-  // SE relatorioVendasModalOverlay contiver um botão com ID 'gerar-relatorio-btn',
-  // DESCOMENTE e use a linha abaixo, mas VERIFIQUE o ID no HTML.
-  // const gerarRelatorioInternoBtn = document.getElementById('gerar-relatorio-btn');
-  // if (gerarRelatorioInternoBtn) {
-  //   gerarRelatorioInternoBtn.addEventListener('click', gerarRelatorioVendas);
-  // }
-  
-  cancelarRelatorioBtn.addEventListener('click', () => closeModal(relatorioVendasModalOverlay));
-  relatorioVendasModalOverlay.addEventListener('click', (e) => {
-      if(e.target === relatorioVendasModalOverlay) closeModal(relatorioVendasModalOverlay);
-  });
-  
-
-  // Evento para visualizar detalhes de transação específica (vendas)
-  historicoList.addEventListener('click', (e) => {
-    const viewDetailsBtn = e.target.closest('.btn-view-details');
-    if (viewDetailsBtn) {
-        const transacaoId = parseInt(viewDetailsBtn.dataset.id);
-        const transacao = historicoTransacoes.find(t => t.id === transacaoId);
+    function renderizarHistorico() {
+        listaTransacoes.innerHTML = ''; // Limpa a lista antes de renderizar
         
-        if (transacao && transacao.detalhesVenda) {
-            // Preenche o modal de relatório com os detalhes da transação selecionada
-            relatorioDetalhes.innerHTML = ''; // Limpa
-            const vendaDiv = document.createElement('div');
-            vendaDiv.classList.add('relatorio-venda-item');
-            vendaDiv.innerHTML = `
-                <h4>Venda ID: ${transacao.id} - ${new Date(transacao.data).toLocaleDateString('pt-BR')}</h4>
-                <p><strong>Total Bruto:</strong> R$ ${parseFloat(transacao.detalhesVenda.totalBruto).toFixed(2)}</p>
-                <p><strong>Desconto Aplicado:</strong> R$ ${parseFloat(transacao.detalhesVenda.valorDesconto).toFixed(2)}</p>
-                <p><strong>Total Final:</strong> R$ ${parseFloat(transacao.detalhesVenda.totalFinal).toFixed(2)}</p>
-                <h5>Itens Vendidos:</h5>
-                <ul>
-                    ${transacao.detalhesVenda.itens ? transacao.detalhesVenda.itens.map(item => `
-                        <li>- ${item.nomeProduto} (${item.codProduto}): ${item.quantidadeVendida} x R$ ${item.precoUnitarioVenda.toFixed(2)} = R$ ${item.totalItem.toFixed(2)}</li>
-                    `).join('') : '<li>Nenhum item detalhado.</li>'}
-                </ul>
+        // Transações já vêm filtradas pela API se filtros foram aplicados em carregarHistoricoTransacoes.
+        // Aqui apenas aplicamos a ordenação e o filtro local que a API pode não ter (como 'all')
+        const transacoesFiltradas = historicoTransacoes.filter(transacao => {
+            if (filtroAtual === 'all') return true;
+            return transacao.tipo === filtroAtual;
+        }).sort((a, b) => {
+            // Converte a string de data para objeto Date para comparação
+            const dateA = new Date(a.data).getTime();
+            const dateB = new Date(b.data).getTime();
+            return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+        }); 
+
+        if (transacoesFiltradas.length === 0) {
+            listaTransacoes.innerHTML = `<li style="justify-content: center; color: var(--text-muted);">${filtroAtual === 'all' ? 'Nenhuma transação encontrada.' : 'Nenhuma transação deste tipo encontrada.'}</li>`;
+            return;
+        }
+
+        transacoesFiltradas.forEach(transacao => {
+            const li = document.createElement('li');
+            const valorFormatado = `R$ ${transacao.valor.toFixed(2)}`;
+            const valorClasse = transacao.tipo === 'entrada' ? 'positive' : 'negative';
+            const sinal = transacao.tipo === 'entrada' ? '+' : '-';
+
+            let detalhesHTML = '';
+            // Verifica se detalhesVenda existe e não é nulo/vazio
+            if (transacao.detalhes_venda && Object.keys(transacao.detalhes_venda).length > 0) {
+                const detalhes = transacao.detalhes_venda;
+                detalhesHTML = `
+                    <details style="margin-top: 10px; padding-top: 5px; border-top: 1px dashed var(--border-color-dark);">
+                        <summary style="font-weight: 500; cursor: pointer; color: var(--primary-color);">Ver Detalhes da Venda</summary>
+                        <div style="font-size: 0.9em; margin-top: 10px;">
+                            <p><strong>Total Bruto:</strong> R$ ${parseFloat(detalhes.totalBruto).toFixed(2)}</p>
+                            <p><strong>Desconto Aplicado:</strong> R$ ${parseFloat(detalhes.valorDesconto).toFixed(2)}</p>
+                            <p><strong>Total Final da Venda:</strong> R$ ${parseFloat(detalhes.totalFinal).toFixed(2)}</p>
+                            <ul style="list-style: none; padding-left: 15px; margin-top: 10px; border-top: 1px solid var(--border-color-dark); padding-top: 10px;">
+                                <li style="font-weight: bold; margin-bottom: 5px;">Itens Vendidos:</li>
+                                ${detalhes.itens && detalhes.itens.length > 0 ? detalhes.itens.map(item => `
+                                    <li style="margin-bottom: 3px;">- ${item.nomeProduto} (${item.codProduto}): ${item.quantidadeVendida} x R$ ${item.precoUnitarioVenda.toFixed(2)} = R$ ${item.totalItem.toFixed(2)}</li>
+                                `).join('') : '<li>Nenhum item detalhado.</li>'}
+                            </ul>
+                        </div>
+                    </details>
+                `;
+                // Se for uma transação de venda, ajuste a descrição
+                transacao.descricao = `Venda (${detalhes.itens ? detalhes.itens.length : 0} itens)`;
+            }
+
+            li.innerHTML = `
+                <div class="transaction-info">
+                    <span class="transaction-description">${transacao.descricao}</span>
+                </div>
+                <div class="transaction-details">
+                    <span class="transaction-value ${valorClasse}">${sinal} ${valorFormatado}</span>
+                    <span class="transaction-date">${new Date(transacao.data).toLocaleDateString('pt-BR')}</span>
+                </div>
+                ${detalhesHTML}
             `;
-            relatorioDetalhes.appendChild(vendaDiv);
-            openModal(relatorioVendasModalOverlay); // Reutiliza o modal de relatório para exibir detalhes
-        } else {
-            showCustomPopup('Informação', 'Não há detalhes de venda para esta transação.', 'info');
+            listaTransacoes.appendChild(li);
+        });
+    }
+
+    // MODIFICADO: registrarOutraTransacao agora usa a API
+    async function registrarOutraTransacao(e) {
+        e.preventDefault();
+
+        const tipo = tipoTransacaoSelect.value;
+        const descricao = descricaoTransacaoInput.value.trim();
+        const valor = parseFloat(valorTransacaoInput.value);
+        const data = dataTransacaoInput.value;
+
+        if (!descricao || isNaN(valor) || valor <= 0 || !data) {
+            showCustomPopup('Erro', 'Por favor, preencha todos os campos corretamente e garanta que o valor seja positivo.', 'error');
+            return;
+        }
+
+        try {
+            const novaTransacao = {
+                tipo: tipo,
+                descricao: descricao,
+                valor: valor,
+                data: data, // Formato YYYY-MM-DD
+                detalhesVenda: null // Transações manuais não têm detalhes de venda
+            };
+
+            await fazerRequisicaoApi('/api/transacoes', 'POST', novaTransacao);
+            
+            // Reabilita o botão após a conclusão
+            // submitButton.disabled = false;
+            // submitButton.textContent = 'Registrar Transação';
+
+            outraTransacaoForm.reset(); // Limpa o formulário
+            registrarTransacaoCard.classList.remove('expanded'); // Fecha o collapsible após o registro
+
+            await carregarHistoricoTransacoes(); // Recarrega o histórico após adicionar via API
+            showCustomPopup('Sucesso', 'Transação registrada com sucesso!', 'success');
+        } catch (error) {
+            console.error('Erro ao registrar transação:', error);
+            showCustomPopup('Erro', error.message || 'Não foi possível registrar a transação.', 'error');
         }
     }
-  });
 
+    // REMOVIDAS as funções de relatório diário e mensal (gerarRelatorioDiario, gerarRelatorioMensal)
 
-  // Carrega produtos para notificações (usando a mesma API de produtos)
-  async function loadProdutosForNotifications() {
-    try {
-        const produtosDoEstoque = await fazerRequisicaoApi('/api/produtos', 'GET');
-        // A função atualizarNotificacoesComuns (do common.js) precisa receber os produtos para operar
-        if (typeof atualizarNotificacoesComuns === 'function') {
-             atualizarNotificacoesComuns(produtosDoEstoque); 
-        } else {
-             console.warn("atualizarNotificacoesComuns não é uma função. Verifique o common.js.");
+    // MODIFICADO: Função para gerar Relatório de Vendas (Resumo e Top Vendas) usando a API
+    async function gerarRelatorioVendas() {
+        const dataInicio = dataInicioVendasInput.value;
+        const dataFim = dataFimVendasInput.value;
+
+        if (!dataInicio || !dataFim) {
+            showCustomPopup('Erro', 'Por favor, selecione as datas de início e fim para o relatório de vendas.', 'error');
+            return;
         }
-    } catch (error) {
-        console.error('Erro ao carregar produtos para notificações:', error);
-    }
-  }
 
-  // No carregamento da página
-  document.addEventListener('DOMContentLoaded', async () => {
-    await carregarHistoricoTransacoes();
-    await loadProdutosForNotifications(); // Carrega produtos para as notificações
-  });
+        // Validação de datas
+        if (new Date(dataInicio) > new Date(dataFim)) {
+            showCustomPopup('Erro', 'A data de início não pode ser posterior à data de fim.', 'error');
+            return;
+        }
+
+        try {
+            const params = new URLSearchParams();
+            params.append('tipo', 'entrada'); // Relatório de VENDAS (entradas)
+            params.append('dataInicio', dataInicio);
+            params.append('dataFim', dataFim);
+
+            const url = `/api/transacoes?${params.toString()}`;
+            const vendasNoPeriodo = await fazerRequisicaoApi(url, 'GET');
+
+            let totalVendasPeriodo = 0; // Total líquido
+            let totalDescontos = 0;
+            let totalBrutoVendas = 0;
+            let totalItensVendidosPeriodo = 0;
+            const produtosVendidosDetalhes = {};
+
+            relatorioVendasOutput.innerHTML = ''; // Limpa antes de preencher
+
+            if (vendasNoPeriodo.length === 0) {
+                relatorioVendasOutput.innerHTML = '<p>Nenhuma venda encontrada para o período selecionado.</p>';
+                return;
+            }
+
+            vendasNoPeriodo.forEach(venda => {
+                // Garante que detalhes_venda seja um objeto, mesmo que venha como string JSON
+                const detalhes = typeof venda.detalhes_venda === 'string' 
+                                ? JSON.parse(venda.detalhes_venda) 
+                                : venda.detalhes_venda;
+
+                if (detalhes) {
+                    totalVendasPeriodo += parseFloat(detalhes.totalFinal || 0);
+                    totalBrutoVendas += parseFloat(detalhes.totalBruto || 0);
+                    totalDescontos += parseFloat(detalhes.valorDesconto || 0);
+                    
+                    if (detalhes.itens) {
+                        detalhes.itens.forEach(item => {
+                            totalItensVendidosPeriodo += item.quantidadeVendida;
+                            if (produtosVendidosDetalhes[item.nomeProduto]) {
+                                produtosVendidosDetalhes[item.nomeProduto].quantidade += item.quantidadeVendida;
+                                produtosVendidosDetalhes[item.nomeProduto].valorTotal += item.totalItem;
+                            } else {
+                                produtosVendidosDetalhes[item.nomeProduto] = {
+                                    quantidade: item.quantidadeVendida,
+                                    valorTotal: item.totalItem
+                                };
+                            }
+                        });
+                    }
+                }
+            });
+
+            const topProdutosVendidos = Object.keys(produtosVendidosDetalhes)
+                .map(nome => ({
+                    nome: nome,
+                    quantidade: produtosVendidosDetalhes[nome].quantidade,
+                    valorTotal: produtosVendidosDetalhes[nome].valorTotal
+                }))
+                .sort((a, b) => b.quantidade - a.quantidade)
+                .slice(0, 5); // Pega os 5 primeiros
+
+            let topProdutosHtml = '';
+            if (topProdutosVendidos.length > 0) {
+                topProdutosHtml = `
+                    <h4>Top 5 Produtos Mais Vendidos:</h4>
+                    <ul style="list-style: decimal; padding-left: 20px;">
+                        ${topProdutosVendidos.map(p => `
+                            <li>${p.nome}: ${p.quantidade} unidades (R$ ${p.valorTotal.toFixed(2)})</li>
+                        `).join('')}
+                    </ul>
+                `;
+            } else {
+                topProdutosHtml = `<p>Nenhum produto vendido no período selecionado.</p>`;
+            }
+
+            relatorioVendasOutput.innerHTML = `
+                <h3>Relatório de Vendas de ${new Date(dataInicio).toLocaleDateString('pt-BR')} a ${new Date(dataFim).toLocaleDateString('pt-BR')}</h3>
+                <p><strong>Número de Vendas:</strong> ${vendasNoPeriodo.length}</p>
+                <p><strong>Valor Total Bruto das Vendas:</strong> R$ ${totalBrutoVendas.toFixed(2)}</p>
+                <p><strong>Total de Descontos Concedidos:</strong> R$ ${totalDescontos.toFixed(2)}</p>
+                <p><strong>Valor Total Líquido das Vendas:</strong> R$ ${totalVendasPeriodo.toFixed(2)}</p>
+                <p><strong>Total de Itens Vendidos:</strong> ${totalItensVendidosPeriodo} unidades</p>
+                ${topProdutosHtml}
+            `;
+
+        } catch (error) {
+            console.error('Erro ao gerar relatório de vendas:', error);
+            showCustomPopup('Erro', error.message || 'Não foi possível gerar o relatório de vendas.', 'error');
+        }
+    }
+
+    // Carrega produtos para notificações (usando a API de produtos)
+    async function loadProdutosForNotifications() {
+        try {
+            const produtosDoEstoque = await fazerRequisicaoApi('/api/produtos', 'GET');
+            // A função atualizarNotificacoesComuns (do common.js) precisa receber os produtos para operar
+            if (typeof atualizarNotificacoesComuns === 'function') {
+                atualizarNotificacoesComuns(produtosDoEstoque); 
+            } else {
+                console.warn("atualizarNotificacoesComuns não é uma função. Verifique o common.js.");
+            }
+        } catch (error) {
+            console.error('Erro ao carregar produtos para notificações:', error);
+            // showCustomPopup('Atenção', 'Não foi possível carregar as notificações de estoque.', 'info');
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            filtroAtual = button.dataset.filter;
+            // Carrega o histórico novamente com o filtro, o backend já pode filtrar
+            carregarHistoricoTransacoes({
+                dataInicio: dataInicioVendasInput.value, // Mantém filtros de data se houver
+                dataFim: dataFimVendasInput.value,
+                tipo: filtroAtual === 'all' ? 'todos' : filtroAtual // Passa 'todos' para a API se não houver filtro específico
+            });
+        });
+    });
+
+    outraTransacaoForm.addEventListener('submit', registrarOutraTransacao);
+
+    // Event listener para o botão de relatório de vendas (já estava correto para disparar a função)
+    gerarRelatorioVendasBtn.addEventListener('click', gerarRelatorioVendas);
+
+    // Event listener para o botão de alternar ordenação
+    toggleSortBtn.addEventListener('click', () => {
+        sortOrder = sortOrder === 'desc' ? 'asc' : 'desc';
+        renderizarHistorico(); // Apenas renderiza, já que os dados estão carregados
+        // Atualiza o ícone de ordenação
+        toggleSortBtn.querySelector('i').classList.toggle('fa-sort-up', sortOrder === 'asc');
+        toggleSortBtn.querySelector('i').classList.toggle('fa-sort-down', sortOrder === 'desc');
+        toggleSortBtn.querySelector('i').classList.toggle('fa-sort', false); // Remove o ícone padrão
+    });
+
+    // Event listener para o cabeçalho do collapsible
+    registrarTransacaoCard.querySelector('.collapsible-header').addEventListener('click', () => {
+        registrarTransacaoCard.classList.toggle('expanded');
+    });
+
+
+    // --- INICIALIZAÇÃO ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        await carregarHistoricoTransacoes(); // Carrega o histórico de transações do backend
+        await loadProdutosForNotifications(); // Carrega produtos para as notificações
+    });
 }

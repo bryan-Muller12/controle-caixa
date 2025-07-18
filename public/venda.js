@@ -1,53 +1,32 @@
-// venda.js
-// Lógica específica da tela de Vendas
+// public/venda.js (Updated)
 
 // Garante que o código só rode na página de venda
 if (document.body.id === 'page-venda' || location.pathname.includes('venda.html')) {
     // --- ELEMENTOS DO DOM ---
-    const productNameDisplay = document.getElementById('product-name-display');
-
-    const searchProdutoInput = document.getElementById('search-produto-input');
-    const findProductBtn = document.getElementById('find-product-btn');
-    const foundProductDetails = document.getElementById('found-product-details');
-    const foundProductName = document.getElementById('found-product-name');
-    const foundProductCod = document.getElementById('found-product-cod');
-    const foundProductQuantityStock = document.getElementById('found-product-quantity-stock');
-
-    const quantidadeItemInput = document.getElementById('quantidade-item');
-    const valorUnitarioItemInput = document.getElementById('valor-unitario-item');
-    const valorTotalItemInput = document.getElementById('valor-total-item');
-    const addItemToCartBtn = document.getElementById('add-item-to-cart-btn');
-
-    const cartItemsList = document.getElementById('cart-items-list');
-    const emptyCartMessage = document.querySelector('.empty-cart-message');
-
-    const totalVolumesDisplay = document.getElementById('total-volumes');
-    const totalSaleDisplay = document.getElementById('total-sale-display');
-
-    const aplicarDescontoCheckbox = document.getElementById('aplicar-desconto');
-    const valorDescontoGlobalInput = document.getElementById('valor-desconto-global');
-
+    const searchProductInput = document.getElementById('search-product-input');
+    const searchProductBtn = document.getElementById('search-product-btn');
+    const productDetailsDiv = document.getElementById('product-details');
+    const addProductToCartBtn = document.getElementById('add-product-to-cart-btn');
+    const quantityInput = document.getElementById('quantity-input');
+    const cartList = document.getElementById('cart-list');
+    const totalSaleDisplay = document.getElementById('total-sale');
     const finalizeSaleBtn = document.getElementById('finalize-sale-btn');
-    const cancelAllItemsBtn = document.getElementById('cancel-all-items-btn');
-    // REMOVIDO: const printReceiptBtn = document.getElementById('print-receipt-btn');
+    const resetSaleBtn = document.getElementById('reset-sale-btn');
+    const applyDiscountBtn = document.getElementById('apply-discount-btn');
+    const removeDiscountBtn = document.getElementById('remove-discount-btn');
+    const valorDescontoGlobalInput = document.getElementById('valor-desconto-global');
+    const aplicarDescontoCheckbox = document.getElementById('aplicar-desconto-checkbox');
+    const descontoGlobalContainer = document.getElementById('desconto-global-container');
+    const searchResultContainer = document.getElementById('search-result-container');
 
-    // REMOVIDO: Elementos do DOM para o recibo (não serão mais usados)
-    /*
-    const receiptPrintArea = document.getElementById('receipt-print-area');
-    const receiptDate = document.getElementById('receipt-date');
-    const receiptTransactionId = document.getElementById('receipt-transaction-id');
-    const receiptItemsList = document.getElementById('receipt-items-list');
-    const receiptSubtotal = document.getElementById('receipt-subtotal');
-    const receiptDiscount = document.getElementById('receipt-discount');
-    const receiptTotal = document.getElementById('receipt-total');
-    */
 
     // --- ESTADO DA APLICAÇÃO ---
-    let produtos = []; // Produtos carregados do banco de dados
+    let produtos = []; // Array de produtos carregados (ainda do localStorage se não for API)
+    let produtoEncontradoParaAdicionar = null;
     let carrinho = [];
-    // REMOVIDO: let ultimaVendaFinalizada = null;
 
     // Função auxiliar para fazer requisições à API
+    // É importante que esta função seja consistente com a do common.js ou esteja disponível globalmente
     async function fazerRequisicaoApi(url, method, data = {}) {
         const options = {
             method: method,
@@ -60,7 +39,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
 
         const response = await fetch(url, options);
-        // Tenta ler JSON, mas permite que a resposta seja vazia (ex: 204 No Content)
         const responseData = await response.json().catch(() => null); 
         
         if (!response.ok) {
@@ -69,363 +47,295 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         return responseData;
     }
 
-    // Carregar produtos do backend
-    async function carregarProdutos() {
+    // Carrega produtos (assumindo que produtos ainda estão no localStorage para este arquivo,
+    // se você também moveu produtos para a API, esta função precisará ser atualizada para buscar da API)
+    async function carregarDados() {
         try {
+            // Buscando produtos da API, assumindo que /api/produtos retorna todos os produtos
             produtos = await fazerRequisicaoApi('/api/produtos', 'GET');
-            atualizarNotificacoesComuns(); // Atualiza as notificações com base nos produtos carregados
+            console.log('Produtos carregados da API:', produtos);
         } catch (error) {
-            console.error('Erro ao carregar produtos:', error);
-            showCustomPopup('Erro', 'Não foi possível carregar os produtos do servidor.', 'error');
+            console.error('Erro ao carregar produtos da API:', error);
+            // Fallback para localStorage se a API falhar ou se produtos ainda forem de lá
+            produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+            console.warn('Produtos carregados do localStorage como fallback.');
+            showCustomPopup('Erro', 'Não foi possível carregar os produtos do estoque. Verifique a conexão.', 'error');
         }
+        atualizarNotificacoesComuns(produtos); // Passa produtos para as notificações
+        resetVendaCompleta();
     }
 
-    function exibirDetalhesProdutoEncontrado(produto) {
-        if (produto) {
-            productNameDisplay.textContent = produto.nome;
-            foundProductName.textContent = produto.nome;
-            foundProductCod.textContent = produto.cod_produto;
-            foundProductQuantityStock.textContent = produto.quantidade;
-            foundProductDetails.classList.remove('hidden');
-
-            quantidadeItemInput.value = 1;
-            quantidadeItemInput.max = produto.quantidade;
-            quantidadeItemInput.min = 1;
-            valorUnitarioItemInput.value = parseFloat(produto.preco_unitario).toFixed(2);
-
-            atualizarValorTotalItem();
-            addItemToCartBtn.disabled = false;
-        } else {
-            productNameDisplay.textContent = 'Produto Selecionado';
-            foundProductDetails.classList.add('hidden');
-            quantidadeItemInput.value = 1;
-            valorUnitarioItemInput.value = (0).toFixed(2);
-            valorTotalItemInput.value = (0).toFixed(2);
-            addItemToCartBtn.disabled = true;
-        }
-        produtoEncontradoParaAdicionar = produto;
+    // A função salvarDados não é mais necessária para historicoTransacoes, apenas produtos se aplicável.
+    // Se produtos são totalmente API-driven, esta função pode ser removida.
+    function salvarDados() {
+        localStorage.setItem('produtos', JSON.stringify(produtos));
     }
 
     function pesquisarProduto() {
-        const termoBusca = searchProdutoInput.value.toLowerCase().trim();
-        let produto = null;
-
-        if (termoBusca) {
-            produto = produtos.find(p =>
-                (p.cod_produto && p.cod_produto.toLowerCase() === termoBusca) ||
-                (p.nome.toLowerCase() === termoBusca)
-            );
-            if (!produto) {
-                produto = produtos.find(p =>
-                    (p.cod_produto && p.cod_produto.toLowerCase().includes(termoBusca)) ||
-                    (p.nome.toLowerCase().includes(termoBusca))
-                );
-            }
+        const searchTerm = searchProductInput.value.trim().toLowerCase();
+        if (searchTerm.length < 2) {
+            searchResultContainer.innerHTML = '<p>Digite pelo menos 2 caracteres para pesquisar.</p>';
+            searchResultContainer.classList.remove('active');
+            produtoEncontradoParaAdicionar = null;
+            return;
         }
 
-        if (produto && produto.quantidade > 0) {
-            exibirDetalhesProdutoEncontrado(produto);
-        } else {
-            showCustomPopup('Alerta', 'Produto não encontrado ou sem estoque.', 'warning');
-            exibirDetalhesProdutoEncontrado(null);
-            searchProdutoInput.value = '';
+        const filteredProducts = produtos.filter(p =>
+            p.nome.toLowerCase().includes(searchTerm) ||
+            (p.cod_produto && p.cod_produto.toLowerCase().includes(searchTerm))
+        );
+
+        searchResultContainer.innerHTML = '';
+        if (filteredProducts.length === 0) {
+            searchResultContainer.innerHTML = '<p>Nenhum produto encontrado.</p>';
+            searchResultContainer.classList.add('active');
+            produtoEncontradoParaAdicionar = null;
+            return;
         }
+
+        searchResultContainer.classList.add('active');
+        filteredProducts.forEach(product => {
+            const resultItem = document.createElement('div');
+            resultItem.classList.add('search-result-item');
+            resultItem.innerHTML = `
+                <span class="product-name">${product.nome}</span>
+                <span class="product-code">(${product.cod_produto})</span>
+                <span class="product-price">R$ ${product.preco_unitario.toFixed(2)}</span>
+                <span class="product-stock">Estoque: ${product.quantidade}</span>
+            `;
+            resultItem.addEventListener('click', () => {
+                exibirDetalhesProdutoEncontrado(product);
+                searchResultContainer.classList.remove('active');
+                searchProductInput.value = ''; // Limpa o campo de busca
+            });
+            searchResultContainer.appendChild(resultItem);
+        });
     }
 
-    function atualizarValorTotalItem() {
-        const quantidade = parseFloat(quantidadeItemInput.value);
-        const valorUnitario = parseFloat(valorUnitarioItemInput.value);
-        let total = 0;
-
-        if (!isNaN(quantidade) && quantidade > 0 && !isNaN(valorUnitario) && valorUnitario > 0) {
-            total = quantidade * valorUnitario;
-        }
-        valorTotalItemInput.value = total.toFixed(2);
+    function exibirDetalhesProdutoEncontrado(product) {
+        produtoEncontradoParaAdicionar = product;
+        productDetailsDiv.innerHTML = `
+            <h3>${product.nome} (${product.cod_produto})</h3>
+            <p>Preço Unitário: R$ ${product.preco_unitario.toFixed(2)}</p>
+            <p>Estoque Disponível: ${product.quantidade}</p>
+        `;
+        productDetailsDiv.classList.add('active');
+        addProductToCartBtn.style.display = 'block';
+        quantityInput.value = 1;
+        quantityInput.style.display = 'block';
     }
 
-    function adicionarItemAoCarrinho() {
+    function adicionarAoCarrinho() {
         if (!produtoEncontradoParaAdicionar) {
-            showCustomPopup('Erro', 'Nenhum produto selecionado para adicionar.', 'error');
+            showCustomPopup('Erro', 'Nenhum produto selecionado para adicionar ao carrinho.', 'error');
             return;
         }
 
-        const quantidadeAdicionar = parseInt(quantidadeItemInput.value, 10);
-        const valorUnitario = parseFloat(valorUnitarioItemInput.value);
+        const quantidadeDesejada = parseInt(quantityInput.value);
 
-        if (isNaN(quantidadeAdicionar) || quantidadeAdicionar <= 0 || quantidadeAdicionar > produtoEncontradoParaAdicionar.quantidade) {
-            showCustomPopup('Erro', `Quantidade inválida ou maior que o estoque disponível (${produtoEncontradoParaAdicionar.quantidade} unidades).`, 'error');
-            return;
-        }
-        if (isNaN(valorUnitario) || valorUnitario <= 0) {
-            showCustomPopup('Erro', 'Valor unitário inválido.', 'error');
+        if (isNaN(quantidadeDesejada) || quantidadeDesejada <= 0) {
+            showCustomPopup('Erro', 'Quantidade inválida.', 'error');
             return;
         }
 
-        const itemExistenteIndex = carrinho.findIndex(item => item.id === produtoEncontradoParaAdicionar.id);
+        if (quantidadeDesejada > produtoEncontradoParaAdicionar.quantidade) {
+            showCustomPopup('Erro', `Quantidade insuficiente em estoque. Disponível: ${produtoEncontradoParaAdicionar.quantidade}`, 'error');
+            return;
+        }
 
-        if (itemExistenteIndex !== -1) {
-            const novaQuantidadeTotal = carrinho[itemExistenteIndex].quantidadeVendidaNoCarrinho + quantidadeAdicionar;
+        const itemExistenteNoCarrinho = carrinho.find(item => item.id === produtoEncontradoParaAdicionar.id);
+
+        if (itemExistenteNoCarrinho) {
+            const novaQuantidadeTotal = itemExistenteNoCarrinho.quantidadeVendidaNoCarrinho + quantidadeDesejada;
             if (novaQuantidadeTotal > produtoEncontradoParaAdicionar.quantidade) {
-                showCustomPopup('Erro', `Não é possível adicionar essa quantidade. Excederia o estoque disponível para "${produtoEncontradoParaAdicionar.nome}".`, 'error');
+                showCustomPopup('Erro', `Adicionar ${quantidadeDesejada} excederia o estoque. Máximo adicional: ${produtoEncontradoParaAdicionar.quantidade - itemExistenteNoCarrinho.quantidadeVendidaNoCarrinho}`, 'error');
                 return;
             }
-            carrinho[itemExistenteIndex].quantidadeVendidaNoCarrinho = novaQuantidadeTotal;
-            carrinho[itemExistenteIndex].totalItem = novaQuantidadeTotal * valorUnitario;
+            itemExistenteNoCarrinho.quantidadeVendidaNoCarrinho = novaQuantidadeTotal;
+            itemExistenteNoCarrinho.totalItem = novaQuantidadeTotal * itemExistenteNoCarrinho.precoUnitario;
         } else {
             carrinho.push({
-                id: produtoEncontradoParaAdicionar.id, // ID do produto no banco
+                id: produtoEncontradoParaAdicionar.id,
                 codProduto: produtoEncontradoParaAdicionar.cod_produto,
                 nomeProduto: produtoEncontradoParaAdicionar.nome,
-                quantidadeVendidaNoCarrinho: quantidadeAdicionar,
-                precoUnitarioOriginal: parseFloat(produtoEncontradoParaAdicionar.preco_unitario),
-                precoUnitario: valorUnitario,
-                totalItem: quantidadeAdicionar * valorUnitario
+                quantidadeVendidaNoCarrinho: quantidadeDesejada,
+                precoUnitario: produtoEncontradoParaAdicionar.preco_unitario,
+                precoUnitarioOriginal: produtoEncontradoParaAdicionar.preco_unitario, // Adiciona preço original para detalhes da venda
+                totalItem: quantidadeDesejada * produtoEncontradoParaAdicionar.preco_unitario
             });
         }
-
+        
+        showCustomPopup('Sucesso', `${quantidadeDesejada}x ${produtoEncontradoParaAdicionar.nome} adicionado ao carrinho!`, 'success');
         atualizarCarrinhoDisplay();
-        resetItemInputArea();
-        calcularTotaisVenda();
+        resetProdutoSelecao();
     }
 
-    function resetItemInputArea() {
-        searchProdutoInput.value = '';
-        exibirDetalhesProdutoEncontrado(null);
-        quantidadeItemInput.value = 1;
-        valorUnitarioItemInput.value = (0).toFixed(2);
-        valorTotalItemInput.value = (0).toFixed(2);
-        produtoEncontradoParaAdicionar = null;
+    function removerDoCarrinho(produtoId) {
+        carrinho = carrinho.filter(item => item.id !== produtoId);
+        atualizarCarrinhoDisplay();
     }
 
     function atualizarCarrinhoDisplay() {
-        cartItemsList.innerHTML = '';
+        cartList.innerHTML = '';
         if (carrinho.length === 0) {
-            emptyCartMessage.classList.remove('hidden');
-            finalizeSaleBtn.disabled = true;
-            cancelAllItemsBtn.disabled = true;
-            // REMOVIDO: printReceiptBtn.classList.add('hidden');
-            valorDescontoGlobalInput.value = '';
-            aplicarDescontoCheckbox.checked = false;
+            cartList.innerHTML = '<li class="empty-cart-message">Carrinho vazio. Adicione itens!</li>';
         } else {
-            emptyCartMessage.classList.add('hidden');
-            carrinho.forEach((item, index) => {
+            carrinho.forEach(item => {
                 const li = document.createElement('li');
-                li.classList.add('cart-item');
-                li.dataset.index = index;
                 li.innerHTML = `
-                    <span class="cart-item-number">${index + 1}</span>
-                    <span class="cart-item-cod">${item.codProduto}</span>
-                    <span class="cart-item-desc">${item.nomeProduto}</span>
-                    <span class="cart-item-qty">${item.quantidadeVendidaNoCarrinho}</span>
-                    <span class="cart-item-unit-val">R$ ${item.precoUnitario.toFixed(2)}</span>
-                    <span class="cart-item-total-val">R$ ${item.totalItem.toFixed(2)}</span>
-                    <span class="cart-item-actions">
-                        <button class="btn-action btn-remove-item" data-index="${index}" title="Remover Item"><i class="fas fa-times"></i></button>
-                    </span>
+                    <span>${item.nomeProduto} (${item.quantidadeVendidaNoCarrinho}x R$ ${item.precoUnitario.toFixed(2)})</span>
+                    <span>R$ ${(item.quantidadeVendidaNoCarrinho * item.precoUnitario).toFixed(2)}</span>
+                    <button class="remove-item-btn" data-id="${item.id}" title="Remover item"><i class="fas fa-times-circle"></i></button>
                 `;
-                cartItemsList.appendChild(li);
+                cartList.appendChild(li);
             });
-            finalizeSaleBtn.disabled = false;
-            cancelAllItemsBtn.disabled = false;
         }
         calcularTotaisVenda();
     }
 
-    function removerItemDoCarrinho(index) {
-        carrinho.splice(index, 1);
-        atualizarCarrinhoDisplay();
-    }
-
-    async function cancelarTodosItens() {
-        const confirmCancel = await showCustomConfirm('Confirmação', 'Tem certeza que deseja cancelar todos os itens da venda atual?');
-        if (confirmCancel) {
-            carrinho = [];
-            atualizarCarrinhoDisplay();
-            resetItemInputArea();
-            showCustomPopup('Sucesso', 'Todos os itens da venda foram cancelados.', 'success');
-            // REMOVIDO: printReceiptBtn.classList.add('hidden');
-        }
-    }
-
     function calcularTotaisVenda() {
-        let totalVolumes = 0;
-        let subtotalVenda = 0;
-
-        carrinho.forEach(item => {
-            totalVolumes += item.quantidadeVendidaNoCarrinho;
-            subtotalVenda += item.totalItem;
-        });
-
-        totalVolumesDisplay.textContent = totalVolumes;
-
-        let totalFinalVenda = subtotalVenda;
+        let subtotal = carrinho.reduce((total, item) => total + item.totalItem, 0);
+        let valorDescontoAplicado = 0;
 
         if (aplicarDescontoCheckbox.checked) {
-            valorDescontoGlobalInput.classList.remove('hidden');
-            const valorDesconto = parseFloat(valorDescontoGlobalInput.value) || 0;
-            if (!isNaN(valorDesconto) && valorDesconto >= 0) {
-                totalFinalVenda = Math.max(0, subtotalVenda - valorDesconto);
+            valorDescontoAplicado = parseFloat(valorDescontoGlobalInput.value) || 0;
+            if (valorDescontoAplicado > subtotal) {
+                valorDescontoAplicado = subtotal; // Não permite desconto maior que o subtotal
+                valorDescontoGlobalInput.value = subtotal.toFixed(2);
             }
         } else {
-            valorDescontoGlobalInput.classList.add('hidden');
-            valorDescontoGlobalInput.value = '';
+            valorDescontoGlobalInput.value = '0.00';
+            valorDescontoGlobalInput.disabled = true;
         }
 
-        const novoValor = `R$ ${totalFinalVenda.toFixed(2)}`;
-        if (totalSaleDisplay.textContent !== novoValor) {
-            totalSaleDisplay.textContent = novoValor;
-        } else {
-            totalSaleDisplay.textContent = '';
-            requestAnimationFrame(() => {
-                totalSaleDisplay.textContent = novoValor;
-            });
-        }
+        const totalFinal = subtotal - valorDescontoAplicado;
+        totalSaleDisplay.textContent = `R$ ${totalFinal.toFixed(2)}`;
+        // Armazenar o total final no elemento para fácil acesso na finalização da venda
+        totalSaleDisplay.dataset.totalFinal = totalFinal.toFixed(2);
+        totalSaleDisplay.dataset.subtotal = subtotal.toFixed(2);
+        totalSaleDisplay.dataset.valorDesconto = valorDescontoAplicado.toFixed(2);
     }
 
-    async function finalizarVenda() {
-        if (carrinho.length === 0) {
-            showCustomPopup('Erro', 'Não há itens no carrinho para finalizar a venda.', 'error');
-            return;
-        }
-
-        const confirmFinalize = await showCustomConfirm('Confirmação', 'Confirmar finalização da venda?');
-        
-        if (confirmFinalize) {
-            try {
-                let totalDaVendaText = totalSaleDisplay.textContent;
-                let totalDaVenda = parseFloat(totalDaVendaText.replace('R$ ', '').replace(',', '.'));
-
-                let valorDescontoAplicado = aplicarDescontoCheckbox.checked ? (parseFloat(valorDescontoGlobalInput.value) || 0) : 0;
-
-                let itensVendidosParaTransacao = [];
-                let subtotalBruto = 0;
-
-                // Prepara os itens para a transação e verifica estoque
-                for (const itemCarrinho of carrinho) {
-                    const produtoEstoque = produtos.find(p => p.id === itemCarrinho.id);
-                    
-                    if (!produtoEstoque || produtoEstoque.quantidade < itemCarrinho.quantidadeVendidaNoCarrinho) {
-                        throw new Error(`Estoque insuficiente para ${itemCarrinho.nomeProduto}. Disponível: ${produtoEstoque ? produtoEstoque.quantidade : 0}`);
-                    }
-
-                    itensVendidosParaTransacao.push({
-                        produtoId: itemCarrinho.id,
-                        codProduto: itemCarrinho.codProduto,
-                        nomeProduto: itemCarrinho.nomeProduto,
-                        quantidadeVendida: itemCarrinho.quantidadeVendidaNoCarrinho,
-                        precoUnitarioOriginal: itemCarrinho.precoUnitarioOriginal,
-                        precoUnitarioVenda: itemCarrinho.precoUnitario,
-                        totalItem: itemCarrinho.totalItem
-                    });
-                    subtotalBruto += itemCarrinho.totalItem;
-                }
-
-                // Cria o objeto da transação para enviar ao backend
-                const novaTransacaoData = {
-                    tipo: 'entrada', // Tipo de transação para vendas
-                    descricao: `Venda de múltiplos itens`,
-                    valor: totalDaVenda, // Valor final da venda
-                    data: new Date().toISOString().split('T')[0], // Data atual no formato YYYY-MM-DD
-                    detalhesVenda: {
-                        totalBruto: subtotalBruto.toFixed(2),
-                        valorDesconto: valorDescontoAplicado.toFixed(2),
-                        totalFinal: totalDaVenda.toFixed(2),
-                        itens: itensVendidosParaTransacao
-                    }
-                };
-
-                // Envia a transação para a API de transações
-                await fazerRequisicaoApi('/api/transacoes', 'POST', novaTransacaoData);
-                
-                // Recarrega os produtos para refletir as atualizações de estoque feitas na API de transações
-                await carregarProdutos(); 
-
-                showCustomPopup('Sucesso', 'Venda finalizada com sucesso!', 'success');
-                
-                resetVendaCompleta(); // Reseta a venda após sucesso
-            } catch (error) {
-                console.error('Erro ao finalizar venda:', error);
-                showCustomPopup('Erro', error.message || 'Não foi possível finalizar a venda.', 'error');
-            }
-        }
+    function resetProdutoSelecao() {
+        productDetailsDiv.innerHTML = '';
+        productDetailsDiv.classList.remove('active');
+        addProductToCartBtn.style.display = 'none';
+        quantityInput.style.display = 'none';
+        searchProductInput.value = '';
+        produtoEncontradoParaAdicionar = null;
     }
-
-    // REMOVIDO: Função para gerar o conteúdo do recibo
-    /*
-    function gerarReciboParaImpressao() {
-        if (!ultimaVendaFinalizada) {
-            showCustomPopup('Erro', 'Nenhuma venda para gerar recibo.', 'error');
-            return;
-        }
-
-        receiptDate.textContent = new Date(ultimaVendaFinalizada.data).toLocaleDateString('pt-BR');
-        receiptTransactionId.textContent = ultimaVendaFinalizada.id;
-        
-        receiptSubtotal.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.totalBruto).toFixed(2);
-        receiptDiscount.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.valorDesconto).toFixed(2);
-        receiptTotal.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.totalFinal).toFixed(2);
-
-        receiptItemsList.innerHTML = '';
-        if (ultimaVendaFinalizada.detalhesVenda && ultimaVendaFinalizada.detalhesVenda.itens) {
-            ultimaVendaFinalizada.detalhesVenda.itens.forEach(item => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <span>- ${item.nomeProduto} (${item.codProduto})</span>
-                    <span>${item.quantidadeVendida} x R$ ${item.precoUnitarioVenda.toFixed(2)}</span>
-                    <span>R$ ${item.totalItem.toFixed(2)}</span>
-                `;
-                receiptItemsList.appendChild(li);
-            });
-        }
-        
-        window.print();
-        
-        resetVendaCompleta();
-    }
-    */
 
     function resetVendaCompleta() {
         carrinho = [];
+        resetProdutoSelecao();
         atualizarCarrinhoDisplay();
-        resetItemInputArea();
         aplicarDescontoCheckbox.checked = false;
-        valorDescontoGlobalInput.classList.add('hidden');
-        valorDescontoGlobalInput.value = '';
-        searchProdutoInput.value = '';
-        productNameDisplay.textContent = 'Produto Selecionado';
-        // REMOVIDO: printReceiptBtn.classList.add('hidden');
-        // REMOVIDO: printReceiptBtn.disabled = true;
-        // REMOVIDO: ultimaVendaFinalizada = null;
-        carregarProdutos(); // Recarrega os produtos após o reset da venda para garantir estoque atualizado
+        valorDescontoGlobalInput.value = '0.00';
+        valorDescontoGlobalInput.disabled = true;
+        descontoGlobalContainer.classList.remove('active');
+        searchResultContainer.classList.remove('active'); // Garante que resultados de busca sejam ocultos
     }
 
-    searchProdutoInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            pesquisarProduto();
+    // MODIFICADO: finalizarVenda agora envia APENAS a transação para /api/transacoes
+    async function finalizarVenda() {
+        console.log('--- Início da função finalizarVenda ---');
+        if (carrinho.length === 0) {
+            showCustomPopup('Erro', 'Não há itens no carrinho para finalizar a venda.', 'error');
+            console.log('Carrinho vazio. Finalização abortada.');
+            return;
+        }
+
+        console.log('Carrinho não está vazio. Exibindo confirmação...');
+        const confirmFinalize = await showCustomConfirm('Confirmação', 'Confirmar finalização da venda?');
+        console.log('Resultado da confirmação:', confirmFinalize);
+
+        if (confirmFinalize) {
+            console.log('Confirmação aceita. Prosseguindo com a finalização.');
+
+            const totalFinal = parseFloat(totalSaleDisplay.dataset.totalFinal);
+            const totalBruto = parseFloat(totalSaleDisplay.dataset.subtotal);
+            const valorDesconto = parseFloat(totalSaleDisplay.dataset.valorDesconto);
+            
+            let itensVendidosDetalhes = [];
+            carrinho.forEach(itemCarrinho => {
+                itensVendidosDetalhes.push({
+                    produtoId: itemCarrinho.id,
+                    codProduto: itemCarrinho.codProduto,
+                    nomeProduto: itemCarrinho.nomeProduto,
+                    quantidadeVendida: itemCarrinho.quantidadeVendidaNoCarrinho,
+                    precoUnitarioOriginal: itemCarrinho.precoUnitarioOriginal,
+                    precoUnitarioVenda: itemCarrinho.precoUnitario,
+                    totalItem: itemCarrinho.totalItem
+                });
+            });
+
+            // Cria o objeto da transação de venda, incluindo os detalhes para o backend
+            const novaTransacao = {
+                tipo: 'entrada',
+                // Descrição genérica, os detalhes estarão em detalhesVenda
+                descricao: `Venda de ${itensVendidosDetalhes.length} itens`, 
+                valor: totalFinal, // Valor final da transação
+                data: new Date().toISOString().split('T')[0], // Formato YYYY-MM-DD
+                detalhesVenda: { // Este objeto será armazenado como JSONB no backend
+                    totalBruto: totalBruto,
+                    valorDesconto: valorDesconto,
+                    totalFinal: totalFinal,
+                    itens: itensVendidosDetalhes
+                }
+            };
+
+            try {
+                // Envia APENAS a transação de venda para a API de transações.
+                // O backend (api/transacoes.js) já cuidará da atualização do estoque.
+                const transactionResult = await fazerRequisicaoApi('/api/transacoes', 'POST', novaTransacao);
+
+                console.log('Transação de venda e estoque atualizados com sucesso pelo backend:', transactionResult);
+                
+                showCustomPopup('Sucesso', 'Venda finalizada com sucesso e estoque atualizado!', 'success');
+                await carregarDados(); // Recarrega os produtos para refletir as novas quantidades em estoque
+                resetVendaCompleta(); // Limpa o carrinho e reseta a interface
+            } catch (error) {
+                console.error('Erro na finalização da venda:', error);
+                showCustomPopup('Erro', `Erro ao finalizar venda: ${error.message}`, 'error');
+            }
+        } else {
+            console.log('Confirmação negada. Finalização abortada.');
+        }
+        console.log('--- Fim da função finalizarVenda ---');
+    }
+
+
+    // --- EVENT LISTENERS ---
+    searchProductInput.addEventListener('input', pesquisarProduto);
+    searchProductBtn.addEventListener('click', pesquisarProduto); // Permite buscar com o botão também
+    addProductToCartBtn.addEventListener('click', adicionarAoCarrinho);
+    finalizeSaleBtn.addEventListener('click', finalizarVenda);
+    resetSaleBtn.addEventListener('click', resetVendaCompleta);
+
+    cartList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-item-btn') || e.target.closest('.remove-item-btn')) {
+            const button = e.target.closest('.remove-item-btn');
+            const produtoId = parseInt(button.dataset.id);
+            removerDoCarrinho(produtoId);
         }
     });
-    findProductBtn.addEventListener('click', pesquisarProduto);
 
-    quantidadeItemInput.addEventListener('input', atualizarValorTotalItem);
-    valorUnitarioItemInput.addEventListener('input', atualizarValorTotalItem); // <-- CORRIGIDO AQUI
-    addItemToCartBtn.addEventListener('click', adicionarItemAoCarrinho);
-
-    cartItemsList.addEventListener('click', (e) => {
-        const removeBtn = e.target.closest('.btn-remove-item');
-        if (removeBtn) {
-            const indexToRemove = parseInt(removeBtn.dataset.index);
-            removerItemDoCarrinho(indexToRemove);
-        }
+    aplicarDescontoCheckbox.addEventListener('change', () => {
+        descontoGlobalContainer.classList.toggle('active', aplicarDescontoCheckbox.checked);
+        valorDescontoGlobalInput.disabled = !aplicarDescontoCheckbox.checked;
+        calcularTotaisVenda();
     });
 
-    aplicarDescontoCheckbox.addEventListener('change', calcularTotaisVenda);
     valorDescontoGlobalInput.addEventListener('input', calcularTotaisVenda);
 
-    finalizeSaleBtn.addEventListener('click', finalizarVenda);
-    cancelAllItemsBtn.addEventListener('click', cancelarTodosItens);
-    // REMOVIDO: printReceiptBtn.addEventListener('click', gerarReciboParaImpressao);
+    // Esconde resultados da busca se clicar fora
+    document.addEventListener('click', (e) => {
+        if (!searchResultContainer.contains(e.target) && e.target !== searchProductInput) {
+            searchResultContainer.classList.remove('active');
+        }
+    });
 
 
-    document.addEventListener('DOMContentLoaded', carregarProdutos);
+    // --- INICIALIZAÇÃO ---
+    document.addEventListener('DOMContentLoaded', carregarDados);
 }
