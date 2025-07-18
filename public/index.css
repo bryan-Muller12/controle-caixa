@@ -69,7 +69,7 @@ body {
   left: 0;
   right: 0;
   height: 100%;
-  background-image: url('/mullersys.png');
+  background-image: url('/public/mullersys.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center bottom;
