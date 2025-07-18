@@ -18,12 +18,13 @@ module.exports = async (req, res) => {
     
     // MÉTODO POST: Adicionar um novo produto
     else if (req.method === 'POST') {
-      const { nome, quantidade, minQuantidade } = req.body;
-      if (!nome || quantidade === undefined || minQuantidade === undefined) {
-        return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+      // Adicionamos codProduto e precoUnitario
+      const { nome, quantidade, minQuantidade, codProduto, precoUnitario } = req.body; 
+      if (!nome || quantidade === undefined || minQuantidade === undefined || !codProduto || precoUnitario === undefined) {
+        return res.status(400).json({ error: 'Todos os campos (nome, quantidade, minQuantidade, codProduto, precoUnitario) são obrigatórios.' });
       }
-      const query = 'INSERT INTO produtos (nome, quantidade, min_quantidade) VALUES ($1, $2, $3) RETURNING *;';
-      const values = [nome, parseInt(quantidade), parseInt(minQuantidade)];
+      const query = 'INSERT INTO produtos (nome, quantidade, min_quantidade, cod_produto, preco_unitario) VALUES ($1, $2, $3, $4, $5) RETURNING *;';
+      const values = [nome, parseInt(quantidade), parseInt(minQuantidade), codProduto, parseFloat(precoUnitario)];
       const { rows } = await client.query(query, values);
       return res.status(201).json(rows[0]);
     } 
@@ -31,13 +32,21 @@ module.exports = async (req, res) => {
     // MÉTODO PUT: Atualizar um produto existente
     else if (req.method === 'PUT') {
       const { id } = req.query; // Pegamos o ID da URL, ex: /api/produtos?id=1
-      const { nome, quantidade, min_quantidade } = req.body;
+      // Incluímos preco_unitario para atualização
+      const { nome, quantidade, min_quantidade, preco_unitario } = req.body; 
       if (!id) {
         return res.status(400).json({ error: 'O ID do produto é obrigatório.' });
       }
-      const query = 'UPDATE produtos SET nome = $1, quantidade = $2, min_quantidade = $3 WHERE id = $4 RETURNING *;';
-      const values = [nome, parseInt(quantidade), parseInt(min_quantidade), id];
+      if (!nome || quantidade === undefined || min_quantidade === undefined || preco_unitario === undefined) {
+        return res.status(400).json({ error: 'Todos os campos (nome, quantidade, min_quantidade, preco_unitario) são obrigatórios para atualização.' });
+      }
+      const query = 'UPDATE produtos SET nome = $1, quantidade = $2, min_quantidade = $3, preco_unitario = $4 WHERE id = $5 RETURNING *;';
+      const values = [nome, parseInt(quantidade), parseInt(min_quantidade), parseFloat(preco_unitario), id];
       const { rows } = await client.query(query, values);
+      // Retorna o produto atualizado, ou erro 404 se não encontrado
+      if (rows.length === 0) {
+        return res.status(404).json({ error: 'Produto não encontrado.' });
+      }
       return res.status(200).json(rows[0]);
     } 
     
@@ -47,7 +56,11 @@ module.exports = async (req, res) => {
       if (!id) {
         return res.status(400).json({ error: 'O ID do produto é obrigatório.' });
       }
-      await client.query('DELETE FROM produtos WHERE id = $1;', [id]);
+      const { rowCount } = await client.query('DELETE FROM produtos WHERE id = $1;', [id]);
+      // Retorna 204 se sucesso, ou 404 se não encontrado
+      if (rowCount === 0) {
+        return res.status(404).json({ error: 'Produto não encontrado para exclusão.' });
+      }
       return res.status(204).send(); // 204 No Content - sucesso, sem corpo de resposta
     } 
     
@@ -57,7 +70,11 @@ module.exports = async (req, res) => {
       return res.status(405).end(`Método ${req.method} não permitido.`);
     }
   } catch (error) {
-    console.error('Erro na API:', error);
+    console.error('Erro na API de produtos:', error);
+    // Erros de violação de UNIQUE constraint (código 23505)
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Código de produto já existe. Por favor, insira um código único.' });
+    }
     return res.status(500).json({ error: 'Erro interno do servidor.' });
   } finally {
     client.release();
