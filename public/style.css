@@ -1205,3 +1205,131 @@ input[readonly] {
     border-bottom: 1px solid var(--border-color-dark); /* Adiciona a borda quando expandido */
     margin-bottom: 20px; /* Adiciona margem após a borda */
 }
+
+/* --- TEMA CLARO (opcional) --- */
+body.light-mode {
+  --primary-color: #008c4c; /* Um verde um pouco mais escuro para o modo claro */
+  --primary-hover: #007a42;
+  --primary-alternative: #e0ffe0; /* Fundo claro para alternativas */
+  --danger-color: #dc2626;
+  --danger-hover: #b91c1c;
+  --success-color: #16a34a;
+  --success-hover: #0d7335;
+  --warning-color: #d97706;
+  --background-dark: #f0f0f0; /* Fundo principal claro */
+  --card-dark: #ffffff; /* Cor do card/componentes clara */
+  --text-light: #333333; /* Cor do texto principal escuro */
+  --text-dark: #008c4c; /* Cor do texto de destaque (verde escuro) */
+  --text-muted: #6b7280;
+  --input-bg: #f9f9f9;
+  --input-border: #008c4c;
+  --border-color-dark: rgba(0, 0, 0, 0.1);
+  --shadow-dark: rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode header {
+    background-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-bottom: 1px solid var(--border-color-dark);
+}
+
+body.light-mode .sidebar-nav {
+    background-color: var(--card-dark);
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+    border-right: 1px solid var(--border-color-dark);
+}
+
+body.light-mode .sidebar-nav ul li a:hover,
+body.light-mode .sidebar-nav ul li a.active {
+    background-color: var(--primary-alternative);
+    color: var(--primary-color);
+    border-left: 3px solid var(--primary-color);
+}
+
+body.light-mode .btn-icon {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color-dark);
+    color: var(--text-muted);
+}
+
+body.light-mode .btn-icon:hover {
+    background-color: var(--primary-alternative);
+    color: var(--primary-color);
+}
+
+body.light-mode .notifications-tab,
+body.light-mode .card,
+body.light-mode .modal-content,
+body.light-mode .custom-popup-content,
+body.light-mode .custom-confirm-content,
+body.light-mode .venda-container {
+    background: var(--card-dark);
+    border: 1px solid var(--border-color-dark);
+    box-shadow: 0 5px 15px var(--shadow-dark);
+}
+
+body.light-mode input[type="text"],
+body.light-mode input[type="number"],
+body.light-mode input[type="date"],
+body.light-mode select {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color-dark);
+    color: var(--text-light);
+}
+
+body.light-mode input:focus,
+body.light-mode select:focus {
+    border-color: var(--input-border);
+    background-color: var(--primary-alternative);
+    box-shadow: 0 0 0 3px rgba(0, 140, 76, 0.2);
+}
+
+body.light-mode .btn-secondary {
+    background-color: var(--input-bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color-dark);
+}
+
+body.light-mode .btn-secondary:hover {
+    background-color: var(--primary-alternative);
+    color: var(--primary-color);
+}
+
+body.light-mode .product-list li:hover,
+body.light-mode .transaction-list li:hover {
+    background-color: var(--primary-alternative);
+}
+
+body.light-mode .product-display-card,
+body.light-mode #found-product-details {
+    background-color: var(--primary-alternative);
+    border: 1px dashed var(--primary-color);
+}
+
+body.light-mode .cart-header-row {
+    background-color: var(--primary-color);
+    color: var(--text-light); /* Pode ser background-dark ou text-light, dependendo do contraste desejado */
+}
+
+body.light-mode .sale-actions-bottom {
+    background-color: var(--primary-alternative);
+    border: 1px solid var(--primary-color);
+}
+
+body.light-mode .main-footer {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-top: 1px solid var(--border-color-dark);
+}
+
+body.light-mode .balance-summary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+    color: white; /* Ou uma cor escura, dependendo do contraste */
+    box-shadow: 0 5px 15px rgba(0,140,76,0.2);
+}
+
+body.light-mode .transaction-type-filter button.active,
+body.light-mode .transaction-type-filter button:hover {
+    background-color: var(--primary-color);
+    color: white; /* Cor do texto no botão ativo/hover do filtro */
+    border-color: var(--primary-color);
+}
