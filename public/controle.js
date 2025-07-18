@@ -6,7 +6,7 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
     // --- ELEMENTOS DO DOM ---
     const saldoAtualDisplay = document.getElementById('saldo-atual');
     // CORREÇÃO: Usando o ID correto do HTML 'lista-transacoes'
-    const listaTransacoes = document.getElementById('lista-transacoes'); 
+    const listaTransacoes = document.getElementById('lista-transacoes');
     const filterButtons = document.querySelectorAll('.transaction-type-filter button');
     const outraTransacaoForm = document.getElementById('outra-transacao-form');
     const tipoTransacaoSelect = document.getElementById('tipo-transacao');
@@ -56,9 +56,6 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
         }
         return responseData;
     }
-
-    // REMOVIDA: function carregarDados() - Agora usamos carregarHistoricoTransacoes da API
-    // REMOVIDA: function salvarDados() - Não há mais necessidade de salvar no localStorage
 
     // NOVA FUNÇÃO: Carrega o histórico de transações do backend
     async function carregarHistoricoTransacoes(filtros = {}) {
@@ -127,9 +124,9 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
             const sinal = transacao.tipo === 'entrada' ? '+' : '-';
 
             let detalhesHTML = '';
-            // Verifica se detalhesVenda existe e não é nulo/vazio
-            if (transacao.detalhes_venda && Object.keys(transacao.detalhes_venda).length > 0) {
-                const detalhes = transacao.detalhes_venda;
+            // CORREÇÃO: Usando 'transacao.detalhesVenda' (camelCase)
+            if (transacao.detalhesVenda && Object.keys(transacao.detalhesVenda).length > 0) {
+                const detalhes = transacao.detalhesVenda; // CORREÇÃO AQUI TAMBÉM
                 detalhesHTML = `
                     <details style="margin-top: 10px; padding-top: 5px; border-top: 1px dashed var(--border-color-dark);">
                         <summary style="font-weight: 500; cursor: pointer; color: var(--primary-color);">Ver Detalhes da Venda</summary>
@@ -189,10 +186,6 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
 
             await fazerRequisicaoApi('/api/transacoes', 'POST', novaTransacao);
             
-            // Reabilita o botão após a conclusão
-            // submitButton.disabled = false;
-            // submitButton.textContent = 'Registrar Transação';
-
             outraTransacaoForm.reset(); // Limpa o formulário
             registrarTransacaoCard.classList.remove('expanded'); // Fecha o collapsible após o registro
 
@@ -203,8 +196,6 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
             showCustomPopup('Erro', error.message || 'Não foi possível registrar a transação.', 'error');
         }
     }
-
-    // REMOVIDAS as funções de relatório diário e mensal (gerarRelatorioDiario, gerarRelatorioMensal)
 
     // MODIFICADO: Função para gerar Relatório de Vendas (Resumo e Top Vendas) usando a API
     async function gerarRelatorioVendas() {
@@ -245,10 +236,10 @@ if (document.body.id === 'page-controle' || location.pathname.includes('controle
             }
 
             vendasNoPeriodo.forEach(venda => {
-                // Garante que detalhes_venda seja um objeto, mesmo que venha como string JSON
-                const detalhes = typeof venda.detalhes_venda === 'string' 
-                                ? JSON.parse(venda.detalhes_venda) 
-                                : venda.detalhes_venda;
+                // Garante que detalhesVenda seja um objeto, mesmo que venha como string JSON (embora a API já esteja retornando objeto)
+                const detalhes = typeof venda.detalhesVenda === 'string' 
+                                ? JSON.parse(venda.detalhesVenda) 
+                                : venda.detalhesVenda;
 
                 if (detalhes) {
                     totalVendasPeriodo += parseFloat(detalhes.totalFinal || 0);
