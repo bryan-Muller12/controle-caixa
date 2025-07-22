@@ -11,8 +11,8 @@ module.exports = async (req, res) => {
   const client = await pool.connect();
   try {
     // MÉTODO POST: Registrar uma nova transação (venda ou outra)
-   if (req.method === 'POST') {
-      const { tipo, descricao, valor, data, detalhesVenda, cliente_id } = req.body; // Adicione cliente_id aqui
+    if (req.method === 'POST') {
+      const { tipo, descricao, valor, data, detalhesVenda, cliente_id } = req.body; // Inclui cliente_id e detalhesVenda
 
       if (!tipo || valor === undefined || !data) {
         return res.status(400).json({ error: 'Campos obrigatórios: tipo, valor, data.' });
@@ -22,23 +22,26 @@ module.exports = async (req, res) => {
       await client.query('BEGIN');
 
       // 1. Inserir a transação principal
-     const insertTransacaoQuery = `
-        INSERT INTO transacoes (tipo, descricao, valor, data_transacao, total_bruto, valor_desconto, cliente_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;
+      // Adicionado 'detalhes_venda' na query INSERT e nos valores
+      const insertTransacaoQuery = `
+        INSERT INTO transacoes (tipo, descricao, valor, data_transacao, total_bruto, valor_desconto, cliente_id, detalhes_venda)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id;
       `;
       const transacaoValues = [
         tipo,
         descricao,
         parseFloat(valor),
-        data,
-        detalhesVenda ? parseFloat(detalhesVenda.totalBruto) : parseFloat(valor),
-        detalhesVenda ? parseFloat(detalhesVenda.valorDesconto) : 0,
-        cliente_id // Adicione cliente_id aos valores
+        data, // data já está em formato 'YYYY-MM-DD'
+        detalhesVenda ? parseFloat(detalhesVenda.totalBruto) : parseFloat(valor), // totalBruto da venda ou valor direto
+        detalhesVenda ? parseFloat(detalhesVenda.valorDesconto) : 0, // valorDesconto da venda ou 0
+        cliente_id, // Cliente ID
+        detalhesVenda // O objeto detalhesVenda JSONB completo
       ];
       const { rows: transacaoRows } = await client.query(insertTransacaoQuery, transacaoValues);
       const transacaoId = transacaoRows[0].id;
 
       // 2. Inserir os itens da transação (se houver detalhesVenda e itens)
+      // Esta parte continua a mesma, pois os itens são lidos de detalhesVenda
       if (detalhesVenda && detalhesVenda.itens && detalhesVenda.itens.length > 0) {
         for (const item of detalhesVenda.itens) {
           const insertItemQuery = `
@@ -60,8 +63,6 @@ module.exports = async (req, res) => {
           await client.query(insertItemQuery, itemValues);
 
           // Opcional: Atualizar o estoque do produto (diminuir a quantidade vendida)
-          // Isso é crucial para manter a consistência do estoque no banco de dados.
-          // Certifique-se de que o produto_id corresponde ao ID na tabela 'produtos'.
           const updateEstoqueQuery = `
             UPDATE produtos SET quantidade = quantidade - $1 WHERE id = $2;
           `;
@@ -86,6 +87,8 @@ module.exports = async (req, res) => {
             t.data_transacao,
             t.total_bruto,
             t.valor_desconto,
+            t.cliente_id, -- Adicionado cliente_id na seleção GET
+            t.detalhes_venda, -- Adicionado detalhes_venda na seleção GET
             ARRAY_AGG(
                 jsonb_build_object(
                     'produtoId', it.produto_id,
@@ -128,11 +131,13 @@ module.exports = async (req, res) => {
         descricao: row.descricao,
         valor: parseFloat(row.valor),
         data: row.data_transacao, // Já vem como string no formato 'YYYY-MM-DD'
-        detalhesVenda: row.itens && row.itens.length > 0 ? {
-          totalBruto: parseFloat(row.total_bruto),
-          valorDesconto: parseFloat(row.valor_desconto),
-          totalFinal: parseFloat(row.valor), // O valor total da transação é o totalFinal
-          itens: row.itens.map(item => ({
+        cliente_id: row.cliente_id, // Inclui o cliente_id
+        detalhesVenda: row.detalhes_venda ? { // Usa detalhes_venda
+          totalBruto: parseFloat(row.detalhes_venda.totalBruto),
+          valorDesconto: parseFloat(row.detalhes_venda.valorDesconto),
+          totalFinal: parseFloat(row.detalhes_venda.totalFinal), // O valor total da transação é o totalFinal
+          // Os itens já vêm de ARRAY_AGG no JOIN, então usamos 'row.itens' aqui
+          itens: row.itens ? row.itens.map(item => ({
               produtoId: item.produtoId,
               codProduto: item.codProduto,
               nomeProduto: item.nomeProduto,
@@ -140,8 +145,8 @@ module.exports = async (req, res) => {
               precoUnitarioOriginal: parseFloat(item.precoUnitarioOriginal),
               precoUnitarioVenda: parseFloat(item.precoUnitarioVenda),
               totalItem: parseFloat(item.totalItem)
-          }))
-        } : undefined // Se não houver itens, detalhesVenda pode ser undefined
+          })) : []
+        } : undefined
       }));
 
       return res.status(200).json(formattedRows);
