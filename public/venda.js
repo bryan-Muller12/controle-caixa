@@ -40,10 +40,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     const selectedClientId = document.getElementById('selected-client-id');
     const clearSelectedClientBtn = document.getElementById('clear-selected-client');
 
-    // O botão de PDF não é mais um elemento DOM fixo, será gerado no popup.
-    // const generatePdfBtn = document.getElementById('generate-pdf-btn'); 
-
-
     // --- ESTADO DA APLICAÇÃO ---
     let produtos = []; // Produtos carregados do banco de dados
     let carrinho = [];
@@ -64,36 +60,42 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             options.body = JSON.stringify(data);
         }
 
-        const response = await fetch(url, options);
-        // Tenta ler JSON, mas permite que a resposta seja vazia (ex: 204 No Content)
-        const responseData = await response.json().catch(() => null); 
-
-        if (!response.ok) {
-            throw new Error(responseData?.error || `Erro na requisição ${method} ${url}: Status ${response.status}`);
+        try {
+            const response = await fetch(url, options);
+            const responseData = await response.json().catch(() => null); 
+            
+            if (!response.ok) {
+                const errorMsg = responseData?.error || `Erro na requisição ${method} ${url}: Status ${response.status}`;
+                console.error(`Erro na fazerRequisicaoApi para ${url}:`, errorMsg, responseData); // LOG de erro na requisição
+                throw new Error(errorMsg);
+            }
+            console.log(`Sucesso na fazerRequisicaoApi para ${url}:`, responseData); // LOG de sucesso
+            return responseData;
+        } catch (apiError) {
+            console.error(`Erro inesperado ao fazer requisição API para ${url}:`, apiError); // LOG de erro de conexão/inesperado
+            throw apiError; // Propaga o erro para quem chamou
         }
-        return responseData;
     }
 
     // Carregar produtos do backend
     async function carregarProdutos() {
         try {
             produtos = await fazerRequisicaoApi('/api/produtos', 'GET');
-            // atualizaNotificacoesComuns (do common.js) precisa receber os produtos para operar
             if (typeof atualizarNotificacoesComuns === 'function') {
                 atualizarNotificacoesComuns(produtos); 
             }
         } catch (error) {
-            console.error('Erro ao carregar produtos:', error);
+            console.error('Erro ao carregar produtos na tela de venda:', error);
             showCustomPopup('Erro', 'Não foi possível carregar os produtos do servidor.', 'error');
         }
     }
 
-    // NOVO: Carregar clientes do backend
+    // Carregar clientes do backend
     async function carregarClientesCadastrados() {
         try {
             clientesCadastrados = await fazerRequisicaoApi('/api/clientes', 'GET');
         } catch (error) {
-            console.error('Erro ao carregar clientes cadastrados:', error);
+            console.error('Erro ao carregar clientes cadastrados na tela de venda:', error);
             showCustomPopup('Atenção', 'Não foi possível carregar a lista de clientes para vinculação. Tente novamente mais tarde.', 'info');
         }
     }
@@ -299,19 +301,25 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     }
 
     async function finalizarVenda() {
+        console.log('--- Início da função finalizarVenda ---'); // LOG
         if (carrinho.length === 0) {
             showCustomPopup('Erro', 'Não há itens no carrinho para finalizar a venda.', 'error');
+            console.log('Carrinho vazio. Finalizar venda abortada.'); // LOG
             return;
         }
+        console.log('Carrinho tem itens:', carrinho.length); // LOG
 
         const confirmFinalize = await showCustomConfirm('Confirmação', 'Confirmar finalização da venda?');
-
+        console.log('Confirmação do usuário:', confirmFinalize); // LOG
+        
         if (confirmFinalize) {
             try {
                 let totalDaVendaText = totalSaleDisplay.textContent;
                 let totalDaVenda = parseFloat(totalDaVendaText.replace('R$ ', '').replace(',', '.'));
+                console.log('Total da Venda calculado:', totalDaVenda); // LOG
 
                 let valorDescontoAplicado = aplicarDescontoCheckbox.checked ? (parseFloat(valorDescontoGlobalInput.value) || 0) : 0;
+                console.log('Valor do Desconto aplicado:', valorDescontoAplicado); // LOG
 
                 let itensVendidosParaTransacao = [];
                 let subtotalBruto = 0;
@@ -319,7 +327,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 // Prepara os itens para a transação e verifica estoque
                 for (const itemCarrinho of carrinho) {
                     const produtoEstoque = produtos.find(p => p.id === itemCarrinho.id);
-
+                    
                     if (!produtoEstoque || produtoEstoque.quantidade < itemCarrinho.quantidadeVendidaNoCarrinho) {
                         throw new Error(`Estoque insuficiente para ${itemCarrinho.nomeProduto}. Disponível: ${produtoEstoque ? produtoEstoque.quantidade : 0}`);
                     }
@@ -335,67 +343,67 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     });
                     subtotalBruto += itemCarrinho.totalItem;
                 }
+                console.log('Itens do carrinho preparados:', itensVendidosParaTransacao); // LOG
 
                 let clienteIdParaVenda = null;
-                // Se o checkbox de vincular cliente estiver marcado E um cliente foi selecionado
                 if (vincularClienteCheckbox.checked && clienteSelecionado) {
                     clienteIdParaVenda = clienteSelecionado.id;
                 }
-                // Se o checkbox não estiver marcado ou nenhum cliente selecionado, clienteIdParaVenda permanece null
+                console.log('ID do cliente para a venda:', clienteIdParaVenda); // LOG
 
-                // Cria o objeto da transação para enviar ao backend
                 const novaTransacaoData = {
-                    tipo: 'entrada', // Tipo de transação para vendas
+                    tipo: 'entrada',
                     descricao: `Venda de múltiplos itens`,
-                    valor: totalDaVenda, // Valor final da venda
-                    data: new Date().toISOString().split('T')[0], // Data atual no formato YYYY-MM-DD
+                    valor: totalDaVenda,
+                    data: new Date().toISOString().split('T')[0],
                     detalhesVenda: {
                         totalBruto: subtotalBruto.toFixed(2),
                         valorDesconto: valorDescontoAplicado.toFixed(2),
                         totalFinal: totalDaVenda.toFixed(2),
                         itens: itensVendidosParaTransacao
                     },
-                    cliente_id: clienteIdParaVenda // Inclui o ID do cliente (pode ser null)
+                    cliente_id: clienteIdParaVenda
                 };
+                console.log('Dados da transação a serem enviados:', novaTransacaoData); // LOG
 
-                // Envia a transação para a API de transações
                 const responseTransacao = await fazerRequisicaoApi('/api/transacoes', 'POST', novaTransacaoData);
-                console.log('Resposta da API de transações:', responseTransacao); // NOVO LOG AQUI
-                // Assume que a API de transações retorna o ID da transação criada
+                console.log('Resposta da API de transações:', responseTransacao); // LOG
+                
+                let idDaVendaParaGerarPdf = null; // Declare aqui fora para o escopo
                 if (responseTransacao && responseTransacao.id) {
-                    ultimaVendaId = responseTransacao.id;
-                    console.log('ultimaVendaId definida como:', ultimaVendaId); // NOVO LOG AQUI
+                    ultimaVendaId = responseTransacao.id; // Ainda atualiza a variável global
+                    idDaVendaParaGerarPdf = responseTransacao.id; // CAPTURA O ID AQUI PARA O BOTÃO DO POPUP
+                    console.log('idDaVendaParaGerarPdf capturado como:', idDaVendaParaGerarPdf); // LOG
                 } else {
-                    console.log('ID da transação não recebido na resposta.', responseTransacao); // NOVO LOG AQUI
+                    console.log('ID da transação não recebido na resposta.', responseTransacao); // LOG
                 }
-
-                // Recarrega os produtos para refletir as atualizações de estoque feitas na API de transações
+                
                 await carregarProdutos(); 
-                await carregarClientesCadastrados(); // Também recarrega clientes
+                await carregarClientesCadastrados();
 
-                // --- MUDANÇA AQUI: CHAMADA DO POPUP COM BOTÃO DE PDF ---
                 showCustomPopup(
                     'Sucesso',
                     'Venda finalizada com sucesso!',
                     'success',
                     [
                         {
-                            id: 'generate-promissory-note-btn', // Novo ID para o botão no popup
-                            text: 'Gerar Orçamento PDF', // Alterado de 'Gerar Nota Promissória' para 'Gerar Orçamento PDF'
-                            className: 'btn-secondary', // Ou 'btn-primary' se quiser destaque
+                            id: 'generate-promissory-note-btn',
+                            text: 'Gerar Orçamento PDF',
+                            className: 'btn-secondary',
                             onClick: async () => {
-                                // Lógica de geração de PDF, movida para cá
-                                if (!ultimaVendaId) {
+                                console.log('Botão Gerar Orçamento PDF clicado.'); // LOG
+                                console.log('ID da venda no clique do botão (capturado):', idDaVendaParaGerarPdf); // USE A VARIÁVEL CAPTURADA
+                                if (!idDaVendaParaGerarPdf) { // VERIFICA A VARIÁVEL CAPTURADA
                                     showCustomPopup('Erro', 'ID da venda não disponível para gerar o orçamento.', 'error');
+                                    console.error('Erro: idDaVendaParaGerarPdf é nula no clique do botão.'); // LOG
                                     return;
                                 }
 
                                 try {
                                     showCustomPopup('Informação', 'Gerando PDF, aguarde...', 'info');
-                                    // Fecha o popup atual para mostrar o de "Gerando PDF..."
                                     hideCustomPopup(); 
 
-                                    const response = await fetch(`/api/gerar_orcamento?venda_id=${ultimaVendaId}`, {
+                                    const response = await fetch(`/api/gerar_orcamento?venda_id=${idDaVendaParaGerarPdf}`, { // USE A VARIÁVEL CAPTURADA
                                         method: 'GET',
                                         headers: {
                                             'Content-Type': 'application/pdf',
@@ -412,7 +420,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                                     const a = document.createElement('a');
                                     a.style.display = 'none';
                                     a.href = url;
-                                    a.download = `orcamento-${ultimaVendaId}.pdf`;
+                                    a.download = `orcamento-${idDaVendaParaGerarPdf}.pdf`; // USE A VARIÁVEL CAPTURADA
                                     document.body.appendChild(a);
                                     a.click();
                                     window.URL.revokeObjectURL(url);
@@ -425,16 +433,21 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                         }
                     ]
                 );
-
+                
                 resetVendaCompleta();
+                console.log('--- Fim da função finalizarVenda (sucesso) ---'); // LOG
             } catch (error) {
-                console.error('Erro ao finalizar venda:', error);
+                console.error('Erro na finalização da venda:', error); // LOG de erro
                 showCustomPopup('Erro', error.message || 'Não foi possível finalizar a venda.', 'error');
+                console.log('--- Fim da função finalizarVenda (erro) ---'); // LOG
             }
+        } else {
+            console.log('Finalização de venda cancelada pelo usuário.'); // LOG
         }
     }
 
     function resetVendaCompleta() {
+        console.log('Iniciando resetVendaCompleta...'); // LOG
         carrinho = [];
         atualizarCarrinhoDisplay();
         resetItemInputArea();
@@ -443,7 +456,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         valorDescontoGlobalInput.value = '';
         searchProdutoInput.value = '';
         productNameDisplay.textContent = 'Produto Selecionado';
-
+        
         // Limpa seleção de cliente e oculta a seção de busca
         clienteSelecionado = null;
         selectedClientId.value = '';
@@ -453,10 +466,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         clienteSearchResults.classList.add('hidden');
         vincularClienteCheckbox.checked = false;
         clientSearchSection.classList.add('hidden'); // Garante que comece escondido
-        ultimaVendaId = null; // Limpa o ID da última venda
+        ultimaVendaId = null; // Limpa o ID da última venda (o que é ok, pois o ID para o PDF está capturado)
+        console.log('ultimaVendaId resetada para:', ultimaVendaId); // LOG
 
 
         carregarProdutos(); // Recarrega os produtos após o reset da venda para garantir estoque atualizado
+        console.log('resetVendaCompleta concluído.'); // LOG
     }
 
     // --- EVENT LISTENERS ---
@@ -514,7 +529,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             if (filteredClients.length > 0) {
                 // Posiciona a lista de resultados abaixo do input
                 const inputRect = searchClienteInput.getBoundingClientRect();
-                // Usar inputRect.height para posicionar corretamente, e clientSearchSection para o 'left'
                 const clientSearchSectionRect = clientSearchSection.getBoundingClientRect();
 
                 clienteSearchResults.style.top = `${inputRect.height + 5}px`; // 5px de margem
@@ -551,13 +565,13 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         if (selectedItem) {
             const clientId = parseInt(selectedItem.dataset.clientId);
             const clientName = selectedItem.dataset.clientName;
-
+            
             clienteSelecionado = clientesCadastrados.find(c => c.id === clientId);
 
             selectedClientId.value = clientId;
             selectedClientName.textContent = clientName;
             selectedClientDisplay.classList.remove('hidden');
-
+            
             searchClienteInput.value = ''; // Limpa o campo de pesquisa
             clienteSearchResults.classList.add('hidden'); // Oculta os resultados da pesquisa
             searchClienteInput.style.display = 'none'; // Esconde o input de busca ao selecionar
@@ -575,17 +589,16 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         searchClienteInput.style.display = 'block'; // Mostra o input de busca novamente
     });
 
-    // Oculta os resultados da pesquisa ao clicar fora
     document.addEventListener('click', (e) => {
-        // Verifica se o clique não foi dentro da seção de busca de cliente ou no checkbox
         if (!clientSearchSection.contains(e.target) && e.target !== vincularClienteCheckbox) {
             clienteSearchResults.classList.add('hidden');
         }
     });
 
-
     document.addEventListener('DOMContentLoaded', async () => {
+        console.log('DOMContentLoaded disparado. Carregando produtos e clientes...'); // LOG
         await carregarProdutos();
-        await carregarClientesCadastrados(); // Carrega clientes quando a página carrega
+        await carregarClientesCadastrados();
+        console.log('Produtos e clientes carregados.'); // LOG
     });
 }
