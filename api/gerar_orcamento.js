@@ -1,5 +1,7 @@
 const { Pool } = require('pg');
 const puppeteer = require('puppeteer');
+// NOVO: Importa o chromium para ambientes serverless
+const chromium = require('@sparticuz/chromium');
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
@@ -26,7 +28,7 @@ module.exports = async (req, res) => {
         t.valor,
         t.total_bruto,
         t.valor_desconto,
-        t.detalhes_venda, -- CORRIGIDO AQUI: de 'detalhesVenda' para 'detalhes_venda'
+        t.detalhes_venda, 
         c.nome as cliente_nome,
         c.endereco as cliente_endereco,
         c.numero as cliente_numero,
@@ -42,7 +44,7 @@ module.exports = async (req, res) => {
     }
 
     const venda = transacaoRows[0];
-    const itensVenda = venda.detalhes_venda ? venda.detalhes_venda.itens : []; // Usa detalhes_venda
+    const itensVenda = venda.detalhes_venda ? venda.detalhes_venda.itens : [];
     const clienteData = {
       nome: venda.cliente_nome || 'Cliente Não Vinculado',
       endereco: venda.cliente_endereco || 'N/A',
@@ -158,8 +160,11 @@ module.exports = async (req, res) => {
 
     // 3. Gerar o PDF usando Puppeteer
     browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: chromium.args, // Usa os argumentos recomendados pelo chromium
+      defaultViewport: chromium.defaultViewport, // Usa o viewport padrão
+      executablePath: await chromium.executablePath, // CHAVE AQUI: Caminho para o executável do Chromium
+      headless: chromium.headless, // Usa o modo headless
+      ignoreHTTPSErrors: true,
     });
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
@@ -182,7 +187,11 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao gerar PDF de orçamento:', error);
-    return res.status(500).json({ error: 'Erro interno do servidor.' });
+    // Verifique se o erro é relacionado ao Puppeteer não encontrar o navegador
+    if (error.message.includes('Could not find Chrome') || error.message.includes('No such file or directory')) {
+        return res.status(500).json({ error: 'Erro de configuração do navegador para PDF. Verifique a instalação do @sparticuz/chromium ou as permissões.' });
+    }
+    return res.status(500).json({ error: 'Erro interno do servidor ao gerar PDF.' });
   } finally {
     if (browser) {
       await browser.close(); 

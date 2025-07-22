@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@sparticuz/chromium": "^138.0.2",
     "pg": "^8.16.0",
     "puppeteer": "^24.14.0"
   }
