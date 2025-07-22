@@ -40,6 +40,7 @@ if (document.body.id === 'page-clientes' || location.pathname.includes('clientes
         }
 
         const response = await fetch(url, options);
+        // Tenta ler JSON, mas permite que a resposta seja vazia (ex: 204 No Content)
         const responseData = await response.json().catch(() => null); 
         
         if (!response.ok) {
@@ -83,11 +84,6 @@ if (document.body.id === 'page-clientes' || location.pathname.includes('clientes
         const filtro = filtroClientesInput.value.toLowerCase();
         const clientesFiltrados = clientes.filter(c =>
             c.nome.toLowerCase().includes(filtro) ||
-            // No frontend, se precisar mostrar o CPF para filtro,
-            // você precisaria de uma versão não-hashed. Por segurança,
-            // a API não retorna o CPF, então o filtro por CPF seria apenas no backend
-            // com base no hash, ou um campo de pesquisa separado que force exatidão.
-            // Aqui, filtro apenas por nome.
             c.endereco.toLowerCase().includes(filtro)
         );
 
@@ -102,7 +98,8 @@ if (document.body.id === 'page-clientes' || location.pathname.includes('clientes
                 <div class="product-info">
                     <span class="product-name">${cliente.nome}</span>
                     <span class="product-quantity">${cliente.endereco}, ${cliente.numero}</span>
-                    <span class="product-price">CPF: ****.${cliente.cpf_hash.substring(cliente.cpf_hash.length - 4)}</span> </div>
+                    <span class="product-price">CPF: ${cliente.cpf_hash ? '****.' + cliente.cpf_hash.substring(cliente.cpf_hash.length - 4) : 'Não exibido (LGPD)'}</span>
+                </div>
                 <div class="actions">
                     <button class="btn-action btn-edit" title="Editar Cliente" data-id="${cliente.id}"><i class="fas fa-pencil-alt"></i></button>
                 </div>
@@ -118,7 +115,7 @@ if (document.body.id === 'page-clientes' || location.pathname.includes('clientes
         const nome = clienteNomeInput.value.trim();
         const endereco = clienteEnderecoInput.value.trim();
         const numero = clienteNumeroInput.value.trim();
-        const cpf = clienteCpfInput.value.trim(); // CPF will be validated and hashed in backend
+        const cpf = clienteCpfInput.value.trim(); // CPF será validado e feito hash no backend
 
         if (!nome || !endereco || !numero || !cpf) {
             showCustomPopup('Erro', 'Por favor, preencha todos os campos obrigatórios.', 'error');
