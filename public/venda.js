@@ -31,6 +31,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     const cancelAllItemsBtn = document.getElementById('cancel-all-items-btn');
 
     // NOVOS ELEMENTOS DO DOM PARA CLIENTES
+    const vincularClienteCheckbox = document.getElementById('vincular-cliente');
     const clientSearchSection = document.getElementById('client-search-section');
     const searchClienteInput = document.getElementById('search-cliente-input');
     const clienteSearchResults = document.getElementById('cliente-search-results');
@@ -327,19 +328,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 }
 
                 let clienteIdParaVenda = null;
-                if (clienteSelecionado) {
+                // Se o checkbox de vincular cliente estiver marcado E um cliente foi selecionado
+                if (vincularClienteCheckbox.checked && clienteSelecionado) {
                     clienteIdParaVenda = clienteSelecionado.id;
-                } else {
-                    // Se nenhum cliente foi explicitamente selecionado, tenta usar 'mullersys'
-                    const mullersysClient = clientesCadastrados.find(c => c.nome.toLowerCase() === 'mullersys');
-                    if (mullersysClient) {
-                        clienteIdParaVenda = mullersysClient.id;
-                        console.log("Nenhum cliente selecionado, vinculando à venda ao usuário padrão 'mullersys'.");
-                    } else {
-                        // Se 'mullersys' não for encontrado, a venda não será vinculada a um cliente.
-                        console.warn("Cliente 'mullersys' não encontrado na base de dados para atribuição padrão. A venda não será vinculada a um cliente.");
-                    }
                 }
+                // Se o checkbox não estiver marcado ou nenhum cliente selecionado, clienteIdParaVenda permanece null
+                // Não há mais atribuição automática ao 'mullersys' aqui, o padrão será null se não selecionado.
 
 
                 // Cria o objeto da transação para enviar ao backend
@@ -354,7 +348,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                         totalFinal: totalDaVenda.toFixed(2),
                         itens: itensVendidosParaTransacao
                     },
-                    cliente_id: clienteIdParaVenda // Inclui o ID do cliente
+                    cliente_id: clienteIdParaVenda // Inclui o ID do cliente (pode ser null)
                 };
 
                 // Envia a transação para a API de transações
@@ -384,14 +378,16 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         searchProdutoInput.value = '';
         productNameDisplay.textContent = 'Produto Selecionado';
         
-        // Limpa seleção de cliente
+        // Limpa seleção de cliente e oculta a seção de busca
         clienteSelecionado = null;
         selectedClientId.value = '';
         selectedClientName.textContent = '';
         selectedClientDisplay.classList.add('hidden');
         searchClienteInput.value = '';
         clienteSearchResults.classList.add('hidden');
-        // Não oculta mais clientSearchSection, pois ela agora é sempre visível
+        vincularClienteCheckbox.checked = false;
+        clientSearchSection.classList.add('hidden'); // Garante que comece escondido
+
 
         carregarProdutos(); // Recarrega os produtos após o reset da venda para garantir estoque atualizado
     }
@@ -424,22 +420,50 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     cancelAllItemsBtn.addEventListener('click', cancelarTodosItens);
 
     // NOVOS EVENT LISTENERS PARA CLIENTES
+    vincularClienteCheckbox.addEventListener('change', () => {
+        clientSearchSection.classList.toggle('hidden', !vincularClienteCheckbox.checked);
+        if (!vincularClienteCheckbox.checked) {
+            // Limpa a seleção ao desmarcar o checkbox
+            clienteSelecionado = null;
+            selectedClientId.value = '';
+            selectedClientName.textContent = '';
+            selectedClientDisplay.classList.add('hidden');
+            searchClienteInput.value = '';
+            clienteSearchResults.classList.add('hidden');
+        }
+    });
+
     searchClienteInput.addEventListener('input', () => {
         const searchTerm = searchClienteInput.value.toLowerCase();
         clienteSearchResults.innerHTML = ''; // Limpa resultados anteriores
 
         if (searchTerm.length > 1) { // Começa a pesquisar após 2 caracteres
             const filteredClients = clientesCadastrados.filter(c => 
-                c.nome.toLowerCase().includes(searchTerm)
+                c.nome.toLowerCase().includes(searchTerm) || 
+                (c.cpf && c.cpf.toLowerCase().includes(searchTerm)) // Adicionando pesquisa por CPF se disponível na lista (no seu caso, não está sendo retornado o CPF da API, mas a lógica está aqui caso mude)
             );
 
             if (filteredClients.length > 0) {
+                // Posiciona a lista de resultados abaixo do input
+                const inputRect = searchClienteInput.getBoundingClientRect();
+                clienteSearchResults.style.top = `${inputRect.height + 5}px`; // 5px de margem
+                clienteSearchResults.style.left = `0`;
+                clienteSearchResults.style.width = `${inputRect.width}px`;
+
+
                 filteredClients.forEach(client => {
                     const li = document.createElement('li');
-                    li.textContent = `${client.nome} (${client.endereco})`;
+                    li.textContent = `${client.nome} - ${client.endereco}`;
                     li.dataset.clientId = client.id;
                     li.dataset.clientName = client.nome;
                     li.classList.add('search-result-item');
+                    // Estilo básico para os itens da lista de pesquisa
+                    li.style.padding = '8px';
+                    li.style.cursor = 'pointer';
+                    li.style.borderBottom = '1px solid #eee';
+                    li.onmouseover = () => li.style.backgroundColor = '#f0f0f0';
+                    li.onmouseout = () => li.style.backgroundColor = 'white';
+
                     clienteSearchResults.appendChild(li);
                 });
                 clienteSearchResults.classList.remove('hidden');
@@ -465,6 +489,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             
             searchClienteInput.value = ''; // Limpa o campo de pesquisa
             clienteSearchResults.classList.add('hidden'); // Oculta os resultados da pesquisa
+            searchClienteInput.style.display = 'none'; // Esconde o input de busca ao selecionar
         }
     });
 
@@ -475,13 +500,13 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         selectedClientName.textContent = '';
         selectedClientDisplay.classList.add('hidden');
         searchClienteInput.value = ''; // Garante que o campo de pesquisa seja limpo
-        // clientSearchSection.classList.add('hidden'); // Esta linha foi removida intencionalmente para manter visível
         clienteSearchResults.classList.add('hidden');
+        searchClienteInput.style.display = 'block'; // Mostra o input de busca novamente
     });
 
     // Oculta os resultados da pesquisa ao clicar fora
     document.addEventListener('click', (e) => {
-        if (!clientSearchSection.contains(e.target) && e.target !== searchClienteInput) {
+        if (!clientSearchSection.contains(e.target) && e.target !== searchClienteInput && e.target !== vincularClienteCheckbox) {
             clienteSearchResults.classList.add('hidden');
         }
     });
