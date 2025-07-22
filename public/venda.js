@@ -67,7 +67,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         const response = await fetch(url, options);
         // Tenta ler JSON, mas permite que a resposta seja vazia (ex: 204 No Content)
         const responseData = await response.json().catch(() => null); 
-        
+
         if (!response.ok) {
             throw new Error(responseData?.error || `Erro na requisição ${method} ${url}: Status ${response.status}`);
         }
@@ -78,7 +78,10 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     async function carregarProdutos() {
         try {
             produtos = await fazerRequisicaoApi('/api/produtos', 'GET');
-            atualizarNotificacoesComuns(); // Atualiza as notificações com base nos produtos carregados
+            // atualizaNotificacoesComuns (do common.js) precisa receber os produtos para operar
+            if (typeof atualizarNotificacoesComuns === 'function') {
+                atualizarNotificacoesComuns(produtos); 
+            }
         } catch (error) {
             console.error('Erro ao carregar produtos:', error);
             showCustomPopup('Erro', 'Não foi possível carregar os produtos do servidor.', 'error');
@@ -302,7 +305,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
 
         const confirmFinalize = await showCustomConfirm('Confirmação', 'Confirmar finalização da venda?');
-        
+
         if (confirmFinalize) {
             try {
                 let totalDaVendaText = totalSaleDisplay.textContent;
@@ -316,7 +319,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 // Prepara os itens para a transação e verifica estoque
                 for (const itemCarrinho of carrinho) {
                     const produtoEstoque = produtos.find(p => p.id === itemCarrinho.id);
-                    
+
                     if (!produtoEstoque || produtoEstoque.quantidade < itemCarrinho.quantidadeVendidaNoCarrinho) {
                         throw new Error(`Estoque insuficiente para ${itemCarrinho.nomeProduto}. Disponível: ${produtoEstoque ? produtoEstoque.quantidade : 0}`);
                     }
@@ -357,11 +360,15 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
                 // Envia a transação para a API de transações
                 const responseTransacao = await fazerRequisicaoApi('/api/transacoes', 'POST', novaTransacaoData);
+                console.log('Resposta da API de transações:', responseTransacao); // NOVO LOG AQUI
                 // Assume que a API de transações retorna o ID da transação criada
                 if (responseTransacao && responseTransacao.id) {
                     ultimaVendaId = responseTransacao.id;
+                    console.log('ultimaVendaId definida como:', ultimaVendaId); // NOVO LOG AQUI
+                } else {
+                    console.log('ID da transação não recebido na resposta.', responseTransacao); // NOVO LOG AQUI
                 }
-                
+
                 // Recarrega os produtos para refletir as atualizações de estoque feitas na API de transações
                 await carregarProdutos(); 
                 await carregarClientesCadastrados(); // Também recarrega clientes
@@ -418,7 +425,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                         }
                     ]
                 );
-                
+
                 resetVendaCompleta();
             } catch (error) {
                 console.error('Erro ao finalizar venda:', error);
@@ -436,7 +443,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         valorDescontoGlobalInput.value = '';
         searchProdutoInput.value = '';
         productNameDisplay.textContent = 'Produto Selecionado';
-        
+
         // Limpa seleção de cliente e oculta a seção de busca
         clienteSelecionado = null;
         selectedClientId.value = '';
@@ -544,13 +551,13 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         if (selectedItem) {
             const clientId = parseInt(selectedItem.dataset.clientId);
             const clientName = selectedItem.dataset.clientName;
-            
+
             clienteSelecionado = clientesCadastrados.find(c => c.id === clientId);
 
             selectedClientId.value = clientId;
             selectedClientName.textContent = clientName;
             selectedClientDisplay.classList.remove('hidden');
-            
+
             searchClienteInput.value = ''; // Limpa o campo de pesquisa
             clienteSearchResults.classList.add('hidden'); // Oculta os resultados da pesquisa
             searchClienteInput.style.display = 'none'; // Esconde o input de busca ao selecionar
@@ -575,8 +582,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             clienteSearchResults.classList.add('hidden');
         }
     });
-
-    // Removido o event listener do generatePdfBtn fixo, pois ele é gerado no popup agora.
 
 
     document.addEventListener('DOMContentLoaded', async () => {
