@@ -11,9 +11,7 @@
 <body id="page-venda">
     <header>
         <div class="header-left">
-            <h1>
-             
-                Ponto de Venda</h1>
+            <h1>Ponto de Venda</h1>
         </div>
         <div class="header-right">
             <button id="theme-toggle-btn" class="btn-icon" title="Alternar Tema">
@@ -103,19 +101,19 @@
                 </div>
 
                 <div class="sale-actions-bottom">
-                    <div class="client-selection-area">
-                       <input type="checkbox" id="vincular-cliente">
-                       <label for="vincular-cliente">Vincular Cliente</label>
-                       <div id="client-search-section" class="hidden" style="margin-top: 10px;">
-                           <input type="text" id="search-cliente-input" placeholder="Pesquisar cliente por nome ou CPF" autocomplete="off" style="width: 100%; padding: 8px; margin-bottom: 5px; box-sizing: border-box;">
-                           <ul id="cliente-search-results" class="search-results-list" style="list-style: none; padding: 0; margin: 0; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; background-color: white; position: absolute; z-index: 10; width: calc(100% - 2px);"></ul>
-                           <div id="selected-client-display" class="hidden" style="background-color: #f0f0f0; padding: 8px; border: 1px solid #ccc; margin-top: 5px; display: flex; justify-content: space-between; align-items: center;">
-                               <span>Cliente: <strong id="selected-client-name"></strong></span>
-                               <button type="button" id="clear-selected-client" class="btn-secondary btn-small">Remover</button>
-                               <input type="hidden" id="selected-client-id">
-                           </div>
-                       </div>
-                   </div>
+                    <div class="client-selection-area" style="position: relative;">
+                        <input type="checkbox" id="vincular-cliente">
+                        <label for="vincular-cliente">Vincular Cliente</label>
+                        <div id="client-search-section" class="hidden" style="margin-top: 10px;">
+                            <input type="text" id="search-cliente-input" placeholder="Pesquisar cliente por nome ou CPF" autocomplete="off" style="width: 100%; padding: 8px; margin-bottom: 5px; box-sizing: border-box;">
+                            <ul id="cliente-search-results" class="search-results-list" style="list-style: none; padding: 0; margin: 0; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; background-color: var(--input-bg); position: absolute; z-index: 10; width: calc(100% - 2px); left: 0;"></ul>
+                            <div id="selected-client-display" class="hidden" style="background-color: var(--primary-alternative); padding: 8px; border: 1px solid var(--border-color-dark); border-radius: var(--border-radius-sm); margin-top: 5px; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: var(--text-light);">Cliente: <strong id="selected-client-name" style="color: var(--primary-color);"></strong></span>
+                                <button type="button" id="clear-selected-client" class="btn-danger btn-small">Remover</button>
+                                <input type="hidden" id="selected-client-id">
+                            </div>
+                        </div>
+                    </div>
                     <div class="discount-area">
                         <input type="checkbox" id="aplicar-desconto">
                         <label for="aplicar-desconto">Aplicar Desconto</label>
@@ -125,7 +123,6 @@
                         <button type="button" id="finalize-sale-btn" class="btn-primary" disabled>FINALIZAR VENDA</button>
                         <button type="button" id="cancel-all-items-btn" class="btn-secondary" disabled>CANCELAR TUDO</button>
                     </div>
-                </div>
                 </div>
             </div>
         </div>
