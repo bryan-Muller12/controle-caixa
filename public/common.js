@@ -1,256 +1,186 @@
-// public/common.js
-// Lógica de verificação de login, logout e notificações (compartilhada entre todas as páginas)
+// common.js
 
-// --- ELEMENTOS DO DOM (comuns) ---
-// Declaração de elementos DOM deve vir antes de seu uso em funções.
-const notificationsBtn = document.getElementById('notifications-btn');
-const notificationsTab = document.getElementById('notifications-tab');
-const notificationsList = document.getElementById('notifications-list');
-const notificationsBadge = document.getElementById('notifications-badge');
-const clearNotificationsBtn = document.getElementById('clear-notifications-btn');
-const logoutBtn = document.getElementById('logout-btn');
+// Função para mostrar pop-ups personalizados
+function showCustomPopup(title, message, type = 'info', additionalButtons = []) {
+    const popupOverlay = document.getElementById('custom-popup-overlay');
+    const popupTitle = document.getElementById('custom-popup-title');
+    const popupMessage = document.getElementById('custom-popup-message');
+    const popupActions = document.querySelector('.custom-popup-actions'); // Seleciona a div de ações
 
-// Elementos de pop-up (declarados globalmente para showCustomPopup e showCustomConfirm)
-const customPopupOverlay = document.getElementById('custom-popup-overlay');
-const customPopupTitle = document.getElementById('custom-popup-title');
-const customPopupMessage = document.getElementById('custom-popup-message');
-const customPopupCloseBtn = document.getElementById('custom-popup-close-btn');
+    popupTitle.textContent = title;
+    popupMessage.textContent = message;
 
-const customConfirmOverlay = document.getElementById('custom-confirm-overlay');
-const customConfirmTitle = document.getElementById('custom-confirm-title');
-const customConfirmMessage = document.getElementById('custom-confirm-message');
-const customConfirmYesBtn = document.getElementById('custom-confirm-yes-btn');
-const customConfirmNoBtn = document.getElementById('custom-confirm-no-btn');
+    // Limpa botões existentes (exceto o OK padrão)
+    popupActions.innerHTML = ''; 
 
-
-// --- FUNÇÕES COMUNS ---
-
-// Função para renderizar notificações (agora aceita produtosArray como parâmetro)
-// Esta função é chamada como 'atualizarNotificacoesComuns' em outros scripts.
-function atualizarNotificacoesComuns(produtosArray) {
-    let notifications = [];
-
-    // Se produtosArray não for fornecido (fallback ou chamada sem parâmetro),
-    // tenta carregar de localStorage como último recurso, embora o ideal seja passar da API.
-    const produtos = produtosArray || JSON.parse(localStorage.getItem('produtos')) || [];
-
-    produtos.forEach(produto => {
-        if (produto.quantidade < produto.min_quantidade) {
-            const notificationText = `<strong>${produto.nome}</strong> está com estoque baixo! (${produto.quantidade} de ${produto.min_quantidade})`;
-            notifications.push(notificationText);
-        }
+    // Adiciona botões adicionais primeiro
+    additionalButtons.forEach(btnConfig => {
+        const btn = document.createElement('button');
+        btn.id = btnConfig.id;
+        btn.className = btnConfig.className || 'btn-secondary'; // Classe padrão
+        btn.textContent = btnConfig.text;
+        btn.onclick = () => {
+            btnConfig.onClick(); // Executa a função do botão
+            // Não ocultamos o popup aqui, a lógica da ação onClick pode decidir ocultar
+            // hideCustomPopup(); // Oculta o popup após o clique (ajuste se não quiser ocultar)
+        };
+        popupActions.appendChild(btn);
     });
 
-    if (notificationsList) { // Verifica se o elemento existe antes de manipular
-        notificationsList.innerHTML = '';
-        if (notifications.length > 0) {
-            notifications.forEach(notificacao => {
-                const li = document.createElement('li');
-                li.innerHTML = notificacao;
-                notificationsList.appendChild(li);
-            });
-            notificationsBadge.textContent = notifications.length;
-            notificationsBadge.classList.remove('hidden');
-        } else {
-            notificationsList.innerHTML = '<li>Nenhuma notificação.</li>';
-            notificationsBadge.classList.add('hidden');
-        }
-    }
-}
+    // Adiciona o botão OK padrão por último
+    const okButton = document.createElement('button');
+    okButton.id = 'custom-popup-close-btn';
+    okButton.className = 'btn-primary';
+    okButton.textContent = 'OK';
+    okButton.onclick = hideCustomPopup;
+    popupActions.appendChild(okButton);
 
-// Função de Logout
-function logout() {
-    localStorage.removeItem('usuarioLogado');
-    sessionStorage.removeItem('usuarioLogado');
-    // Em uma aplicação real com DB, você faria uma chamada à API para invalidar a sessão no backend
-    showCustomPopup('Logout', 'Você foi desconectado.', 'info');
-    setTimeout(() => {
-        window.location.href = 'index.html';
-    }, 1000);
-}
-
-// Função para exibir um pop-up customizado (substitui alert())
-function showCustomPopup(title, message, type = 'info') {
-    if (!customPopupOverlay) return; // Garante que os elementos do pop-up existem
-
-    customPopupTitle.textContent = title;
-    customPopupMessage.textContent = message;
-
-    customPopupTitle.classList.remove('success', 'error', 'warning');
-    if (type === 'error') {
-        customPopupTitle.style.color = 'var(--danger-color)';
-    } else if (type === 'success') {
-        customPopupTitle.style.color = 'var(--success-color)';
+    // Adiciona classe de estilo com base no tipo
+    popupOverlay.className = 'custom-popup-overlay'; // Reseta classes
+    if (type === 'success') {
+        popupOverlay.classList.add('success');
+    } else if (type === 'error') {
+        popupOverlay.classList.add('error');
     } else if (type === 'warning') {
-        customPopupTitle.style.color = 'var(--warning-color)';
+        popupOverlay.classList.add('warning');
     } else {
-        customPopupTitle.style.color = 'var(--primary-color)';
+        popupOverlay.classList.add('info');
     }
 
-    customPopupOverlay.classList.remove('hidden');
-
-    const closePopup = () => {
-        customPopupOverlay.classList.add('hidden');
-        customPopupCloseBtn.removeEventListener('click', closePopup);
-        customPopupOverlay.removeEventListener('click', handleOverlayClick);
-    };
-
-    const handleOverlayClick = (e) => {
-        if (e.target === customPopupOverlay) {
-            closePopup();
-        }
-    };
-
-    customPopupCloseBtn.addEventListener('click', closePopup);
-    customPopupOverlay.addEventListener('click', handleOverlayClick);
+    popupOverlay.classList.remove('hidden');
 }
 
-// Função para exibir um pop-up de confirmação customizado (substitui confirm())
+// Função para esconder pop-ups
+function hideCustomPopup() {
+    const popupOverlay = document.getElementById('custom-popup-overlay');
+    popupOverlay.classList.add('hidden');
+}
+
+// Função para mostrar pop-ups de confirmação
 function showCustomConfirm(title, message) {
     return new Promise((resolve) => {
-        if (!customConfirmOverlay) { // Garante que os elementos do pop-up existem
-            resolve(false); // Retorna falso se o overlay não estiver pronto
-            return;
-        }
+        const confirmOverlay = document.getElementById('custom-confirm-overlay');
+        const confirmTitle = document.getElementById('custom-confirm-title');
+        const confirmMessage = document.getElementById('custom-confirm-message');
+        const confirmYesBtn = document.getElementById('custom-confirm-yes-btn');
+        const confirmNoBtn = document.getElementById('custom-confirm-no-btn');
 
-        customConfirmTitle.textContent = title;
-        customConfirmMessage.textContent = message;
-        customConfirmTitle.style.color = 'var(--warning-color)';
+        confirmTitle.textContent = title;
+        confirmMessage.textContent = message;
 
-        customConfirmOverlay.classList.remove('hidden');
+        confirmOverlay.classList.remove('hidden');
 
-        const cleanup = () => {
-            customConfirmOverlay.classList.add('hidden');
-            customConfirmYesBtn.removeEventListener('click', onYes);
-            customConfirmNoBtn.removeEventListener('click', onNo);
-            customConfirmOverlay.removeEventListener('click', handleConfirmOverlayClick);
-        };
-
-        const onYes = () => {
-            cleanup();
+        const handleYes = () => {
+            confirmOverlay.classList.add('hidden');
+            confirmYesBtn.removeEventListener('click', handleYes);
+            confirmNoBtn.removeEventListener('click', handleNo);
             resolve(true);
         };
 
-        const onNo = () => {
-            cleanup();
+        const handleNo = () => {
+            confirmOverlay.classList.add('hidden');
+            confirmYesBtn.removeEventListener('click', handleYes);
+            confirmNoBtn.removeEventListener('click', handleNo);
             resolve(false);
         };
 
-        const handleConfirmOverlayClick = (e) => {
-            if (e.target === customConfirmOverlay) {
-                cleanup();
-                resolve(false);
-            }
-        };
-
-        customConfirmYesBtn.addEventListener('click', onYes);
-        customConfirmNoBtn.addEventListener('click', onNo);
-        customConfirmOverlay.addEventListener('click', handleConfirmOverlayClick);
+        confirmYesBtn.addEventListener('click', handleYes);
+        confirmNoBtn.addEventListener('click', handleNo);
     });
 }
 
-// --- VERIFICAÇÃO DE LOGIN ---
-// A verificação de login agora é uma função e é chamada no DOMContentLoaded
-function checkLoginStatus() {
-    let usuarioLogado = sessionStorage.getItem('usuarioLogado');
+// Lógica para alternar tema (Dark/Light Mode)
+document.addEventListener('DOMContentLoaded', () => {
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    if (themeToggleBtn) {
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        document.body.setAttribute('data-theme', currentTheme);
+        themeToggleBtn.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
 
-    if (!usuarioLogado) {
-        usuarioLogado = localStorage.getItem('usuarioLogado');
-        if (usuarioLogado) {
-            sessionStorage.setItem('usuarioLogado', usuarioLogado);
+        themeToggleBtn.addEventListener('click', () => {
+            let theme = document.body.getAttribute('data-theme');
+            if (theme === 'dark') {
+                theme = 'light';
+            } else {
+                theme = 'dark';
+            }
+            document.body.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            themeToggleBtn.innerHTML = theme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        });
+    }
+
+    // Lógica para notificações (exemplo simples)
+    const notificationsBtn = document.getElementById('notifications-btn');
+    const notificationsTab = document.getElementById('notifications-tab');
+    const notificationsBadge = document.getElementById('notifications-badge');
+    const notificationsList = document.getElementById('notifications-list');
+    const clearNotificationsBtn = document.getElementById('clear-notifications-btn');
+
+    let notificationCount = 0;
+    let notifications = [];
+
+    // Função para adicionar notificação
+    window.addNotification = (message, type = 'info') => {
+        const timestamp = new Date().toLocaleTimeString();
+        const notification = { message, type, timestamp };
+        notifications.unshift(notification); // Adiciona no início
+        notificationCount++;
+        updateNotificationDisplay();
+    };
+
+    // Função para atualizar o display de notificações
+    function updateNotificationDisplay() {
+        if (notificationsBadge) {
+            notificationsBadge.textContent = notificationCount;
+            notificationsBadge.classList.toggle('hidden', notificationCount === 0);
+        }
+
+        if (notificationsList) {
+            notificationsList.innerHTML = '';
+            if (notifications.length === 0) {
+                const li = document.createElement('li');
+                li.textContent = 'Nenhuma notificação.';
+                notificationsList.appendChild(li);
+            } else {
+                notifications.forEach(n => {
+                    const li = document.createElement('li');
+                    li.className = `notification-item notification-${n.type}`;
+                    li.innerHTML = `<span>${n.timestamp}</span> - ${n.message}`;
+                    notificationsList.appendChild(li);
+                });
+            }
         }
     }
 
-    // Se o usuário não está logado E a página atual NÃO é a de login (index.html)
-    if (!usuarioLogado && (window.location.pathname !== '/' && !window.location.pathname.includes('index.html'))) {
-        window.location.href = 'index.html'; // Redireciona para a tela de login
-        return false;
-    }
-    // Se o usuário está logado E a página atual É a de login, redireciona para a página de venda
-    if (usuarioLogado && (window.location.pathname === '/' || window.location.pathname.includes('index.html'))) {
-        window.location.href = 'venda.html';
-        return true;
-    }
-    return !!usuarioLogado; // Retorna true se logado, false caso contrário
-}
+    // Exemplo de uso:
+    // addNotification('Bem-vindo ao sistema!', 'info');
+    // addNotification('Estoque baixo para o produto X!', 'warning');
 
-// --- LÓGICA DE TEMA CLARO/ESCURO ---
-const themeToggleBtn = document.getElementById('theme-toggle-btn');
-
-function applyTheme(theme) {
-    document.body.classList.toggle('light-mode', theme === 'light');
-    // Atualiza o ícone do botão com base no tema
-    if (themeToggleBtn) {
-        themeToggleBtn.querySelector('i').classList.toggle('fa-sun', theme === 'dark');
-        themeToggleBtn.querySelector('i').classList.toggle('fa-moon', theme === 'light');
-    }
-}
-
-function loadUserThemePreference() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-        applyTheme(savedTheme);
-    } else {
-        // Padrão para tema escuro se não houver preferência salva
-        applyTheme('dark'); 
-    }
-}
-
-function toggleTheme() {
-    const isLightMode = document.body.classList.contains('light-mode');
-    const newTheme = isLightMode ? 'dark' : 'light';
-    applyTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-}
-
-// --- EVENT LISTENERS COMUNS (adicionados apenas após o DOM estar carregado) ---
-document.addEventListener('DOMContentLoaded', () => {
-    // ... seu código existente ...
-
-    // Adiciona listener para o botão de alternar tema
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', toggleTheme);
-    }
-    
-    // Carrega a preferência de tema do usuário ao carregar a página
-    loadUserThemePreference();
-
-    // NOTA: renderizarNotificacoesComuns será chamada por cada script de página (venda.js, estoque.js, controle.js)
-    // após eles carregarem seus próprios dados de produtos da API.
-});
-
-// --- EVENT LISTENERS COMUNS (adicionados apenas após o DOM estar carregado) ---
-document.addEventListener('DOMContentLoaded', () => {
-    // Garante que os elementos do cabeçalho existem antes de adicionar listeners
-    if (notificationsBtn && notificationsTab && notificationsList && notificationsBadge && clearNotificationsBtn && logoutBtn) {
-        notificationsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
+    if (notificationsBtn) {
+        notificationsBtn.addEventListener('click', () => {
             notificationsTab.classList.toggle('hidden');
-        });
-
-        notificationsTab.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-
-        clearNotificationsBtn.addEventListener('click', () => {
-            notificationsList.innerHTML = '<li>Nenhuma notificação.</li>';
-            notificationsBadge.classList.add('hidden');
-        });
-
-        document.addEventListener('click', (e) => {
             if (!notificationsTab.classList.contains('hidden')) {
-                if (!notificationsTab.contains(e.target) && !notificationsBtn.contains(e.target)) {
-                    notificationsTab.classList.add('hidden');
-                }
+                // Ao abrir, marcar como lidas (opcional)
+                notificationCount = 0;
+                updateNotificationDisplay();
             }
         });
-
-        logoutBtn.addEventListener('click', logout);
     }
-    
-    // Chama a verificação de login uma vez que o DOM esteja carregado
-    checkLoginStatus();
 
-    // NOTA: renderizarNotificacoesComuns será chamada por cada script de página (venda.js, estoque.js, controle.js)
-    // após eles carregarem seus próprios dados de produtos da API.
+    if (clearNotificationsBtn) {
+        clearNotificationsBtn.addEventListener('click', () => {
+            notifications = [];
+            notificationCount = 0;
+            updateNotificationDisplay();
+            showCustomPopup('Notificações', 'Todas as notificações foram limpas.', 'info');
+        });
+    }
+
+    // Exemplo de notificação de estoque baixo (pode ser chamada de venda.js)
+    window.atualizarNotificacoesComuns = () => {
+        // Esta função seria chamada de venda.js ou estoque.js
+        // para adicionar notificações de estoque baixo, por exemplo.
+        // Por enquanto, é apenas um placeholder.
+    };
 });

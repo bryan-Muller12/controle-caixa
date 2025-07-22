@@ -40,14 +40,14 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     const selectedClientId = document.getElementById('selected-client-id');
     const clearSelectedClientBtn = document.getElementById('clear-selected-client');
 
-    // NOVO ELEMENTO DO DOM PARA PDF
-    const generatePdfBtn = document.getElementById('generate-pdf-btn');
+    // O botão de PDF não é mais um elemento DOM fixo, será gerado no popup.
+    // const generatePdfBtn = document.getElementById('generate-pdf-btn'); 
 
 
     // --- ESTADO DA APLICAÇÃO ---
     let produtos = []; // Produtos carregados do banco de dados
     let carrinho = [];
-    let clientesCadastrados = []; // Para armazenar uma lista de todos os clientes registrados
+    let clientesCadastrados = []; // Para armazenar a lista de todos os clientes registrados
     let clienteSelecionado = null; // Armazena o objeto cliente selecionado
     let ultimaVendaId = null; // Para armazenar o ID da última venda finalizada para o PDF
 
@@ -218,7 +218,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             emptyCartMessage.classList.remove('hidden');
             finalizeSaleBtn.disabled = true;
             cancelAllItemsBtn.disabled = true;
-            generatePdfBtn.disabled = true; // Desabilita o botão de PDF
             valorDescontoGlobalInput.value = '';
             aplicarDescontoCheckbox.checked = false;
         } else {
@@ -242,7 +241,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             });
             finalizeSaleBtn.disabled = false;
             cancelAllItemsBtn.disabled = false;
-            // generatePdfBtn.disabled = false; // Habilitar apenas após a finalização da venda
         }
         calcularTotaisVenda();
     }
@@ -362,16 +360,66 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 // Assume que a API de transações retorna o ID da transação criada
                 if (responseTransacao && responseTransacao.id) {
                     ultimaVendaId = responseTransacao.id;
-                    generatePdfBtn.disabled = false; // Habilita o botão de PDF
                 }
                 
                 // Recarrega os produtos para refletir as atualizações de estoque feitas na API de transações
                 await carregarProdutos(); 
                 await carregarClientesCadastrados(); // Também recarrega clientes
 
-                showCustomPopup('Sucesso', 'Venda finalizada com sucesso!', 'success');
+                // --- MUDANÇA AQUI: CHAMADA DO POPUP COM BOTÃO DE PDF ---
+                showCustomPopup(
+                    'Sucesso',
+                    'Venda finalizada com sucesso!',
+                    'success',
+                    [
+                        {
+                            id: 'generate-promissory-note-btn', // Novo ID para o botão no popup
+                            text: 'Gerar Orçamento PDF', // Alterado de 'Gerar Nota Promissória' para 'Gerar Orçamento PDF'
+                            className: 'btn-secondary', // Ou 'btn-primary' se quiser destaque
+                            onClick: async () => {
+                                // Lógica de geração de PDF, movida para cá
+                                if (!ultimaVendaId) {
+                                    showCustomPopup('Erro', 'ID da venda não disponível para gerar o orçamento.', 'error');
+                                    return;
+                                }
+
+                                try {
+                                    showCustomPopup('Informação', 'Gerando PDF, aguarde...', 'info');
+                                    // Fecha o popup atual para mostrar o de "Gerando PDF..."
+                                    hideCustomPopup(); 
+
+                                    const response = await fetch(`/api/gerar_orcamento?venda_id=${ultimaVendaId}`, {
+                                        method: 'GET',
+                                        headers: {
+                                            'Content-Type': 'application/pdf',
+                                        },
+                                    });
+
+                                    if (!response.ok) {
+                                        const errorData = await response.json().catch(() => null);
+                                        throw new Error(errorData?.error || `Erro ao baixar PDF: Status ${response.status}`);
+                                    }
+
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.style.display = 'none';
+                                    a.href = url;
+                                    a.download = `orcamento-${ultimaVendaId}.pdf`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                    showCustomPopup('Sucesso', 'PDF gerado e download iniciado!', 'success'); 
+                                } catch (error) {
+                                    console.error('Erro ao gerar ou baixar PDF:', error);
+                                    showCustomPopup('Erro', error.message || 'Não foi possível gerar o PDF do orçamento.', 'error');
+                                }
+                            }
+                        }
+                    ]
+                );
                 
-                resetVendaCompleta(); // Reseta a venda após sucesso
+                resetVendaCompleta();
             } catch (error) {
                 console.error('Erro ao finalizar venda:', error);
                 showCustomPopup('Erro', error.message || 'Não foi possível finalizar a venda.', 'error');
@@ -398,7 +446,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         clienteSearchResults.classList.add('hidden');
         vincularClienteCheckbox.checked = false;
         clientSearchSection.classList.add('hidden'); // Garante que comece escondido
-        generatePdfBtn.disabled = true; // Desabilita o botão de PDF
         ultimaVendaId = null; // Limpa o ID da última venda
 
 
@@ -529,43 +576,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
     });
 
-    // Event listener para o botão de gerar PDF
-    generatePdfBtn.addEventListener('click', async () => {
-        if (!ultimaVendaId) {
-            showCustomPopup('Erro', 'Nenhuma venda finalizada para gerar o orçamento. Finalize uma venda primeiro.', 'error');
-            return;
-        }
-
-        try {
-            showCustomPopup('Informação', 'Gerando PDF, aguarde...', 'info');
-            const response = await fetch(`/api/gerar_orcamento?venda_id=${ultimaVendaId}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/pdf',
-                },
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                throw new Error(errorData?.error || `Erro ao baixar PDF: Status ${response.status}`);
-            }
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = `orcamento-${ultimaVendaId}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            showCustomPopup('Sucesso', 'PDF gerado e download iniciado!', 'success');
-
-        } catch (error) {
-            console.error('Erro ao gerar ou baixar PDF:', error);
-            showCustomPopup('Erro', error.message || 'Não foi possível gerar o PDF do orçamento.', 'error');
-        }
-    });
+    // Removido o event listener do generatePdfBtn fixo, pois ele é gerado no popup agora.
 
 
     document.addEventListener('DOMContentLoaded', async () => {
