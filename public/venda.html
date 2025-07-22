@@ -31,6 +31,7 @@
             <li><a href="venda.html" class="active" title="Venda"><i class="fas fa-cash-register"></i><span>Venda</span></a></li>
             <li><a href="estoque.html" title="Estoque"><i class="fas fa-boxes"></i><span>Estoque</span></a></li>
             <li><a href="controle.html" title="Controle de Caixa"><i class="fas fa-wallet"></i><span>Caixa</span></a></li>
+            <li><a href="clientes.html" title="Clientes"><i class="fas fa-users"></i><span>Clientes</span></a></li>
         </ul>
     </aside>
 
@@ -102,6 +103,16 @@
                 </div>
 
                 <div class="sale-actions-bottom">
+                    <div class="client-selection-area">
+                        <input type="checkbox" id="vincular-cliente">
+                        <label for="vincular-cliente">Vincular Cliente à Venda</label>
+                        <div id="client-search-section" class="hidden">
+                            <input type="text" id="search-cliente-input" placeholder="Pesquisar cliente por nome" autocomplete="off">
+                            <ul id="cliente-search-results" class="search-results-list"></ul>
+                            <p id="selected-client-display" class="hidden">Cliente Selecionado: <span id="selected-client-name"></span> (<a href="#" id="clear-selected-client">Limpar</a>)</p>
+                            <input type="hidden" id="selected-client-id">
+                        </div>
+                    </div>
                     <div class="discount-area">
                         <input type="checkbox" id="aplicar-desconto">
                         <label for="aplicar-desconto">Aplicar Desconto</label>
@@ -111,6 +122,7 @@
                         <button type="button" id="finalize-sale-btn" class="btn-primary" disabled>FINALIZAR VENDA</button>
                         <button type="button" id="cancel-all-items-btn" class="btn-secondary" disabled>CANCELAR TUDO</button>
                     </div>
+                </div>
                 </div>
             </div>
         </div>

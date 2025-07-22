@@ -11,8 +11,8 @@ module.exports = async (req, res) => {
   const client = await pool.connect();
   try {
     // MÉTODO POST: Registrar uma nova transação (venda ou outra)
-    if (req.method === 'POST') {
-      const { tipo, descricao, valor, data, detalhesVenda } = req.body;
+   if (req.method === 'POST') {
+      const { tipo, descricao, valor, data, detalhesVenda, cliente_id } = req.body; // Adicione cliente_id aqui
 
       if (!tipo || valor === undefined || !data) {
         return res.status(400).json({ error: 'Campos obrigatórios: tipo, valor, data.' });
@@ -22,17 +22,18 @@ module.exports = async (req, res) => {
       await client.query('BEGIN');
 
       // 1. Inserir a transação principal
-      const insertTransacaoQuery = `
-        INSERT INTO transacoes (tipo, descricao, valor, data_transacao, total_bruto, valor_desconto)
-        VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;
+     const insertTransacaoQuery = `
+        INSERT INTO transacoes (tipo, descricao, valor, data_transacao, total_bruto, valor_desconto, cliente_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;
       `;
       const transacaoValues = [
         tipo,
         descricao,
         parseFloat(valor),
-        data, // data já está em formato 'YYYY-MM-DD'
-        detalhesVenda ? parseFloat(detalhesVenda.totalBruto) : parseFloat(valor), // totalBruto da venda ou valor direto
-        detalhesVenda ? parseFloat(detalhesVenda.valorDesconto) : 0 // valorDesconto da venda ou 0
+        data,
+        detalhesVenda ? parseFloat(detalhesVenda.totalBruto) : parseFloat(valor),
+        detalhesVenda ? parseFloat(detalhesVenda.valorDesconto) : 0,
+        cliente_id // Adicione cliente_id aos valores
       ];
       const { rows: transacaoRows } = await client.query(insertTransacaoQuery, transacaoValues);
       const transacaoId = transacaoRows[0].id;

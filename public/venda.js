@@ -29,23 +29,22 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
     const finalizeSaleBtn = document.getElementById('finalize-sale-btn');
     const cancelAllItemsBtn = document.getElementById('cancel-all-items-btn');
-    // REMOVIDO: const printReceiptBtn = document.getElementById('print-receipt-btn');
 
-    // REMOVIDO: Elementos do DOM para o recibo (não serão mais usados)
-    /*
-    const receiptPrintArea = document.getElementById('receipt-print-area');
-    const receiptDate = document.getElementById('receipt-date');
-    const receiptTransactionId = document.getElementById('receipt-transaction-id');
-    const receiptItemsList = document.getElementById('receipt-items-list');
-    const receiptSubtotal = document.getElementById('receipt-subtotal');
-    const receiptDiscount = document.getElementById('receipt-discount');
-    const receiptTotal = document.getElementById('receipt-total');
-    */
+    // NOVOS ELEMENTOS DO DOM PARA CLIENTES
+    const vincularClienteCheckbox = document.getElementById('vincular-cliente');
+    const clientSearchSection = document.getElementById('client-search-section');
+    const searchClienteInput = document.getElementById('search-cliente-input');
+    const clienteSearchResults = document.getElementById('cliente-search-results');
+    const selectedClientDisplay = document.getElementById('selected-client-display');
+    const selectedClientName = document.getElementById('selected-client-name');
+    const selectedClientId = document.getElementById('selected-client-id');
+    const clearSelectedClientBtn = document.getElementById('clear-selected-client');
 
     // --- ESTADO DA APLICAÇÃO ---
     let produtos = []; // Produtos carregados do banco de dados
     let carrinho = [];
-    // REMOVIDO: let ultimaVendaFinalizada = null;
+    let clientesCadastrados = []; // Para armazenar uma lista de todos os clientes registrados
+    let clienteSelecionado = null; // Armazena o objeto cliente selecionado
 
     // Função auxiliar para fazer requisições à API
     async function fazerRequisicaoApi(url, method, data = {}) {
@@ -77,6 +76,16 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         } catch (error) {
             console.error('Erro ao carregar produtos:', error);
             showCustomPopup('Erro', 'Não foi possível carregar os produtos do servidor.', 'error');
+        }
+    }
+
+    // NOVO: Carregar clientes do backend
+    async function carregarClientesCadastrados() {
+        try {
+            clientesCadastrados = await fazerRequisicaoApi('/api/clientes', 'GET');
+        } catch (error) {
+            console.error('Erro ao carregar clientes cadastrados:', error);
+            showCustomPopup('Atenção', 'Não foi possível carregar a lista de clientes para vinculação. Tente novamente mais tarde.', 'info');
         }
     }
 
@@ -203,7 +212,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             emptyCartMessage.classList.remove('hidden');
             finalizeSaleBtn.disabled = true;
             cancelAllItemsBtn.disabled = true;
-            // REMOVIDO: printReceiptBtn.classList.add('hidden');
             valorDescontoGlobalInput.value = '';
             aplicarDescontoCheckbox.checked = false;
         } else {
@@ -243,7 +251,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             atualizarCarrinhoDisplay();
             resetItemInputArea();
             showCustomPopup('Sucesso', 'Todos os itens da venda foram cancelados.', 'success');
-            // REMOVIDO: printReceiptBtn.classList.add('hidden');
         }
     }
 
@@ -320,6 +327,10 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     subtotalBruto += itemCarrinho.totalItem;
                 }
 
+                // Obtém o ID do cliente selecionado se vinculado
+                const clienteIdParaVenda = clienteSelecionado ? clienteSelecionado.id : null;
+
+
                 // Cria o objeto da transação para enviar ao backend
                 const novaTransacaoData = {
                     tipo: 'entrada', // Tipo de transação para vendas
@@ -331,7 +342,8 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                         valorDesconto: valorDescontoAplicado.toFixed(2),
                         totalFinal: totalDaVenda.toFixed(2),
                         itens: itensVendidosParaTransacao
-                    }
+                    },
+                    cliente_id: clienteIdParaVenda // Inclui o ID do cliente
                 };
 
                 // Envia a transação para a API de transações
@@ -339,6 +351,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 
                 // Recarrega os produtos para refletir as atualizações de estoque feitas na API de transações
                 await carregarProdutos(); 
+                await carregarClientesCadastrados(); // Também recarrega clientes
 
                 showCustomPopup('Sucesso', 'Venda finalizada com sucesso!', 'success');
                 
@@ -350,40 +363,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
     }
 
-    // REMOVIDO: Função para gerar o conteúdo do recibo
-    /*
-    function gerarReciboParaImpressao() {
-        if (!ultimaVendaFinalizada) {
-            showCustomPopup('Erro', 'Nenhuma venda para gerar recibo.', 'error');
-            return;
-        }
-
-        receiptDate.textContent = new Date(ultimaVendaFinalizada.data).toLocaleDateString('pt-BR');
-        receiptTransactionId.textContent = ultimaVendaFinalizada.id;
-        
-        receiptSubtotal.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.totalBruto).toFixed(2);
-        receiptDiscount.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.valorDesconto).toFixed(2);
-        receiptTotal.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.totalFinal).toFixed(2);
-
-        receiptItemsList.innerHTML = '';
-        if (ultimaVendaFinalizada.detalhesVenda && ultimaVendaFinalizada.detalhesVenda.itens) {
-            ultimaVendaFinalizada.detalhesVenda.itens.forEach(item => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <span>- ${item.nomeProduto} (${item.codProduto})</span>
-                    <span>${item.quantidadeVendida} x R$ ${item.precoUnitarioVenda.toFixed(2)}</span>
-                    <span>R$ ${item.totalItem.toFixed(2)}</span>
-                `;
-                receiptItemsList.appendChild(li);
-            });
-        }
-        
-        window.print();
-        
-        resetVendaCompleta();
-    }
-    */
-
     function resetVendaCompleta() {
         carrinho = [];
         atualizarCarrinhoDisplay();
@@ -393,12 +372,21 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         valorDescontoGlobalInput.value = '';
         searchProdutoInput.value = '';
         productNameDisplay.textContent = 'Produto Selecionado';
-        // REMOVIDO: printReceiptBtn.classList.add('hidden');
-        // REMOVIDO: printReceiptBtn.disabled = true;
-        // REMOVIDO: ultimaVendaFinalizada = null;
+        
+        // NOVO: Limpa seleção de cliente
+        clienteSelecionado = null;
+        selectedClientId.value = '';
+        selectedClientName.textContent = '';
+        selectedClientDisplay.classList.add('hidden');
+        searchClienteInput.value = '';
+        clienteSearchResults.classList.add('hidden');
+        clientSearchSection.classList.add('hidden');
+        vincularClienteCheckbox.checked = false;
+
         carregarProdutos(); // Recarrega os produtos após o reset da venda para garantir estoque atualizado
     }
 
+    // --- EVENT LISTENERS ---
     searchProdutoInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -408,7 +396,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     findProductBtn.addEventListener('click', pesquisarProduto);
 
     quantidadeItemInput.addEventListener('input', atualizarValorTotalItem);
-    valorUnitarioItemInput.addEventListener('input', atualizarValorTotalItem); // <-- CORRIGIDO AQUI
+    valorUnitarioItemInput.addEventListener('input', atualizarValorTotalItem);
     addItemToCartBtn.addEventListener('click', adicionarItemAoCarrinho);
 
     cartItemsList.addEventListener('click', (e) => {
@@ -424,8 +412,88 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
     finalizeSaleBtn.addEventListener('click', finalizarVenda);
     cancelAllItemsBtn.addEventListener('click', cancelarTodosItens);
-    // REMOVIDO: printReceiptBtn.addEventListener('click', gerarReciboParaImpressao);
+
+    // NOVOS EVENT LISTENERS PARA CLIENTES
+    searchClienteInput.addEventListener('input', () => {
+        const searchTerm = searchClienteInput.value.toLowerCase();
+        clienteSearchResults.innerHTML = ''; // Limpa resultados anteriores
+
+        if (searchTerm.length > 1) { // Começa a pesquisar após 2 caracteres
+            const filteredClients = clientesCadastrados.filter(c => 
+                c.nome.toLowerCase().includes(searchTerm)
+            );
+
+            if (filteredClients.length > 0) {
+                filteredClients.forEach(client => {
+                    const li = document.createElement('li');
+                    li.textContent = `${client.nome} (${client.endereco})`;
+                    li.dataset.clientId = client.id;
+                    li.dataset.clientName = client.nome;
+                    li.classList.add('search-result-item');
+                    clienteSearchResults.appendChild(li);
+                });
+                clienteSearchResults.classList.remove('hidden');
+            } else {
+                clienteSearchResults.classList.add('hidden');
+            }
+        } else {
+            clienteSearchResults.classList.add('hidden');
+        }
+    });
+
+    clienteSearchResults.addEventListener('click', (e) => {
+        const selectedItem = e.target.closest('.search-result-item');
+        if (selectedItem) {
+            const clientId = parseInt(selectedItem.dataset.clientId);
+            const clientName = selectedItem.dataset.clientName;
+            
+            clienteSelecionado = clientesCadastrados.find(c => c.id === clientId);
+
+            selectedClientId.value = clientId;
+            selectedClientName.textContent = clientName;
+            selectedClientDisplay.classList.remove('hidden');
+            
+            searchClienteInput.value = ''; // Limpa o campo de pesquisa
+            clienteSearchResults.classList.add('hidden'); // Oculta os resultados da pesquisa
+        }
+    });
+
+    clearSelectedClientBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        clienteSelecionado = null;
+        selectedClientId.value = '';
+        selectedClientName.textContent = '';
+        selectedClientDisplay.classList.add('hidden');
+        searchClienteInput.value = ''; // Garante que o campo de pesquisa seja limpo
+        clientSearchSection.classList.add('hidden'); // Oculta novamente a seção de pesquisa
+        vincularClienteCheckbox.checked = false; // Desmarca a caixa de seleção principal
+    });
+
+    vincularClienteCheckbox.addEventListener('change', () => {
+        if (vincularClienteCheckbox.checked) {
+            clientSearchSection.classList.remove('hidden');
+        } else {
+            clientSearchSection.classList.add('hidden');
+            // Limpa o cliente selecionado se a caixa de seleção for desmarcada
+            clienteSelecionado = null;
+            selectedClientId.value = '';
+            selectedClientName.textContent = '';
+            selectedClientDisplay.classList.add('hidden');
+            searchClienteInput.value = '';
+            clienteSearchResults.classList.add('hidden');
+        }
+    });
+
+    // Oculta os resultados da pesquisa ao clicar fora
+    document.addEventListener('click', (e) => {
+        if (!clientSearchSection.contains(e.target) && e.target !== searchClienteInput && e.target !== vincularClienteCheckbox) {
+            clienteSearchResults.classList.add('hidden');
+        }
+    });
 
 
-    document.addEventListener('DOMContentLoaded', carregarProdutos);
+    document.addEventListener('DOMContentLoaded', async () => {
+        await carregarProdutos();
+        await carregarClientesCadastrados(); // Carrega clientes quando a página carrega
+    });
 }

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MullerSys - Clientes</title>
+    <link rel="icon" type="image/png" href="mullersys.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body id="page-clientes">
+    <header>
+        <div class="header-left">
+            <h1>Cadastro de Clientes</h1>
+        </div>
+        <div class="header-right">
+            <button id="theme-toggle-btn" class="btn-icon" title="Alternar Tema">
+                <i class="fas fa-sun"></i> </button>
+            <button id="notifications-btn" class="btn-icon"><i class="fas fa-bell"></i><span id="notifications-badge" class="badge hidden">0</span></button>
+            <button id="logout-btn" class="btn-icon" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </header>
+
+    <aside class="sidebar-nav">
+        <div class="sidebar-logo">
+            <i><img src="mullersys.png" alt="" style="height: 80px; vertical-align: middle;"></i>
+        </div>
+        <ul>
+            <li><a href="venda.html" title="Venda"><i class="fas fa-cash-register"></i><span>Venda</span></a></li>
+            <li><a href="estoque.html" title="Estoque"><i class="fas fa-boxes"></i><span>Estoque</span></a></li>
+            <li><a href="controle.html" title="Controle de Caixa"><i class="fas fa-wallet"></i><span>Caixa</span></a></li>
+            <li><a href="clientes.html" class="active" title="Clientes"><i class="fas fa-users"></i><span>Clientes</span></a></li>
+        </ul>
+    </aside>
+
+    <main class="content">
+        <div class="notifications-tab hidden" id="notifications-tab">
+            <h2>Notificações</h2>
+            <ul id="notifications-list">
+                <li>Nenhuma notificação.</li>
+            </ul>
+            <button id="clear-notifications-btn" class="btn-clear-notifications">Limpar Notificações</button>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="filtro-clientes" placeholder="Filtrar clientes por nome...">
+            <button id="open-add-modal-btn" class="btn-primary">Adicionar Novo Cliente</button>
+        </div>
+
+        <ul id="lista-clientes" class="product-list">
+            <li style="justify-content: center; color: var(--text-muted);">Nenhum cliente cadastrado.</li>
+        </ul>
+    </main>
+
+    <div class="modal-overlay hidden" id="cliente-modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title"></h2>
+            <form id="cliente-form">
+                <input type="hidden" id="cliente-id">
+                <div class="form-group">
+                    <label for="cliente-nome">Nome Completo:</label>
+                    <input type="text" id="cliente-nome" required>
+                </div>
+                <div class="form-group">
+                    <label for="cliente-endereco">Endereço:</label>
+                    <input type="text" id="cliente-endereco" required>
+                </div>
+                <div class="form-group">
+                    <label for="cliente-numero">Número:</label>
+                    <input type="text" id="cliente-numero" required>
+                </div>
+                <div class="form-group">
+                    <label for="cliente-cpf">CPF:</label>
+                    <input type="text" id="cliente-cpf" pattern="\d{3}\.?\d{3}\.?\d{3}-?\d{2}" placeholder="Ex: 123.456.789-00" required>
+                    <small style="color: var(--text-muted);">Formato: 123.456.789-00</small>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary" id="save-cliente-btn">Salvar</button>
+                    <button type="button" id="delete-cliente-btn" class="btn-danger hidden">Excluir Cliente</button>
+                    <button type="button" id="cancel-cliente-btn" class="btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="custom-popup-overlay hidden" id="custom-popup-overlay">
+        <div class="custom-popup-content">
+            <h2 id="custom-popup-title"></h2>
+            <p id="custom-popup-message"></p>
+            <div class="custom-popup-actions">
+                <button id="custom-popup-close-btn" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="custom-confirm-overlay hidden" id="custom-confirm-overlay">
+        <div class="custom-confirm-content">
+            <h2 id="custom-confirm-title">Confirmação</h2>
+            <p id="custom-confirm-message">Tem certeza que deseja prosseguir com esta ação?</p>
+            <div class="custom-confirm-actions">
+                <button id="custom-confirm-yes-btn" class="btn-danger">Sim</button>
+                <button id="custom-confirm-no-btn" class="btn-secondary">Não</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="clientes.js"></script>
+</body>
+</html>
