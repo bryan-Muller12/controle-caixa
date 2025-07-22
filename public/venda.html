@@ -104,10 +104,8 @@
 
                 <div class="sale-actions-bottom">
                     <div class="client-selection-area">
-                        <input type="checkbox" id="vincular-cliente">
-                        <label for="vincular-cliente">Vincular Cliente à Venda</label>
-                        <div id="client-search-section" class="hidden">
-                            <input type="text" id="search-cliente-input" placeholder="Pesquisar cliente por nome" autocomplete="off">
+                        <div id="client-search-section"> <label for="search-cliente-input" style="font-weight: bold; margin-bottom: 5px;">Vincular Cliente (Opcional):</label>
+                            <input type="text" id="search-cliente-input" placeholder="Pesquisar cliente por nome ou CPF" autocomplete="off">
                             <ul id="cliente-search-results" class="search-results-list"></ul>
                             <p id="selected-client-display" class="hidden">Cliente Selecionado: <span id="selected-client-name"></span> (<a href="#" id="clear-selected-client">Limpar</a>)</p>
                             <input type="hidden" id="selected-client-id">

@@ -31,7 +31,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     const cancelAllItemsBtn = document.getElementById('cancel-all-items-btn');
 
     // NOVOS ELEMENTOS DO DOM PARA CLIENTES
-    const vincularClienteCheckbox = document.getElementById('vincular-cliente');
     const clientSearchSection = document.getElementById('client-search-section');
     const searchClienteInput = document.getElementById('search-cliente-input');
     const clienteSearchResults = document.getElementById('cliente-search-results');
@@ -327,8 +326,20 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     subtotalBruto += itemCarrinho.totalItem;
                 }
 
-                // Obtém o ID do cliente selecionado se vinculado
-                const clienteIdParaVenda = clienteSelecionado ? clienteSelecionado.id : null;
+                let clienteIdParaVenda = null;
+                if (clienteSelecionado) {
+                    clienteIdParaVenda = clienteSelecionado.id;
+                } else {
+                    // Se nenhum cliente foi explicitamente selecionado, tenta usar 'mullersys'
+                    const mullersysClient = clientesCadastrados.find(c => c.nome.toLowerCase() === 'mullersys');
+                    if (mullersysClient) {
+                        clienteIdParaVenda = mullersysClient.id;
+                        console.log("Nenhum cliente selecionado, vinculando à venda ao usuário padrão 'mullersys'.");
+                    } else {
+                        // Se 'mullersys' não for encontrado, a venda não será vinculada a um cliente.
+                        console.warn("Cliente 'mullersys' não encontrado na base de dados para atribuição padrão. A venda não será vinculada a um cliente.");
+                    }
+                }
 
 
                 // Cria o objeto da transação para enviar ao backend
@@ -373,15 +384,14 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         searchProdutoInput.value = '';
         productNameDisplay.textContent = 'Produto Selecionado';
         
-        // NOVO: Limpa seleção de cliente
+        // Limpa seleção de cliente
         clienteSelecionado = null;
         selectedClientId.value = '';
         selectedClientName.textContent = '';
         selectedClientDisplay.classList.add('hidden');
         searchClienteInput.value = '';
         clienteSearchResults.classList.add('hidden');
-        clientSearchSection.classList.add('hidden');
-        vincularClienteCheckbox.checked = false;
+        // Não oculta mais clientSearchSection, pois ela agora é sempre visível
 
         carregarProdutos(); // Recarrega os produtos após o reset da venda para garantir estoque atualizado
     }
@@ -465,28 +475,13 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         selectedClientName.textContent = '';
         selectedClientDisplay.classList.add('hidden');
         searchClienteInput.value = ''; // Garante que o campo de pesquisa seja limpo
-        clientSearchSection.classList.add('hidden'); // Oculta novamente a seção de pesquisa
-        vincularClienteCheckbox.checked = false; // Desmarca a caixa de seleção principal
-    });
-
-    vincularClienteCheckbox.addEventListener('change', () => {
-        if (vincularClienteCheckbox.checked) {
-            clientSearchSection.classList.remove('hidden');
-        } else {
-            clientSearchSection.classList.add('hidden');
-            // Limpa o cliente selecionado se a caixa de seleção for desmarcada
-            clienteSelecionado = null;
-            selectedClientId.value = '';
-            selectedClientName.textContent = '';
-            selectedClientDisplay.classList.add('hidden');
-            searchClienteInput.value = '';
-            clienteSearchResults.classList.add('hidden');
-        }
+        // clientSearchSection.classList.add('hidden'); // Esta linha foi removida intencionalmente para manter visível
+        clienteSearchResults.classList.add('hidden');
     });
 
     // Oculta os resultados da pesquisa ao clicar fora
     document.addEventListener('click', (e) => {
-        if (!clientSearchSection.contains(e.target) && e.target !== searchClienteInput && e.target !== vincularClienteCheckbox) {
+        if (!clientSearchSection.contains(e.target) && e.target !== searchClienteInput) {
             clienteSearchResults.classList.add('hidden');
         }
     });
