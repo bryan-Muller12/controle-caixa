@@ -10,9 +10,9 @@ const pool = new Pool({
 
 module.exports = async (req, res) => {
   const clientDb = await pool.connect();
-  let browser; // Declaração fora do try para garantir que esteja acessível no finally
+  let browser; 
   try {
-    const { venda_id } = req.query; // Recebe o ID da venda como parâmetro de query
+    const { venda_id } = req.query; 
 
     if (!venda_id) {
       return res.status(400).json({ error: 'O ID da venda é obrigatório para gerar o orçamento.' });
@@ -26,12 +26,10 @@ module.exports = async (req, res) => {
         t.valor,
         t.total_bruto,
         t.valor_desconto,
-        t.detalhesVenda, -- Este campo JSONB contém os itens
+        t.detalhes_venda, -- CORRIGIDO AQUI: de 'detalhesVenda' para 'detalhes_venda'
         c.nome as cliente_nome,
         c.endereco as cliente_endereco,
         c.numero as cliente_numero,
-        -- Não inclua cpf_hash diretamente aqui para evitar exposição em logs ou no template HTML final se não for estritamente necessário
-        -- Poderíamos buscar os últimos 4 dígitos do CPF_HASH para exibição parcial se estritamente necessário no PDF, mas não o CPF completo.
         c.id as cliente_id
       FROM transacoes t
       LEFT JOIN clientes c ON t.cliente_id = c.id
@@ -44,12 +42,12 @@ module.exports = async (req, res) => {
     }
 
     const venda = transacaoRows[0];
-    const itensVenda = venda.detalhesvenda ? venda.detalhesvenda.itens : [];
+    const itensVenda = venda.detalhes_venda ? venda.detalhes_venda.itens : []; // Usa detalhes_venda
     const clienteData = {
       nome: venda.cliente_nome || 'Cliente Não Vinculado',
       endereco: venda.cliente_endereco || 'N/A',
       numero: venda.cliente_numero || 'N/A',
-      cpf: 'Não Informado' // Por segurança, não estamos buscando o CPF real do cliente aqui.
+      cpf: 'Não Informado' 
     };
 
     // 2. Montar o conteúdo HTML para o PDF
@@ -68,7 +66,6 @@ module.exports = async (req, res) => {
       `;
     });
 
-    // Dados da empresa (assumidos fixos para este exemplo)
     const empresaNome = "MULLERSYS SISTEMAS";
     const empresaEndereco = "Rua Teste, 123 - Centro";
     const empresaCidade = "Minha Cidade";
@@ -161,15 +158,15 @@ module.exports = async (req, res) => {
 
     // 3. Gerar o PDF usando Puppeteer
     browser = await puppeteer.launch({
-      headless: true, // Use 'new' para Puppeteer v16+
-      args: ['--no-sandbox', '--disable-setuid-sandbox'] // Necessário para ambientes de servidor
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' }); // Espera a rede ficar inativa
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
-      printBackground: true, // Inclui cores e imagens de fundo
+      printBackground: true, 
       margin: {
         top: '20mm',
         right: '20mm',
@@ -185,10 +182,10 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao gerar PDF de orçamento:', error);
-    return res.status(500).json({ error: 'Erro interno do servidor ao gerar PDF.' });
+    return res.status(500).json({ error: 'Erro interno do servidor.' });
   } finally {
     if (browser) {
-      await browser.close(); // Garante que o navegador seja fechado
+      await browser.close(); 
     }
     clientDb.release();
   }
