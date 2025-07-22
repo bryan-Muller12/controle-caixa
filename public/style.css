@@ -1333,3 +1333,8 @@ body.light-mode .transaction-type-filter button:hover {
     color: white; /* Cor do texto no botão ativo/hover do filtro */
     border-color: var(--primary-color);
 }
+
+/* Força a cor primária para o checkbox Vincular Cliente */
+#vincular-cliente {
+    accent-color: var(--primary-color) !important;
+}
