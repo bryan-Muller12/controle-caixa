@@ -298,11 +298,10 @@ header h1 img {
 }
 
 /* --- FORMULÁRIOS E BOTÕES --- */
-/* MODIFICAÇÃO AQUI: Incluído input[type="password"] e ajustes no select */
 input[type="text"],
 input[type="number"],
 input[type="date"],
-input[type="password"], /* Adicionado para garantir o estilo do campo de senha */
+input[type="password"],
 select {
   width: 100%;
   padding: 12px 15px;
@@ -316,17 +315,15 @@ select {
   margin-bottom: 10px; /* Garante espaçamento entre os campos */
 }
 
-/* MODIFICAÇÃO AQUI: Incluído input[type="password"]:focus */
 input:focus,
 select:focus,
-input[type="password"]:focus { /* Adicionado para o foco do campo de senha */
+input[type="password"]:focus {
   outline: none;
   border-color: var(--input-border); /* Borda verde vibrante no foco */
   background-color: var(--primary-alternative); /* Fundo verde escuro no foco */
   box-shadow: 0 0 0 3px rgba(0, 255, 127, 0.2); /* Sombra verde */
 }
 
-/* MODIFICAÇÃO AQUI: Estilo para o form-group e select para melhor visualização */
 .form-group {
     margin-bottom: 25px; /* Mais espaço entre grupos de campo */
     text-align: left;
@@ -349,7 +346,6 @@ select {
     background-position: right 10px center; /* Posição da seta */
     padding-right: 35px; /* Espaço para a seta */
 }
-/* Estilo para input readonly (já existente, mas importante) */
 input[readonly] {
     background-color: var(--input-bg);
     cursor: not-allowed;
@@ -477,6 +473,23 @@ input[readonly] {
 
 .product-info, .transaction-info {
   flex-grow: 1;
+  /* MODIFICADO: Adicionado display flex para o product-info para empilhar detalhes */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* MODIFICADO: Adicionado para dar um pequeno espaçamento abaixo do nome do produto/cliente */
+.product-info .product-name {
+    margin-bottom: 5px;
+}
+
+/* NOVO ESTILO PARA DETALHES DE CLIENTE */
+.client-detail {
+    color: var(--text-muted); /* Cor do texto mais discreta */
+    font-size: 0.9rem; /* Tamanho de fonte menor para detalhes */
+    margin-top: 5px; /* Um pequeno espaçamento entre as linhas de detalhe */
+    display: block; /* Garante que cada detalhe fique em sua própria linha */
 }
 
 .product-name, .transaction-description {
@@ -1207,9 +1220,9 @@ input[readonly] {
 /* Estilos para o cabeçalho do collapsible */
 .collapsible-card .card-header {
     cursor: pointer;
-    padding-bottom: 15px; /* Ajuste para não parecer tão "grudado" no conteúdo */
-    margin-bottom: 0; /* Remove a margem inferior para o conteúdo ficar logo abaixo */
-    border-bottom: none; /* Remove a borda inferior para ser controlada pelo estado */
+    padding-bottom: 15px;
+    margin-bottom: 0;
+    border-bottom: none;
     transition: border-bottom 0.3s ease;
 }
 
@@ -1230,17 +1243,17 @@ input[readonly] {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease-out, padding 0.3s ease-out;
-    padding: 0 25px; /* Padding horizontal igual ao card */
+    padding: 0 25px;
 }
 
 .collapsible-card.expanded .collapsible-content {
-    max-height: 500px; /* Um valor grande o suficiente para o conteúdo expandido */
-    padding-bottom: 25px; /* Padding inferior do card */
+    max-height: 500px;
+    padding-bottom: 25px;
 }
 
 .collapsible-card.expanded .card-header {
-    border-bottom: 1px solid var(--border-color-dark); /* Adiciona a borda quando expandido */
-    margin-bottom: 20px; /* Adiciona margem após a borda */
+    border-bottom: 1px solid var(--border-color-dark);
+    margin-bottom: 20px;
 }
 
 /* --- TEMA CLARO (opcional) --- */
@@ -1308,7 +1321,7 @@ body.light-mode .venda-container {
 body.light-mode input[type="text"],
 body.light-mode input[type="number"],
 body.light-mode input[type="date"],
-body.light-mode input[type="password"], /* Adicionado para tema claro */
+body.light-mode input[type="password"],
 body.light-mode select {
     background-color: var(--input-bg);
     border: 1px solid var(--border-color-dark);
@@ -1317,7 +1330,7 @@ body.light-mode select {
 
 body.light-mode input:focus,
 body.light-mode select:focus,
-body.light-mode input[type="password"]:focus { /* Adicionado para tema claro */
+body.light-mode input[type="password"]:focus {
     border-color: var(--input-border);
     background-color: var(--primary-alternative);
     box-shadow: 0 0 0 3px rgba(0, 140, 76, 0.2);
@@ -1347,7 +1360,7 @@ body.light-mode #found-product-details {
 
 body.light-mode .cart-header-row {
     background-color: var(--primary-color);
-    color: var(--text-light); /* Pode ser background-dark ou text-light, dependendo do contraste desejado */
+    color: var(--text-light);
 }
 
 body.light-mode .sale-actions-bottom {
@@ -1362,13 +1375,13 @@ body.light-mode .main-footer {
 
 body.light-mode .balance-summary {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-    color: white; /* Ou uma cor escura, dependendo do contraste */
+    color: white;
     box-shadow: 0 5px 15px rgba(0,140,76,0.2);
 }
 
 body.light-mode .transaction-type-filter button.active,
 body.light-mode .transaction-type-filter button:hover {
     background-color: var(--primary-color);
-    color: white; /* Cor do texto no botão ativo/hover do filtro */
+    color: white;
     border-color: var(--primary-color);
 }

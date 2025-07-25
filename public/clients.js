@@ -2,6 +2,10 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
     // ==== Seleção de Elementos do DOM ====
+    // Seção de Controles
+    const filtroClientesInput = document.getElementById('filtro-clientes');
+    const openAddClientModalBtn = document.getElementById('open-add-client-modal-btn');
+
     // Referências para o novo modal de edição de clientes
     const editClientModalOverlay = document.getElementById('edit-client-modal-overlay');
     const clientFormModal = document.getElementById('client-form-modal'); // Referência ao formulário dentro do modal
@@ -13,17 +17,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const clientCpfInput = document.getElementById('client-cpf');
     const saveClientBtn = document.getElementById('save-client-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
-    const clientsTableBody = document.getElementById('clients-table-body');
+    // MUDANÇA AQUI: Agora a referência é para a UL, não para o tbody da tabela
+    const clientsList = document.getElementById('clients-list');
 
-    // Funções de utilidade para popups (assumindo que common.js as fornece ou as duplique aqui)
-    // Usando as funções showCustomPopup e showCustomConfirm do common.js
-    // Certifique-se de que common.js carrega antes de clients.js no HTML.
-    // function showPopup, showConfirm, formatPhone, formatCpf
-    // Já que common.js define showCustomPopup e showCustomConfirm, vou remover as duplicatas daqui para evitar conflito.
+    // Variável para armazenar todos os clientes (para filtro local)
+    let allClients = [];
 
-    // ==== Funções de Utilidade (se não estiverem em common.js, elas devem ser mantidas) ====
-    // Verifique se showCustomPopup e showCustomConfirm estão realmente em common.js.
-    // Se não, você precisará ter essas definições ou incluir common.js primeiro.
+    // Funções de utilidade para popups (assumindo que common.js as fornece)
+    // showCustomPopup e showCustomConfirm
 
     function formatPhone(phone) {
         if (!phone) return '';
@@ -61,19 +62,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==== Funções de API ====
 
     async function fetchClients() {
-        clientsTableBody.innerHTML = '<tr><td colspan="5">Carregando clientes...</td></tr>';
+        clientsList.innerHTML = '<li>Carregando clientes...</li>';
         try {
             const response = await fetch('/api/clients');
             if (!response.ok) {
-                // Usando showCustomPopup do common.js
                 throw new Error('Erro ao buscar clientes.');
             }
-            const clients = await response.json();
-            renderClients(clients);
+            allClients = await response.json();
+            renderClients();
         } catch (error) {
             console.error('Erro ao carregar clientes:', error);
-            clientsTableBody.innerHTML = `<tr><td colspan="5" style="color: var(--color-danger);">Erro ao carregar clientes: ${error.message}</td></tr>`;
-            if (typeof showCustomPopup === 'function') { // Verifica se showCustomPopup está disponível
+            clientsList.innerHTML = `<li style="color: var(--danger-color);">Erro ao carregar clientes: ${error.message}</li>`;
+            if (typeof showCustomPopup === 'function') {
                 showCustomPopup('Erro ao Carregar', error.message, 'error');
             }
         }
@@ -81,12 +81,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function saveClient() {
         const id = clientIdInput.value;
-        const name = clientNameInput.value.trim();
-        const phone = clientPhoneInput.value.trim();
-        const address = clientAddressInput.value.trim();
-        const cpf = clientCpfInput.value.trim(); // CPF não é salvo como hash aqui, mas enviado para o backend
+        let name = clientNameInput.value.trim();
+        let phone = clientPhoneInput.value.trim();
+        let address = clientAddressInput.value.trim();
+        const cpf = clientCpfInput.value.trim();
 
-        if (!name || (!id && !cpf)) { // CPF é obrigatório apenas para novas criações
+        // CONVERTER DADOS PARA MAIÚSCULAS ANTES DE ENVIAR PARA A API
+        name = name ? name.toUpperCase() : null;
+        phone = phone ? phone.toUpperCase() : null;
+        address = address ? address.toUpperCase() : null;
+
+
+        if (!name || (!id && !cpf)) {
             if (typeof showCustomPopup === 'function') {
                 showCustomPopup('Erro de Cadastro', 'Nome e CPF são obrigatórios para novos clientes. Nome é obrigatório para atualização.', 'error');
             }
@@ -105,14 +111,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         let url = '/api/clients';
         let method = 'POST';
 
-        if (id) { // Se houver um ID, é uma edição (PUT)
-            url = `/api/clients?id=${id}`; // O ID É ENVIADO COMO PARÂMETRO DE CONSULTA PARA O BACKEND
+        if (id) {
+            url = `/api/clients?id=${id}`;
             method = 'PUT';
-            // Para PUT, o CPF não deve ser enviado pois ele é o que o hash foi feito com base
-            // Se precisar editar CPF, seria um caso mais complexo de "alterar CPF" no backend
-            // delete clientData.cpf; // Não precisamos deletar se nunca adicionamos
-        } else { // Se não houver ID, é uma nova criação (POST)
-            clientData.cpf = cpf; // Adiciona CPF apenas para criação
+        } else {
+            clientData.cpf = cpf;
         }
 
         try {
@@ -131,14 +134,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (typeof showCustomPopup === 'function') {
                 showCustomPopup('Sucesso', `Cliente ${id ? 'atualizado' : 'adicionado'} com sucesso!`, 'success', () => {
-                    closeModal(editClientModalOverlay); // Fecha o modal
-                    fetchClients(); // Recarrega a lista
+                    closeModal(editClientModalOverlay);
+                    fetchClients();
                 });
             } else {
-                 closeModal(editClientModalOverlay); // Fecha o modal mesmo sem popup
+                 closeModal(editClientModalOverlay);
                  fetchClients();
             }
-
 
         } catch (error) {
             console.error('Erro ao salvar cliente:', error);
@@ -149,15 +151,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function deleteClient(id) {
+        let confirmDelete = true;
         if (typeof showCustomConfirm === 'function') {
-            const confirm = await showCustomConfirm('Confirmar Exclusão', 'Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.');
-            if (!confirm) return;
+            confirmDelete = await showCustomConfirm('Confirmar Exclusão', 'Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.');
         } else {
-             if (!confirm('Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.')) return;
+             confirmDelete = confirm('Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.');
         }
 
+        if (!confirmDelete) return;
+
         try {
-            const response = await fetch(`/api/clients?id=${id}`, { // ID enviado como query parameter
+            const response = await fetch(`/api/clients?id=${id}`, {
                 method: 'DELETE'
             });
 
@@ -167,9 +171,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             if (typeof showCustomPopup === 'function') {
-                showCustomPopup('Sucesso', 'Cliente excluído com sucesso!', 'success', fetchClients); // Recarrega a lista
+                showCustomPopup('Sucesso', 'Cliente excluído com sucesso!', 'success', fetchClients);
             } else {
-                fetchClients(); // Recarrega mesmo sem popup
+                fetchClients();
             }
 
         } catch (error) {
@@ -182,25 +186,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ==== Funções de UI ====
 
-    function renderClients(clients) {
-        clientsTableBody.innerHTML = '';
-        if (clients.length === 0) {
-            clientsTableBody.innerHTML = '<tr><td colspan="5">Nenhum cliente cadastrado.</td></tr>';
+    function renderClients() {
+        clientsList.innerHTML = ''; // Limpa a UL
+        const filtro = filtroClientesInput.value.toUpperCase();
+        
+        const clientsFiltered = allClients.filter(client =>
+            client.name.toUpperCase().includes(filtro) ||
+            (client.phone && client.phone.toUpperCase().includes(filtro)) ||
+            (client.address && client.address.toUpperCase().includes(filtro))
+        );
+
+        if (clientsFiltered.length === 0) {
+            clientsList.innerHTML = `<li>Nenhum cliente ${filtro ? 'encontrado com o filtro' : 'cadastrado'}.</li>`;
             return;
         }
 
-        clients.forEach(client => {
-            const row = clientsTableBody.insertRow();
-            row.innerHTML = `
-                <td>${client.id}</td>
-                <td>${client.name}</td>
-                <td>${formatPhone(client.phone) || 'N/A'}</td>
-                <td>${client.address || 'N/A'}</td>
-                <td class="client-actions">
-                    <button class="btn-icon btn-edit-client" data-id="${client.id}" data-name="${client.name}" data-phone="${client.phone || ''}" data-address="${client.address || ''}" title="Editar Cliente"><i class="fas fa-edit"></i></button>
-                    <button class="btn-icon btn-delete-client" data-id="${client.id}" title="Excluir Cliente"><i class="fas fa-trash"></i></button>
-                </td>
+        clientsFiltered.forEach(client => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="product-info">
+                    <span class="product-name">${client.name}</span>
+                    <span class="client-detail">Tel: ${formatPhone(client.phone) || 'N/A'}</span>
+                    <span class="client-detail">End: ${client.address || 'N/A'}</span>
+                </div>
+                <div class="actions">
+                    <button class="btn-action btn-edit" data-id="${client.id}" data-name="${client.name}" data-phone="${client.phone || ''}" data-address="${client.address || ''}" title="Editar Cliente"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="btn-action btn-danger" data-id="${client.id}" title="Excluir Cliente"><i class="fas fa-trash"></i></button>
+                </div>
             `;
+            clientsList.appendChild(li);
         });
     }
 
@@ -209,13 +223,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         clientNameInput.value = client.name;
         clientPhoneInput.value = client.phone;
         clientAddressInput.value = client.address;
-        clientCpfInput.value = ''; // CPF não é editável diretamente aqui por segurança (hash)
-        clientCpfInput.disabled = true; // Desabilita o campo CPF na edição
+        clientCpfInput.value = '';
+        clientCpfInput.disabled = true;
         saveClientBtn.textContent = 'Atualizar Cliente';
-        // O botão cancelar não precisa mais ser explicitamente escondido/mostrado, pois o modal lida com isso.
-        // cancelEditBtn.classList.remove('hidden'); // Removido: o modal controla a visibilidade
 
-        openModal(editClientModalOverlay); // Abre o modal de edição
+        openModal(editClientModalOverlay);
     }
 
     function clearForm() {
@@ -224,76 +236,84 @@ document.addEventListener('DOMContentLoaded', async () => {
         clientPhoneInput.value = '';
         clientAddressInput.value = '';
         clientCpfInput.value = '';
-        clientCpfInput.disabled = false; // Habilita o campo CPF para nova criação
+        clientCpfInput.disabled = false;
         saveClientBtn.textContent = 'Salvar Cliente';
-        // cancelEditBtn.classList.add('hidden'); // Removido: o modal controla a visibilidade
-        clientFormModal.reset(); // Garante que o formulário é resetado
+        clientFormModal.reset();
     }
 
     // ==== Listeners de Eventos ====
-    // O formulário do modal agora tem o ID client-form-modal
-    clientFormModal.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await saveClient();
-    });
+    // ESTAS SÃO AS LINHAS ONDE O ERRO ESTÁ PROVAVELMENTE ACONTECENDO SE OS ELEMENTOS FOREM NULL
+    if (clientFormModal) { // Adicionado verificação
+      clientFormModal.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          await saveClient();
+      });
+    } else { console.error("Elemento clientFormModal não encontrado!"); }
 
-    cancelEditBtn.addEventListener('click', () => {
-        clearForm();
-        closeModal(editClientModalOverlay); // Fecha o modal ao cancelar
-    });
-
-    // Listener para abrir o modal para adicionar um NOVO cliente (opcional, adicione um botão no HTML se quiser)
-    // Se você tiver um botão "Adicionar Novo Cliente" no HTML, pode adicionar um listener aqui:
-    /*
-    const addNewClientBtn = document.getElementById('add-new-client-btn'); // Adicione este ID no seu HTML
-    if (addNewClientBtn) {
-        addNewClientBtn.addEventListener('click', () => {
-            clearForm();
-            openModal(editClientModalOverlay);
-            saveClientBtn.textContent = 'Adicionar Cliente'; // Certifica que o texto está correto para adicionar
-        });
-    }
-    */
-
-    clientsTableBody.addEventListener('click', (event) => {
-        if (event.target.closest('.btn-edit-client')) {
-            const btn = event.target.closest('.btn-edit-client');
-            const clientData = {
-                id: btn.dataset.id,
-                name: btn.dataset.name,
-                phone: btn.dataset.phone,
-                address: btn.dataset.address
-            };
-            editClient(clientData);
-        } else if (event.target.closest('.btn-delete-client')) {
-            const id = event.target.closest('.btn-delete-client').dataset.id;
-            deleteClient(id);
-        }
-    });
-
-    // Fechar modal ao clicar fora dele
-    editClientModalOverlay.addEventListener('click', (e) => {
-        if (e.target === editClientModalOverlay) {
-            clearForm(); // Limpa o formulário se fechar clicando fora
-            closeModal(editClientModalOverlay);
-        }
-    });
+    if (cancelEditBtn) { // Adicionado verificação
+      cancelEditBtn.addEventListener('click', () => {
+          clearForm();
+          closeModal(editClientModalOverlay);
+      });
+    } else { console.error("Elemento cancelEditBtn não encontrado!"); }
+    
+    if (openAddClientModalBtn) { // Adicionado verificação
+      openAddClientModalBtn.addEventListener('click', () => {
+          clearForm();
+          openModal(editClientModalOverlay);
+          saveClientBtn.textContent = 'Salvar Cliente';
+      });
+    } else { console.error("Elemento openAddClientModalBtn não encontrado!"); }
 
 
-    // Masks para telefone e CPF
+    // MUDANÇA AQUI: O listener agora está na UL, não no tbody
+    if (clientsList) { // Adicionado verificação
+      clientsList.addEventListener('click', (event) => {
+          if (event.target.closest('.btn-edit')) {
+              const btn = event.target.closest('.btn-edit');
+              const clientData = {
+                  id: btn.dataset.id,
+                  name: btn.dataset.name,
+                  phone: btn.dataset.phone,
+                  address: btn.dataset.address
+              };
+              editClient(clientData);
+          } else if (event.target.closest('.btn-danger')) {
+              const id = event.target.closest('.btn-danger').dataset.id;
+              deleteClient(id);
+          }
+      });
+    } else { console.error("Elemento clientsList não encontrado!"); }
+
+
+    if (editClientModalOverlay) { // Adicionado verificação
+      editClientModalOverlay.addEventListener('click', (e) => {
+          if (e.target === editClientModalOverlay) {
+              clearForm();
+              closeModal(editClientModalOverlay);
+          }
+      });
+    } else { console.error("Elemento editClientModalOverlay não encontrado!"); }
+
+
+    if (filtroClientesInput) { // Adicionado verificação
+      filtroClientesInput.addEventListener('input', renderClients);
+    } else { console.error("Elemento filtroClientesInput não encontrado!"); }
+
+
     clientPhoneInput.addEventListener('input', (e) => {
-        let value = e.target.value.replace(/\D/g, ''); // Remove não-dígitos
+        let value = e.target.value.replace(/\D/g, '');
         if (value.length > 0) {
             value = '(' + value;
             if (value.length > 3) {
                 value = value.substring(0, 3) + ')' + value.substring(3);
             }
-            if (value.length > 9) { // Para 5 dígitos no meio (99999)
+            if (value.length > 9) {
                 value = value.substring(0, 9) + '-' + value.substring(9);
-            } else if (value.length > 8 && value.length < 10) { // Para 4 dígitos no meio (9999)
+            } else if (value.length > 8 && value.length < 10) {
                  value = value.substring(0, 8) + '-' + value.substring(8);
             }
-            if (value.length > 14) { // Limita o tamanho total (ex: (99)99999-9999)
+            if (value.length > 14) {
                 value = value.substring(0, 14);
             }
         }
@@ -301,7 +321,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     clientCpfInput.addEventListener('input', (e) => {
-        let value = e.target.value.replace(/\D/g, ''); // Remove não-dígitos
+        let value = e.target.value.replace(/\D/g, '');
         if (value.length > 0) {
             if (value.length > 3) {
                 value = value.substring(0, 3) + '.' + value.substring(3);
@@ -312,7 +332,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (value.length > 11) {
                 value = value.substring(0, 11) + '-' + value.substring(11);
             }
-            if (value.length > 14) { // Limita o tamanho total (ex: 999.999.999-99)
+            if (value.length > 14) {
                 value = value.substring(0, 14);
             }
         }
@@ -320,6 +340,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // ==== Inicialização ====
-    fetchClients(); // Carrega a lista de clientes ao carregar a página
-    clearForm(); // Limpa o formulário e configura o estado inicial
+    fetchClients();
+    clearForm();
 });

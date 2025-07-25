@@ -13,10 +13,6 @@ module.exports = async (req, res) => {
   const client = await pool.connect();
   try {
     // --- Lógica de Verificação de Admin (similar a users.js, se necessário) ---
-    // Decida se a criação/visualização de clientes requer privilégios de administrador.
-    // Por enquanto, vamos assumir que não precisa para simplificar o exemplo,
-    // mas em um ambiente de produção você provavelmente quer alguma autenticação/autorização.
-    // Se for necessário, descomente e adapte a lógica abaixo:
     /*
     const loggedInUsername = req.headers['x-logged-in-username'];
     if (!loggedInUsername) {
@@ -31,7 +27,13 @@ module.exports = async (req, res) => {
 
     // MÉTODO POST: Adicionar um novo cliente
     if (req.method === 'POST') {
-      const { name, phone, address, cpf } = req.body;
+      let { name, phone, address, cpf } = req.body;
+
+      // CONVERTER DADOS PARA MAIÚSCULAS ANTES DE SALVAR
+      name = name ? name.toUpperCase() : null;
+      phone = phone ? phone.toUpperCase() : null;
+      address = address ? address.toUpperCase() : null;
+      // CPF não é convertido para uppercase, pois é para hash
 
       if (!name || !cpf) {
         return res.status(400).json({ error: 'Nome e CPF do cliente são obrigatórios.' });
@@ -42,13 +44,6 @@ module.exports = async (req, res) => {
       if (phone && !phoneRegex.test(phone)) {
         return res.status(400).json({ error: 'Formato de telefone inválido. Use (DD)NNNNN-NNNN ou (DD)NNNN-NNNN.' });
       }
-
-      // Verificar se o CPF já existe (mesmo antes do hash, para evitar colisões lógicas)
-      // Para verificar o CPF, você precisaria de uma forma de deshash ou comparar o hash
-      // com o hash de todos os CPFs existentes, o que é inviável.
-      // A abordagem comum é garantir que o CPF original seja único ou que o hash gerado seja "único o suficiente"
-      // para fins de lookup, embora comparar hashes diretamente não seja ideal para verificar a existência do valor original.
-      // Por segurança, para um campo UNIQUE como cpf_hash, podemos apenas tentar inserir e pegar o erro de duplicidade.
 
       let cpfHash;
       try {
@@ -85,7 +80,9 @@ module.exports = async (req, res) => {
       if (id) {
         conditions.push(`id = $${queryParams.push(id)}`);
       } else if (search) {
-        conditions.push(`name ILIKE $${queryParams.push(`%${search}%`)}`); // Busca insensível a maiúsculas/minúsculas
+        // A busca é case-insensitive devido ao ILIKE, mas os dados no DB estarão em UPPERCASE
+        // O termo de busca do frontend virá em UPPERCASE para consistência.
+        conditions.push(`name ILIKE $${queryParams.push(`%${search}%`)}`);
       }
 
       if (conditions.length > 0) {
@@ -99,8 +96,13 @@ module.exports = async (req, res) => {
 
     // MÉTODO PUT: Atualizar um cliente existente
     else if (req.method === 'PUT') {
-      const { id } = req.query; // Pega o ID da query
-      const { name, phone, address } = req.body; // CPF não deve ser atualizado diretamente aqui
+      const { id } = req.query;
+      let { name, phone, address } = req.body;
+
+      // CONVERTER DADOS PARA MAIÚSCULAS ANTES DE ATUALIZAR
+      name = name ? name.toUpperCase() : null;
+      phone = phone ? phone.toUpperCase() : null;
+      address = address ? address.toUpperCase() : null;
 
       if (!id) {
         return res.status(400).json({ error: 'ID do cliente é obrigatório para atualização.' });
@@ -109,7 +111,6 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Nome do cliente é obrigatório para atualização.' });
       }
 
-      // Validar formato do telefone (opcional)
       const phoneRegex = /^\(\d{2}\)\d{4,5}-\d{4}$/;
       if (phone && !phoneRegex.test(phone)) {
         return res.status(400).json({ error: 'Formato de telefone inválido. Use (DD)NNNNN-NNNN ou (DD)NNNN-NNNN.' });
@@ -133,7 +134,7 @@ module.exports = async (req, res) => {
 
     // MÉTODO DELETE: Excluir um cliente
     else if (req.method === 'DELETE') {
-      const { id } = req.query; // Pega o ID da query
+      const { id } = req.query;
 
       if (!id) {
         return res.status(400).json({ error: 'ID do cliente é obrigatório para exclusão.' });
@@ -148,7 +149,7 @@ module.exports = async (req, res) => {
         return res.status(200).json({ message: 'Cliente excluído com sucesso!' });
       } catch (dbError) {
         console.error('Erro ao excluir cliente do banco de dados:', dbError);
-        return res.status(500).json({ error: 'Erro interno do servidor ao excluir cliente.' });
+        return res.status(500).json({ error: 'Erro interno do servidor.' });
       }
     }
 
