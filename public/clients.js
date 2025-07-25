@@ -17,7 +17,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const clientCpfInput = document.getElementById('client-cpf');
     const saveClientBtn = document.getElementById('save-client-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
-    const clientsTableBody = document.getElementById('clients-table-body');
+    // MUDANÇA AQUI: Agora a referência é para a UL, não para o tbody da tabela
+    const clientsList = document.getElementById('clients-list'); //
 
     // Variável para armazenar todos os clientes (para filtro local)
     let allClients = [];
@@ -61,8 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==== Funções de API ====
 
     async function fetchClients() {
-        // Colspan ajustado para 4 colunas (Nome, Telefone, Endereço, Ações)
-        clientsTableBody.innerHTML = '<tr><td colspan="4">Carregando clientes...</td></tr>';
+        clientsList.innerHTML = '<li>Carregando clientes...</li>'; // Ajuste para <li>
         try {
             const response = await fetch('/api/clients');
             if (!response.ok) {
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderClients(); // Renderiza com base na lista completa (ou filtrada)
         } catch (error) {
             console.error('Erro ao carregar clientes:', error);
-            clientsTableBody.innerHTML = `<tr class="no-results"><td colspan="4" style="color: var(--color-danger);">Erro ao carregar clientes: ${error.message}</td></tr>`; // colspan ajustado
+            clientsList.innerHTML = `<li style="color: var(--danger-color);">Erro ao carregar clientes: ${error.message}</li>`; // Ajuste para <li>
             if (typeof showCustomPopup === 'function') {
                 showCustomPopup('Erro ao Carregar', error.message, 'error');
             }
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==== Funções de UI ====
 
     function renderClients() {
-        clientsTableBody.innerHTML = '';
+        clientsList.innerHTML = ''; // Limpa a UL
         const filtro = filtroClientesInput.value.toUpperCase();
         
         const clientsFiltered = allClients.filter(client =>
@@ -197,22 +197,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
 
         if (clientsFiltered.length === 0) {
-            // colspan ajustado para 4 colunas
-            clientsTableBody.innerHTML = `<tr><td colspan="4">Nenhum cliente ${filtro ? 'encontrado com o filtro' : 'cadastrado'}.</td></tr>`;
+            clientsList.innerHTML = `<li>Nenhum cliente ${filtro ? 'encontrado com o filtro' : 'cadastrado'}.</li>`; // Ajuste para <li>
             return;
         }
 
         clientsFiltered.forEach(client => {
-            const row = clientsTableBody.insertRow();
-            row.innerHTML = `
-                <td>${client.name}</td>
-                <td>${formatPhone(client.phone) || 'N/A'}</td>
-                <td>${client.address || 'N/A'}</td>
-                <td class="client-actions">
-                    <button class="btn-icon btn-edit-client" data-id="${client.id}" data-name="${client.name}" data-phone="${client.phone || ''}" data-address="${client.address || ''}" title="Editar Cliente"><i class="fas fa-edit"></i></button>
-                    <button class="btn-icon btn-delete-client" data-id="${client.id}" title="Excluir Cliente"><i class="fas fa-trash"></i></button>
-                </td>
+            const li = document.createElement('li'); // Cria um LI
+            // Não precisa de classList.add('product-item') aqui, pois o UL já é 'product-list' e o estilo já se aplica aos LIs.
+            // A classe 'product-item' é mais usada no estoque para cada LI individual.
+            // Para consistência visual, é bom aplicar a mesma estrutura e classes internas.
+            li.innerHTML = `
+                <div class="product-info">
+                    <span class="product-name">${client.name}</span>
+                    <span class="client-detail">Tel: ${formatPhone(client.phone) || 'N/A'}</span>
+                    <span class="client-detail">End: ${client.address || 'N/A'}</span>
+                </div>
+                <div class="actions">
+                    <button class="btn-action btn-edit" data-id="${client.id}" data-name="${client.name}" data-phone="${client.phone || ''}" data-address="${client.address || ''}" title="Editar Cliente"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="btn-action btn-danger" data-id="${client.id}" title="Excluir Cliente"><i class="fas fa-trash"></i></button>
+                </div>
             `;
+            clientsList.appendChild(li); // Adiciona o LI à UL
         });
     }
 
@@ -256,10 +261,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveClientBtn.textContent = 'Salvar Cliente';
     });
 
-
-    clientsTableBody.addEventListener('click', (event) => {
-        if (event.target.closest('.btn-edit-client')) {
-            const btn = event.target.closest('.btn-edit-client');
+    // MUDANÇA AQUI: O listener agora está na UL, não no tbody
+    clientsList.addEventListener('click', (event) => {
+        if (event.target.closest('.btn-edit')) {
+            const btn = event.target.closest('.btn-edit');
             const clientData = {
                 id: btn.dataset.id,
                 name: btn.dataset.name,
@@ -267,8 +272,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 address: btn.dataset.address
             };
             editClient(clientData);
-        } else if (event.target.closest('.btn-delete-client')) {
-            const id = event.target.closest('.btn-delete-client').dataset.id;
+        } else if (event.target.closest('.btn-danger')) {
+            const id = event.target.closest('.btn-danger').dataset.id;
             deleteClient(id);
         }
     });
