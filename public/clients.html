@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MullerSys - Clientes</title>
+    <link rel="icon" type="image/png" href="mullersys.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        /* Estilos específicos para a página de clientes, você pode ajustar em style.css */
+        .client-management-section {
+            background-color: var(--color-background-card);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-light);
+            margin-bottom: 20px;
+        }
+
+        .client-form, .client-list {
+            margin-top: 20px;
+        }
+
+        .client-form .form-group {
+            margin-bottom: 15px;
+        }
+
+        .client-form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .client-form input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .client-form .btn-group button {
+            margin-right: 10px;
+        }
+
+        .client-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .client-table th, .client-table td {
+            border: 1px solid var(--color-border);
+            padding: 10px;
+            text-align: left;
+        }
+
+        .client-table th {
+            background-color: var(--color-primary-light);
+            color: var(--color-text);
+        }
+
+        .client-table tbody tr:nth-child(odd) {
+            background-color: var(--color-background-secondary);
+        }
+
+        .client-actions button {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body id="page-clients">
+    <header>
+        <div class="header-left">
+            <h1>Gerenciamento de Clientes</h1>
+        </div>
+        <div class="header-right">
+            <button id="theme-toggle-btn" class="btn-icon" title="Alternar Tema">
+                <i class="fas fa-sun"></i> </button>
+            <button id="logout-btn" class="btn-icon" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </header>
+
+    <aside class="sidebar-nav">
+        <div class="sidebar-logo">
+            <i> <img src="mullersys.png" alt="" style="height: 80px; vertical-align: middle;"></i>
+        </div>
+        <ul>
+            <li><a href="venda.html" title="Venda"><i class="fas fa-cash-register"></i><span>Venda</span></a></li>
+            <li><a href="estoque.html" title="Estoque"><i class="fas fa-boxes"></i><span>Estoque</span></a></li>
+            <li><a href="controle.html" title="Controle de Caixa"><i class="fas fa-wallet"></i><span>Caixa</span></a></li>
+            <li id="clients-section-link" class="active"><a href="clients.html" title="Clientes"><i class="fas fa-users"></i><span>Clientes</span></a></li>
+            <li id="admin-section-link" class="hidden"><a href="admin.html"><i class="fas fa-user-cog"></i> Admin</a></li>
+        </ul>
+    </aside>
+
+    <main class="content">
+        <div class="client-management-section">
+            <h2>Adicionar/Editar Cliente</h2>
+            <div class="client-form">
+                <input type="hidden" id="client-id">
+                <div class="form-group">
+                    <label for="client-name">Nome do Cliente:</label>
+                    <input type="text" id="client-name" placeholder="Nome completo" required>
+                </div>
+                <div class="form-group">
+                    <label for="client-phone">Telefone (DDD)9999-9999:</label>
+                    <input type="text" id="client-phone" placeholder="(DD)NNNNN-NNNN" pattern="\(\d{2}\)\d{4,5}-\d{4}">
+                </div>
+                <div class="form-group">
+                    <label for="client-address">Endereço:</label>
+                    <input type="text" id="client-address" placeholder="Endereço completo">
+                </div>
+                <div class="form-group">
+                    <label for="client-cpf">CPF:</label>
+                    <input type="text" id="client-cpf" placeholder="Apenas números" required>
+                </div>
+                <div class="btn-group">
+                    <button id="save-client-btn" class="btn-primary">Salvar Cliente</button>
+                    <button id="cancel-edit-btn" class="btn-secondary">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="client-management-section client-list">
+            <h2>Lista de Clientes</h2>
+            <table class="client-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Endereço</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="clients-table-body">
+                    <tr><td colspan="5">Carregando clientes...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div class="custom-popup-overlay hidden" id="custom-popup-overlay">
+        <div class="custom-popup-content">
+            <h2 id="custom-popup-title"></h2>
+            <p id="custom-popup-message"></p>
+            <div class="custom-popup-actions">
+                <button id="custom-popup-close-btn" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="custom-confirm-overlay hidden" id="custom-confirm-overlay">
+        <div class="custom-confirm-content">
+            <h2 id="custom-confirm-title">Confirmação</h2>
+            <p id="custom-confirm-message"></p>
+            <div class="custom-confirm-actions">
+                <button id="custom-confirm-yes-btn" class="btn-danger">Sim</button>
+                <button id="custom-confirm-no-btn" class="btn-secondary">Não</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="clients.js"></script>
+</body>
+</html>
