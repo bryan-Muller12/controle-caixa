@@ -96,10 +96,65 @@ module.exports = async (req, res) => {
       const { rows } = await client.query(query, queryParams);
       return res.status(200).json(rows);
     }
-    
-    // Outros métodos (PUT, DELETE para clientes se necessário no futuro)
+
+    // MÉTODO PUT: Atualizar um cliente existente
+    else if (req.method === 'PUT') {
+      const { id } = req.query; // Pega o ID da query
+      const { name, phone, address } = req.body; // CPF não deve ser atualizado diretamente aqui
+
+      if (!id) {
+        return res.status(400).json({ error: 'ID do cliente é obrigatório para atualização.' });
+      }
+      if (!name) {
+        return res.status(400).json({ error: 'Nome do cliente é obrigatório para atualização.' });
+      }
+
+      // Validar formato do telefone (opcional)
+      const phoneRegex = /^\(\d{2}\)\d{4,5}-\d{4}$/;
+      if (phone && !phoneRegex.test(phone)) {
+        return res.status(400).json({ error: 'Formato de telefone inválido. Use (DD)NNNNN-NNNN ou (DD)NNNN-NNNN.' });
+      }
+
+      try {
+        const { rowCount } = await client.query(
+          'UPDATE clients SET name = $1, phone = $2, address = $3 WHERE id = $4;',
+          [name, phone, address, id]
+        );
+
+        if (rowCount === 0) {
+          return res.status(404).json({ error: 'Cliente não encontrado.' });
+        }
+        return res.status(200).json({ message: 'Cliente atualizado com sucesso!' });
+      } catch (dbError) {
+        console.error('Erro ao atualizar cliente no banco de dados:', dbError);
+        return res.status(500).json({ error: 'Erro interno do servidor ao atualizar cliente.' });
+      }
+    }
+
+    // MÉTODO DELETE: Excluir um cliente
+    else if (req.method === 'DELETE') {
+      const { id } = req.query; // Pega o ID da query
+
+      if (!id) {
+        return res.status(400).json({ error: 'ID do cliente é obrigatório para exclusão.' });
+      }
+
+      try {
+        const { rowCount } = await client.query('DELETE FROM clients WHERE id = $1;', [id]);
+
+        if (rowCount === 0) {
+          return res.status(404).json({ error: 'Cliente não encontrado para exclusão.' });
+        }
+        return res.status(200).json({ message: 'Cliente excluído com sucesso!' });
+      } catch (dbError) {
+        console.error('Erro ao excluir cliente do banco de dados:', dbError);
+        return res.status(500).json({ error: 'Erro interno do servidor ao excluir cliente.' });
+      }
+    }
+
+    // Outros métodos
     else {
-      res.setHeader('Allow', ['POST', 'GET']); 
+      res.setHeader('Allow', ['POST', 'GET', 'PUT', 'DELETE']);
       return res.status(405).end(`Método ${req.method} não permitido.`);
     }
   } catch (error) {

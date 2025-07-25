@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         let method = 'POST';
 
         if (id) { // Se houver um ID, é uma edição (PUT)
-            url = `/api/clients/${id}`; // Você precisaria implementar um PUT na sua API de clients para isso
+            url = `/api/clients?id=${id}`; // AGORA O ID É ENVIADO COMO PARÂMETRO DE CONSULTA
             method = 'PUT';
             // Para PUT, o CPF não deve ser enviado pois ele é o que o hash foi feito com base
             // Se precisar editar CPF, seria um caso mais complexo de "alterar CPF" no backend
@@ -153,7 +153,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function deleteClient(id) {
         showConfirm('Confirmar Exclusão', 'Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.', async () => {
             try {
-                const response = await fetch(`/api/clients/${id}`, {
+                // Modificado para enviar ID como query parameter, igual ao PUT
+                const response = await fetch(`/api/clients?id=${id}`, {
                     method: 'DELETE'
                 });
 
@@ -278,4 +279,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==== Inicialização ====
     fetchClients(); // Carrega a lista de clientes ao carregar a página
     clearForm(); // Limpa o formulário e configura o estado inicial
-});  
+});
