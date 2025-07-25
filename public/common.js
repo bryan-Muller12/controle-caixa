@@ -58,11 +58,26 @@ function atualizarNotificacoesComuns(produtosArray) {
     }
 }
 
-// Função de Logout
+// Função de Logout (Modificada para remover status de login do DB)
 function logout() {
-    localStorage.removeItem('usuarioLogado');
-    sessionStorage.removeItem('usuarioLogado');
-    // Em uma aplicação real com DB, você faria uma chamada à API para invalidar a sessão no backend
+    localStorage.removeItem('usuarioLogado'); // Remove a flag do localStorage
+    sessionStorage.removeItem('usuarioLogado'); // Remove a flag do sessionStorage
+    // Se estiver usando JWTs, você também removeria o token aqui:
+    // localStorage.removeItem('token');
+    // sessionStorage.removeItem('token');
+
+    // Em uma aplicação mais robusta, você faria uma chamada à API para invalidar a sessão no backend,
+    // garantindo que o token não possa ser reutilizado. Ex:
+    /*
+    fetch('/api/logout', { method: 'POST' })
+        .then(response => {
+            if (response.ok) {
+                console.log('Sessão invalidada no servidor.');
+            }
+        })
+        .catch(error => console.error('Erro ao invalidar sessão no servidor:', error));
+    */
+
     showCustomPopup('Logout', 'Você foi desconectado.', 'info');
     setTimeout(() => {
         window.location.href = 'index.html';
@@ -149,24 +164,29 @@ function showCustomConfirm(title, message) {
     });
 }
 
-// --- VERIFICAÇÃO DE LOGIN ---
+// --- VERIFICAÇÃO DE LOGIN (Modificada para refletir o login via DB) ---
 // A verificação de login agora é uma função e é chamada no DOMContentLoaded
 function checkLoginStatus() {
-    let usuarioLogado = sessionStorage.getItem('usuarioLogado');
+    let usuarioLogado = sessionStorage.getItem('usuarioLogado'); // Tenta buscar a flag do sessionStorage
 
     if (!usuarioLogado) {
-        usuarioLogado = localStorage.getItem('usuarioLogado');
+        usuarioLogado = localStorage.getItem('usuarioLogado'); // Se não encontrar, tenta do localStorage
         if (usuarioLogado) {
+            // Se encontrou no localStorage, mas não no sessionStorage (pode ser uma nova sessão),
+            // move para sessionStorage para consistência durante a sessão atual.
             sessionStorage.setItem('usuarioLogado', usuarioLogado);
         }
     }
 
-    // Se o usuário não está logado E a página atual NÃO é a de login (index.html)
+    // Se o usuário NÃO está logado E a página atual NÃO é a de login (index.html),
+    // redireciona para a página de login.
+    // Verifica window.location.pathname para cobrir casos onde a raiz é '/' ou '/index.html'
     if (!usuarioLogado && (window.location.pathname !== '/' && !window.location.pathname.includes('index.html'))) {
         window.location.href = 'index.html'; // Redireciona para a tela de login
         return false;
     }
-    // Se o usuário está logado E a página atual É a de login, redireciona para a página de venda
+    // Se o usuário ESTÁ logado E a página atual É a de login,
+    // redireciona para a página de venda.
     if (usuarioLogado && (window.location.pathname === '/' || window.location.pathname.includes('index.html'))) {
         window.location.href = 'venda.html';
         return true;
@@ -205,8 +225,6 @@ function toggleTheme() {
 
 // --- EVENT LISTENERS COMUNS (adicionados apenas após o DOM estar carregado) ---
 document.addEventListener('DOMContentLoaded', () => {
-    // ... seu código existente ...
-
     // Adiciona listener para o botão de alternar tema
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener('click', toggleTheme);
@@ -215,12 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carrega a preferência de tema do usuário ao carregar a página
     loadUserThemePreference();
 
-    // NOTA: renderizarNotificacoesComuns será chamada por cada script de página (venda.js, estoque.js, controle.js)
-    // após eles carregarem seus próprios dados de produtos da API.
-});
-
-// --- EVENT LISTENERS COMUNS (adicionados apenas após o DOM estar carregado) ---
-document.addEventListener('DOMContentLoaded', () => {
     // Garante que os elementos do cabeçalho existem antes de adicionar listeners
     if (notificationsBtn && notificationsTab && notificationsList && notificationsBadge && clearNotificationsBtn && logoutBtn) {
         notificationsBtn.addEventListener('click', (e) => {
@@ -251,6 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Chama a verificação de login uma vez que o DOM esteja carregado
     checkLoginStatus();
 
-    // NOTA: renderizarNotificacoesComuns será chamada por cada script de página (venda.js, estoque.js, controle.js)
+    // NOTA: atualizarNotificacoesComuns será chamada por cada script de página (venda.js, estoque.js, controle.js)
     // após eles carregarem seus próprios dados de produtos da API.
 });
