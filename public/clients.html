@@ -7,139 +7,7 @@
     <link rel="icon" type="image/png" href="mullersys.png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <style>
-        /* Estilos específicos para a página de clientes, você pode ajustar em style.css */
-        .client-management-section {
-            background-color: var(--color-background-card);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: var(--shadow-light);
-            margin-bottom: 20px;
-        }
-
-        /* O formulário agora estará dentro de um modal, então os estilos abaixo podem ser ajustados conforme seu estilo de modal */
-        /* .client-form, .client-list {
-            margin-top: 20px;
-        } */
-
-        .client-form .form-group {
-            margin-bottom: 15px;
-        }
-
-        .client-form label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .client-form input[type="text"] {
-            width: calc(100% - 20px);
-            padding: 10px;
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        .client-form .btn-group button {
-            margin-right: 10px;
-        }
-
-        .client-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        .client-table th, .client-table td {
-            border: 1px solid var(--color-border);
-            padding: 10px;
-            text-align: left;
-        }
-
-        .client-table th {
-            background-color: var(--color-primary-light);
-            color: var(--color-text);
-        }
-
-        .client-table tbody tr:nth-child(odd) {
-            background-color: var(--color-background-secondary);
-        }
-
-        .client-actions button {
-            margin-right: 5px;
-        }
-
-        /* Estilos para o Modal (replicando de estoque.html e style.css se já existirem) */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background-color: var(--color-background);
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: var(--shadow-dark);
-            width: 90%;
-            max-width: 500px;
-            position: relative;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        .modal-content h2 {
-            color: var(--color-primary);
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        /* Estilos para a seção de controles, similar ao estoque.html */
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            background-color: var(--color-background-card);
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: var(--shadow-light);
-            flex-wrap: wrap; /* Para telas menores */
-            gap: 10px; /* Espaçamento entre itens */
-        }
-
-        .controls input[type="text"] {
-            flex-grow: 1; /* Permite que o campo de filtro ocupe o espaço disponível */
-            padding: 10px;
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
-            max-width: 300px; /* Limita a largura para melhor visualização */
-        }
-
-        /* Animações (se já estiverem no style.css, pode remover daqui) */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .hidden {
-            display: none;
-        }
-    </style>
-</head>
+    </head>
 <body id="page-clients">
     <header>
         <div class="header-left">
@@ -176,7 +44,6 @@
             <table class="client-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Nome</th>
                         <th>Telefone</th>
                         <th>Endereço</th>
@@ -184,7 +51,7 @@
                     </tr>
                 </thead>
                 <tbody id="clients-table-body">
-                    <tr><td colspan="5">Carregando clientes...</td></tr>
+                    <tr><td colspan="4">Carregando clientes...</td></tr>
                 </tbody>
             </table>
         </div>

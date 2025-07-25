@@ -61,7 +61,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==== Funções de API ====
 
     async function fetchClients() {
-        clientsTableBody.innerHTML = '<tr><td colspan="5">Carregando clientes...</td></tr>';
+        // Colspan ajustado para 4 colunas (Nome, Telefone, Endereço, Ações)
+        clientsTableBody.innerHTML = '<tr><td colspan="4">Carregando clientes...</td></tr>';
         try {
             const response = await fetch('/api/clients');
             if (!response.ok) {
@@ -71,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderClients(); // Renderiza com base na lista completa (ou filtrada)
         } catch (error) {
             console.error('Erro ao carregar clientes:', error);
-            clientsTableBody.innerHTML = `<tr><td colspan="5" style="color: var(--color-danger);">Erro ao carregar clientes: ${error.message}</td></tr>`;
+            clientsTableBody.innerHTML = `<tr class="no-results"><td colspan="4" style="color: var(--color-danger);">Erro ao carregar clientes: ${error.message}</td></tr>`; // colspan ajustado
             if (typeof showCustomPopup === 'function') {
                 showCustomPopup('Erro ao Carregar', error.message, 'error');
             }
@@ -187,26 +188,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderClients() {
         clientsTableBody.innerHTML = '';
-        // CONVERTER O FILTRO PARA MAIÚSCULAS PARA CORRESPONDER AOS DADOS NO BANCO
         const filtro = filtroClientesInput.value.toUpperCase();
         
-        // Filtra a lista completa de clientes (que já está em maiúsculas vindo do banco)
         const clientsFiltered = allClients.filter(client =>
-            // COMPARAÇÃO TAMBÉM EM MAIÚSCULAS PARA CONSISTÊNCIA
             client.name.toUpperCase().includes(filtro) ||
-            (client.phone && client.phone.toUpperCase().includes(filtro)) || // Adiciona busca por telefone
-            (client.address && client.address.toUpperCase().includes(filtro)) // Adiciona busca por endereço
+            (client.phone && client.phone.toUpperCase().includes(filtro)) ||
+            (client.address && client.address.toUpperCase().includes(filtro))
         );
 
         if (clientsFiltered.length === 0) {
-            clientsTableBody.innerHTML = `<tr><td colspan="5">Nenhum cliente ${filtro ? 'encontrado com o filtro' : 'cadastrado'}.</td></tr>`;
+            // colspan ajustado para 4 colunas
+            clientsTableBody.innerHTML = `<tr><td colspan="4">Nenhum cliente ${filtro ? 'encontrado com o filtro' : 'cadastrado'}.</td></tr>`;
             return;
         }
 
         clientsFiltered.forEach(client => {
             const row = clientsTableBody.insertRow();
             row.innerHTML = `
-                <td>${client.id}</td>
                 <td>${client.name}</td>
                 <td>${formatPhone(client.phone) || 'N/A'}</td>
                 <td>${client.address || 'N/A'}</td>
@@ -223,11 +221,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         clientNameInput.value = client.name;
         clientPhoneInput.value = client.phone;
         clientAddressInput.value = client.address;
-        clientCpfInput.value = ''; // CPF não é editável diretamente aqui por segurança (hash)
-        clientCpfInput.disabled = true; // Desabilita o campo CPF na edição
+        clientCpfInput.value = '';
+        clientCpfInput.disabled = true;
         saveClientBtn.textContent = 'Atualizar Cliente';
 
-        openModal(editClientModalOverlay); // Abre o modal de edição
+        openModal(editClientModalOverlay);
     }
 
     function clearForm() {
@@ -236,9 +234,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         clientPhoneInput.value = '';
         clientAddressInput.value = '';
         clientCpfInput.value = '';
-        clientCpfInput.disabled = false; // Habilita o campo CPF para nova criação
-        saveClientBtn.textContent = 'Salvar Cliente'; // Garante que o texto seja "Salvar Cliente" para novas adições
-        clientFormModal.reset(); // Garante que o formulário é resetado
+        clientCpfInput.disabled = false;
+        saveClientBtn.textContent = 'Salvar Cliente';
+        clientFormModal.reset();
     }
 
     // ==== Listeners de Eventos ====
@@ -249,14 +247,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     cancelEditBtn.addEventListener('click', () => {
         clearForm();
-        closeModal(editClientModalOverlay); // Fecha o modal ao cancelar
+        closeModal(editClientModalOverlay);
     });
 
-    // Listener para o botão "Adicionar Novo Cliente"
     openAddClientModalBtn.addEventListener('click', () => {
-        clearForm(); // Limpa o formulário para uma nova entrada
-        openModal(editClientModalOverlay); // Abre o modal
-        saveClientBtn.textContent = 'Salvar Cliente'; // Garante o texto correto para adicionar
+        clearForm();
+        openModal(editClientModalOverlay);
+        saveClientBtn.textContent = 'Salvar Cliente';
     });
 
 
@@ -276,7 +273,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Fechar modal ao clicar fora dele
     editClientModalOverlay.addEventListener('click', (e) => {
         if (e.target === editClientModalOverlay) {
             clearForm();
@@ -284,13 +280,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Listener para o campo de filtro
-    filtroClientesInput.addEventListener('input', renderClients); // Chama renderClients no input do filtro
+    filtroClientesInput.addEventListener('input', renderClients);
 
-
-    // Masks para telefone e CPF (mantidos como estavam)
     clientPhoneInput.addEventListener('input', (e) => {
-        let value = e.target.value.replace(/\D/g, ''); // Remove não-dígitos
+        let value = e.target.value.replace(/\D/g, '');
         if (value.length > 0) {
             value = '(' + value;
             if (value.length > 3) {
@@ -309,7 +302,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     clientCpfInput.addEventListener('input', (e) => {
-        let value = e.target.value.replace(/\D/g, ''); // Remove não-dígitos
+        let value = e.target.value.replace(/\D/g, '');
         if (value.length > 0) {
             if (value.length > 3) {
                 value = value.substring(0, 3) + '.' + value.substring(3);
@@ -328,6 +321,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // ==== Inicialização ====
-    fetchClients(); // Carrega a lista de clientes ao carregar a página
-    clearForm(); // Limpa o formulário e configura o estado inicial
+    fetchClients();
+    clearForm();
 });
