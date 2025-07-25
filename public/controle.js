@@ -18,9 +18,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==== Funções de Busca e Renderização ====
 
     async function fetchTransactions() {
-        transactionsTableBody.innerHTML = '<tr><td colspan="7">Carregando transações...</td></tr>'; // Atualizado colspan
+        transactionsTableBody.innerHTML = '<tr><td colspan="5">Carregando transações...</td></tr>';
         const dataInicio = filterDataInicioInput.value;
-        const dataFim = filterDataFimInput.value;
+        const dataFim = filterFimInput.value;
         const tipo = filterTipoSelect.value;
 
         let queryParams = new URLSearchParams();
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             calculateAndDisplayBalance(transactions);
         } catch (error) {
             console.error('Erro ao carregar transações:', error);
-            transactionsTableBody.innerHTML = `<tr><td colspan="7" style="color: var(--color-danger);">Erro ao carregar transações: ${error.message}</td></tr>`; // Atualizado colspan
+            transactionsTableBody.innerHTML = `<tr><td colspan="5" style="color: var(--color-danger);">Erro ao carregar transações: ${error.message}</td></tr>`;
             saldoCaixaSpan.textContent = 'Erro';
         }
     }
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderTransactions(transactions) {
         transactionsTableBody.innerHTML = ''; // Limpa o corpo da tabela
         if (transactions.length === 0) {
-            transactionsTableBody.innerHTML = '<tr><td colspan="7">Nenhuma transação encontrada.</td></tr>'; // Atualizado colspan
+            transactionsTableBody.innerHTML = '<tr><td colspan="5">Nenhuma transação encontrada.</td></tr>';
             return;
         }
 
@@ -58,9 +58,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td>${transaction.descricao}</td>
                 <td style="color: ${transaction.tipo === 'saida' ? 'red' : 'green'};">${formatCurrency(transaction.valor)}</td>
                 <td>${new Date(transaction.data).toLocaleDateString('pt-BR')}</td>
-                <td>${transaction.client ? transaction.client.name : 'N/A'}</td> <td>
-                    ${transaction.tipo === 'venda' ? `<button class="btn-icon btn-view-receipt" data-transaction-id="${transaction.id}" title="Visualizar Nota"><i class="fas fa-file-invoice-dollar"></i></button>` : '—'}
-                </td>
             `;
         });
     }
@@ -85,18 +82,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         filterDataFimInput.value = '';
         filterTipoSelect.value = '';
         fetchTransactions(); // Recarrega todas as transações sem filtros
-    });
-
-    // Listener para os botões "Visualizar Nota" (delegação de evento)
-    transactionsTableBody.addEventListener('click', (event) => {
-        const viewReceiptBtn = event.target.closest('.btn-view-receipt');
-        if (viewReceiptBtn) {
-            const transactionId = viewReceiptBtn.dataset.transactionId;
-            if (transactionId) {
-                // Abre a nota em uma nova guia
-                window.open(`receipt.html?transactionId=${transactionId}`, '_blank');
-            }
-        }
     });
 
     // ==== Inicialização ====
