@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administração de Usuários - Controle de Caixa</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="index.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" type="image/png" href="MullerSys_Logo_.png">
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <img src="MullerSys_Logo_.png" alt="MullerSys Logo" class="logo">
+            <h1>Controle de Caixa</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="venda.html"><i class="fas fa-cash-register"></i> Vendas</a></li>
+                <li><a href="estoque.html"><i class="fas fa-boxes"></i> Estoque</a></li>
+                <li><a href="controle.html"><i class="fas fa-chart-line"></i> Controle</a></li>
+                <li id="admin-section-link" class="hidden"><a href="admin.html"><i class="fas fa-user-cog"></i> Admin</a></li>
+            </ul>
+        </nav>
+        <div class="header-right">
+            <button id="notifications-btn" class="icon-button">
+                <i class="fas fa-bell"></i>
+                <span class="badge hidden" id="notifications-badge">0</span>
+            </button>
+            <div class="notifications-tab hidden" id="notifications-tab">
+                <h3>Notificações</h3>
+                <ul id="notifications-list">
+                    <li>Nenhuma notificação.</li>
+                </ul>
+                <button id="clear-notifications-btn">Limpar Notificações</button>
+            </div>
+            <button id="theme-toggle-btn" class="icon-button">
+                <i class="fas fa-sun"></i> </button>
+            <button id="logout-btn" class="icon-button"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </header>
+
+    <main class="login-container">
+        <h2>Gerenciar Usuários</h2>
+
+        <div class="login-box">
+            <h3>Criar Novo Usuário</h3>
+            <form id="create-user-form">
+                <div class="input-group">
+                    <label for="new-username">Nome de Usuário:</label>
+                    <input type="text" id="new-username" required>
+                </div>
+                <div class="input-group">
+                    <label for="new-password">Senha:</label>
+                    <input type="password" id="new-password" required>
+                </div>
+                <div class="input-group">
+                    <label for="new-role">Papel:</label>
+                    <select id="new-role">
+                        <option value="common">Comum</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <button type="submit" class="login-button">Criar Usuário</button>
+                <p id="user-creation-message" class="error-message" style="display: none;"></p>
+            </form>
+        </div>
+    </main>
+
+    <div id="custom-popup-overlay" class="custom-overlay hidden">
+        <div class="custom-popup">
+            <h3 id="custom-popup-title"></h3>
+            <p id="custom-popup-message"></p>
+            <button id="custom-popup-close-btn" class="popup-close-btn">OK</button>
+        </div>
+    </div>
+
+    <div id="custom-confirm-overlay" class="custom-overlay hidden">
+        <div class="custom-popup">
+            <h3 id="custom-confirm-title"></h3>
+            <p id="custom-confirm-message"></p>
+            <div class="popup-buttons">
+                <button id="custom-confirm-yes-btn" class="popup-btn">Sim</button>
+                <button id="custom-confirm-no-btn" class="popup-btn">Não</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="common.js"></script>
+    <script>
+        // Este script é específico para admin.html
+        document.addEventListener('DOMContentLoaded', () => {
+            // Verifica se o usuário é admin. Se não for, redireciona.
+            if (!isUserAdmin()) {
+                window.location.href = 'venda.html'; // Ou index.html, dependendo da sua preferência
+                return; // Impede a execução do restante do script se não for admin
+            }
+
+            const createUserForm = document.getElementById('create-user-form');
+            const newUsernameInput = document.getElementById('new-username');
+            const newPasswordInput = document.getElementById('new-password');
+            const newRoleSelect = document.getElementById('new-role');
+            const userCreationMessage = document.getElementById('user-creation-message');
+
+            createUserForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                userCreationMessage.style.display = 'none'; // Esconde mensagens anteriores
+
+                const username = newUsernameInput.value;
+                const password = newPasswordInput.value;
+                const role = newRoleSelect.value;
+
+                try {
+                    const response = await fetch('/api/users', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            // IMPORTANT: Em produção, isto DEVE ser um token JWT
+                            // (const token = sessionStorage.getItem('token'); ...)
+                            // 'Authorization': `Bearer ${token}`
+                            // Por agora, como exemplo simples, passamos o username.
+                            // Isso não é seguro para produção sem validação de token!
+                            'X-Logged-In-Username': sessionStorage.getItem('usuarioLogado') || localStorage.getItem('usuarioLogado'),
+                        },
+                        body: JSON.stringify({ username, password, role }),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        showCustomPopup('Sucesso', data.message || 'Usuário criado com sucesso!', 'success');
+                        createUserForm.reset(); // Limpa o formulário
+                    } else {
+                        userCreationMessage.textContent = data.error || 'Erro ao criar usuário.';
+                        userCreationMessage.style.display = 'block';
+                        userCreationMessage.style.color = 'var(--danger-color)'; // Estilo para erro
+                    }
+                } catch (error) {
+                    console.error('Erro de rede ou servidor:', error);
+                    userCreationMessage.textContent = 'Não foi possível conectar ao servidor para criar o usuário.';
+                    userCreationMessage.style.display = 'block';
+                    userCreationMessage.style.color = 'var(--danger-color)';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

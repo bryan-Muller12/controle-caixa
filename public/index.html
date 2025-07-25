@@ -50,55 +50,45 @@
   </div>
 
 <script>
-    // Remova a array 'usuarios' hardcoded, se existir.
-    // Ex: // const usuarios = [ { username: 'bryan.ms@gmail.com', password: '123' }, { username: 'admin@estoque.com', password: '123' }];
-
     document.getElementById('login-form').addEventListener('submit', async (e) => {
-      e.preventDefault(); // Impede o envio padrão do formulário
-
+      e.preventDefault();
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
       const keepLoggedIn = document.getElementById('keep-logged-in').checked;
-      const erroEl = document.getElementById('login-erro'); // Elemento para exibir mensagens de erro
-      erroEl.style.display = 'none'; // Esconde mensagens de erro anteriores
+      const erroEl = document.getElementById('login-erro');
+      erroEl.style.display = 'none';
 
       try {
-        // Envia as credenciais para o novo endpoint de autenticação no backend
         const response = await fetch('/api/auth', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json', // Informa que o corpo da requisição é JSON
+            'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ username, password }), // Converte os dados do formulário para JSON
+          body: JSON.stringify({ username, password }),
         });
 
-        const data = await response.json(); // Analisa a resposta JSON do servidor
+        const data = await response.json();
 
-        if (response.ok) { // Verifica se a resposta HTTP foi um sucesso (status 2xx)
-          // Limpa quaisquer estados de login anteriores para evitar conflitos
+        if (response.ok) {
           localStorage.removeItem('usuarioLogado');
           sessionStorage.removeItem('usuarioLogado');
-          // Se estiver usando JWT, remova também o token:
-          // localStorage.removeItem('token');
-          // sessionStorage.removeItem('token');
+          // Limpar também o role anterior
+          localStorage.removeItem('usuarioRole');
+          sessionStorage.removeItem('usuarioRole');
 
-          // Armazena o status de login (e opcionalmente o token JWT)
           if (keepLoggedIn) {
-            localStorage.setItem('usuarioLogado', data.user.username); // Armazena o username no localStorage
-            // Se usar JWT: localStorage.setItem('token', data.token);
+            localStorage.setItem('usuarioLogado', data.user.username);
+            localStorage.setItem('usuarioRole', data.user.role); // Armazenar o role
           } else {
-            sessionStorage.setItem('usuarioLogado', data.user.username); // Armazena o username no sessionStorage
-            // Se usar JWT: sessionStorage.setItem('token', data.token);
+            sessionStorage.setItem('usuarioLogado', data.user.username);
+            sessionStorage.setItem('usuarioRole', data.user.role); // Armazenar o role
           }
-
-          window.location.href = 'venda.html'; // Redireciona para a página principal após o login
+          window.location.href = 'venda.html';
         } else {
-          // Exibe a mensagem de erro recebida do backend ou uma mensagem genérica
           erroEl.textContent = data.error || 'Erro ao fazer login. Tente novamente.';
-          erroEl.style.display = 'block'; // Mostra a mensagem de erro
+          erroEl.style.display = 'block';
         }
       } catch (error) {
-        // Captura erros de rede ou outros problemas durante a requisição
         console.error('Erro de rede ou servidor:', error);
         erroEl.textContent = 'Não foi possível conectar ao servidor. Verifique sua conexão.';
         erroEl.style.display = 'block';

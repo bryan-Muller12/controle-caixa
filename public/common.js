@@ -58,26 +58,13 @@ function atualizarNotificacoesComuns(produtosArray) {
     }
 }
 
-// Função de Logout (Modificada para remover status de login do DB)
+// Função de Logout (MODIFICADA: remove também o role do armazenamento)
 function logout() {
-    localStorage.removeItem('usuarioLogado'); // Remove a flag do localStorage
-    sessionStorage.removeItem('usuarioLogado'); // Remove a flag do sessionStorage
-    // Se estiver usando JWTs, você também removeria o token aqui:
-    // localStorage.removeItem('token');
-    // sessionStorage.removeItem('token');
-
-    // Em uma aplicação mais robusta, você faria uma chamada à API para invalidar a sessão no backend,
-    // garantindo que o token não possa ser reutilizado. Ex:
-    /*
-    fetch('/api/logout', { method: 'POST' })
-        .then(response => {
-            if (response.ok) {
-                console.log('Sessão invalidada no servidor.');
-            }
-        })
-        .catch(error => console.error('Erro ao invalidar sessão no servidor:', error));
-    */
-
+    localStorage.removeItem('usuarioLogado');
+    sessionStorage.removeItem('usuarioLogado');
+    localStorage.removeItem('usuarioRole'); // Remove o role
+    sessionStorage.removeItem('usuarioRole'); // Remove o role
+    // Em uma aplicação real com DB, você faria uma chamada à API para invalidar a sessão no backend
     showCustomPopup('Logout', 'Você foi desconectado.', 'info');
     setTimeout(() => {
         window.location.href = 'index.html';
@@ -164,34 +151,37 @@ function showCustomConfirm(title, message) {
     });
 }
 
-// --- VERIFICAÇÃO DE LOGIN (Modificada para refletir o login via DB) ---
-// A verificação de login agora é uma função e é chamada no DOMContentLoaded
+// --- VERIFICAÇÃO DE LOGIN (MODIFICADA: agora considera o role do usuário) ---
 function checkLoginStatus() {
-    let usuarioLogado = sessionStorage.getItem('usuarioLogado'); // Tenta buscar a flag do sessionStorage
+    let usuarioLogado = sessionStorage.getItem('usuarioLogado');
+    let usuarioRole = sessionStorage.getItem('usuarioRole'); // Pega o role do sessionStorage
 
     if (!usuarioLogado) {
-        usuarioLogado = localStorage.getItem('usuarioLogado'); // Se não encontrar, tenta do localStorage
+        usuarioLogado = localStorage.getItem('usuarioLogado');
+        usuarioRole = localStorage.getItem('usuarioRole'); // Pega o role do localStorage
         if (usuarioLogado) {
-            // Se encontrou no localStorage, mas não no sessionStorage (pode ser uma nova sessão),
-            // move para sessionStorage para consistência durante a sessão atual.
             sessionStorage.setItem('usuarioLogado', usuarioLogado);
+            sessionStorage.setItem('usuarioRole', usuarioRole); // Move o role para sessionStorage
         }
     }
 
-    // Se o usuário NÃO está logado E a página atual NÃO é a de login (index.html),
-    // redireciona para a página de login.
-    // Verifica window.location.pathname para cobrir casos onde a raiz é '/' ou '/index.html'
+    // Se o usuário não está logado E a página atual NÃO é a de login (index.html)
     if (!usuarioLogado && (window.location.pathname !== '/' && !window.location.pathname.includes('index.html'))) {
         window.location.href = 'index.html'; // Redireciona para a tela de login
         return false;
     }
-    // Se o usuário ESTÁ logado E a página atual É a de login,
-    // redireciona para a página de venda.
+    // Se o usuário está logado E a página atual É a de login, redireciona para a página de venda
     if (usuarioLogado && (window.location.pathname === '/' || window.location.pathname.includes('index.html'))) {
         window.location.href = 'venda.html';
         return true;
     }
     return !!usuarioLogado; // Retorna true se logado, false caso contrário
+}
+
+// NOVA FUNÇÃO: para verificar se o usuário logado é admin
+function isUserAdmin() {
+    const usuarioRole = sessionStorage.getItem('usuarioRole') || localStorage.getItem('usuarioRole');
+    return usuarioRole === 'admin';
 }
 
 // --- LÓGICA DE TEMA CLARO/ESCURO ---
@@ -260,6 +250,16 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutBtn.addEventListener('click', logout);
     }
     
+    // Adicione a verificação e exibição da seção de admin, se necessário
+    const adminSectionLink = document.getElementById('admin-section-link'); // Ex: um link no menu
+    if (adminSectionLink) {
+        if (isUserAdmin()) {
+            adminSectionLink.classList.remove('hidden'); // Mostra o link para admins
+        } else {
+            adminSectionLink.classList.add('hidden'); // Esconde para não-admins
+        }
+    }
+
     // Chama a verificação de login uma vez que o DOM esteja carregado
     checkLoginStatus();
 
