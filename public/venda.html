@@ -31,6 +31,7 @@
             <li><a href="venda.html" class="active" title="Venda"><i class="fas fa-cash-register"></i><span>Venda</span></a></li>
             <li><a href="estoque.html" title="Estoque"><i class="fas fa-boxes"></i><span>Estoque</span></a></li>
             <li><a href="controle.html" title="Controle de Caixa"><i class="fas fa-wallet"></i><span>Caixa</span></a></li>
+            <li><a href="clients.html" title="Clientes"><i class="fas fa-users"></i><span>Clientes</span></a></li>
             <li id="admin-section-link" class="hidden"><a href="admin.html"><i class="fas fa-user-cog"></i> Admin</a></li>
         </ul>
     </aside>
@@ -62,11 +63,14 @@
                         <p><strong>Nome:</strong> <span id="found-client-name"></span></p>
                         <p><strong>Telefone:</strong> <span id="found-client-phone"></span></p>
                         <p><strong>Endereço:</strong> <span id="found-client-address"></span></p>
-                        <input type="hidden" id="selected-client-id"> </div>
-                    <div class="form-group">
-                        <button type="button" id="add-new-client-btn" class="btn-primary">Adicionar Novo Cliente</button>
+                        <input type="hidden" id="selected-client-id">
                     </div>
-                </div>
+                    
+                    <div id="client-search-results" class="client-results-list hidden">
+                        <ul id="client-results-ul">
+                            </ul>
+                    </div>
+                    </div>
                 <div class="form-item-input">
                     <div class="form-group">
                         <label for="search-produto-input">Código ou Nome:</label>
@@ -134,31 +138,6 @@
         </div>
     </main>
 
-    <div class="custom-popup-overlay hidden" id="add-client-popup-overlay">
-        <div class="custom-popup-content">
-            <h2 id="add-client-popup-title">Adicionar Novo Cliente</h2>
-            <div class="form-group">
-                <label for="new-client-name">Nome:</label>
-                <input type="text" id="new-client-name" required>
-            </div>
-            <div class="form-group">
-                <label for="new-client-phone">Telefone (DDD)9999-9999:</label>
-                <input type="text" id="new-client-phone" placeholder="(DD)9999-9999" pattern="\(\d{2}\)\d{4,5}-\d{4}">
-            </div>
-            <div class="form-group">
-                <label for="new-client-address">Endereço:</label>
-                <input type="text" id="new-client-address">
-            </div>
-            <div class="form-group">
-                <label for="new-client-cpf">CPF:</label>
-                <input type="text" id="new-client-cpf" required>
-            </div>
-            <div class="custom-popup-actions">
-                <button id="save-new-client-btn" class="btn-primary">Salvar Cliente</button>
-                <button id="cancel-add-client-btn" class="btn-secondary">Cancelar</button>
-            </div>
-        </div>
-    </div>
     <div class="custom-popup-overlay hidden" id="custom-popup-overlay">
         <div class="custom-popup-content">
             <h2 id="custom-popup-title"></h2>

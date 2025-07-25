@@ -21,7 +21,7 @@ const valorDescontoGlobalInput = document.getElementById('valor-desconto-global'
 const productDisplayCard = document.querySelector('.product-display-card');
 const productNameDisplay = document.getElementById('product-name-display');
 
-// ==== Seleção de Elementos do DOM para Clientes (NOVOS) ====
+// ==== Seleção de Elementos do DOM para Clientes (ATUALIZADOS) ====
 const searchClientInput = document.getElementById('search-client-input');
 const findClientBtn = document.getElementById('find-client-btn');
 const clearClientBtn = document.getElementById('clear-client-btn');
@@ -30,14 +30,11 @@ const foundClientName = document.getElementById('found-client-name');
 const foundClientPhone = document.getElementById('found-client-phone');
 const foundClientAddress = document.getElementById('found-client-address');
 const selectedClientIdInput = document.getElementById('selected-client-id');
-const addNewClientBtn = document.getElementById('add-new-client-btn');
-const addClientPopupOverlay = document.getElementById('add-client-popup-overlay');
-const saveNewClientBtn = document.getElementById('save-new-client-btn');
-const cancelAddClientBtn = document.getElementById('cancel-add-client-btn');
-const newClientNameInput = document.getElementById('new-client-name');
-const newClientPhoneInput = document.getElementById('new-client-phone');
-const newClientAddressInput = document.getElementById('new-client-address');
-const newClientCpfInput = document.getElementById('new-client-cpf');
+// REMOVIDO: addNewClientBtn e elementos relacionados ao popup de adicionar cliente
+
+// NOVOS elementos para a lista de resultados da busca de clientes
+const clientSearchResultsDiv = document.getElementById('client-search-results');
+const clientResultsUl = document.getElementById('client-results-ul');
 
 
 // Variáveis de estado (existente)
@@ -46,8 +43,9 @@ let selectedProduct = null;
 let currentProductId = null;
 let currentProductStock = 0;
 
-// Variáveis de estado (NOVO para clientes)
+// Variáveis de estado (ATUALIZADO para clientes)
 let selectedClient = null; // Para armazenar o objeto do cliente selecionado
+
 
 // ==== Funções de Utilidade (existente) ====
 function showPopup(title, message, isError = false, callback = null) {
@@ -60,14 +58,12 @@ function showPopup(title, message, isError = false, callback = null) {
     popupMessage.textContent = message;
     popupOverlay.classList.remove('hidden');
 
-    // Estilo de erro
     if (isError) {
         popupTitle.style.color = 'var(--color-danger)';
     } else {
-        popupTitle.style.color = ''; // Reseta para a cor padrão
+        popupTitle.style.color = '';
     }
 
-    // Garante que o event listener só é adicionado uma vez
     popupCloseBtn.onclick = () => {
         popupOverlay.classList.add('hidden');
         if (callback) callback();
@@ -99,20 +95,20 @@ function formatCurrency(value) {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
-// Função para formatar telefone (NOVO)
 function formatPhone(phone) {
     if (!phone) return '';
-    // Remove tudo que não for dígito
     const cleaned = ('' + phone).replace(/\D/g, '');
     const match = cleaned.match(/^(\d{2})(\d{4,5})(\d{4})$/);
     if (match) {
         return `(${match[1]})${match[2]}-${match[3]}`;
     }
-    return phone; // Retorna o original se não conseguir formatar
+    return phone;
 }
 
 
-// ==== Lógica do Produto (existente, com pequenas adaptações) ====
+// ==== Lógica do Produto (existente) ====
+// Nenhuma alteração aqui, mas se os produtos não estão sendo puxados, a causa pode estar no backend ou na conexão.
+// Esta função está correta em sua lógica para puxar um produto pelo search.
 async function fetchProduct(query) {
     try {
         const response = await fetch(`/api/produtos?search=${encodeURIComponent(query)}`);
@@ -130,7 +126,7 @@ async function fetchProduct(query) {
             foundProductQuantityStock.textContent = selectedProduct.quantidade;
             foundProductDetails.classList.remove('hidden');
             addItemToCartBtn.disabled = false;
-            productNameDisplay.textContent = selectedProduct.nome; // Atualiza o nome no card
+            productNameDisplay.textContent = selectedProduct.nome;
             valorUnitarioItemInput.value = selectedProduct.preco_venda.toFixed(2);
             updateValorTotalItem();
         } else {
@@ -185,13 +181,11 @@ function updateCartSummary() {
     finalizeSaleBtn.disabled = cart.length === 0;
     cancelAllItemsBtn.disabled = cart.length === 0;
 
-    // Aplica o desconto global se a checkbox estiver marcada
     if (aplicarDescontoCheckbox.checked && parseFloat(valorDescontoGlobalInput.value) > 0) {
         const desconto = parseFloat(valorDescontoGlobalInput.value);
         if (!isNaN(desconto) && desconto < totalSale) {
             totalSaleDisplay.textContent = formatCurrency(totalSale - desconto);
         } else if (desconto >= totalSale) {
-            // Evita valor negativo, opcionalmente pode mostrar um erro
             totalSaleDisplay.textContent = formatCurrency(0);
         }
     }
@@ -247,7 +241,6 @@ function addItemToCart() {
         return;
     }
 
-    // Verificar se o item já está no carrinho e atualizar
     const existingItemIndex = cart.findIndex(item => item.produtoId === selectedProduct.id);
 
     if (existingItemIndex > -1) {
@@ -259,7 +252,7 @@ function addItemToCart() {
             return;
         }
         existingItem.quantidadeVendida = newTotalQuantity;
-        existingItem.totalItem = newTotalQuantity * existingItem.precoUnitarioVenda; // Recalcula o total do item
+        existingItem.totalItem = newTotalQuantity * existingItem.precoUnitarioVenda;
     } else {
         const item = {
             produtoId: selectedProduct.id,
@@ -267,14 +260,14 @@ function addItemToCart() {
             nomeProduto: selectedProduct.nome,
             quantidadeVendida: quantidade,
             precoUnitarioOriginal: selectedProduct.preco_venda,
-            precoUnitarioVenda: valorUnitario, // Permite alterar o preço de venda
+            precoUnitarioVenda: valorUnitario,
             totalItem: totalItem
         };
         cart.push(item);
     }
     
     renderCart();
-    clearProductSelection(); // Limpa a seleção após adicionar ao carrinho
+    clearProductSelection();
     searchProdutoInput.focus();
 }
 
@@ -310,8 +303,8 @@ async function finalizeSale() {
     const transactionData = {
         tipo: 'venda',
         descricao: `Venda de ${cart.length} itens.`,
-        valor: totalFinal, // Valor final da transação após o desconto
-        data: new Date().toISOString().slice(0, 10), // Data atual no formato YYYY-MM-DD
+        valor: totalFinal,
+        data: new Date().toISOString().slice(0, 10),
         detalhesVenda: {
             totalBruto: totalBruto,
             valorDesconto: valorDesconto,
@@ -348,19 +341,14 @@ async function finalizeSale() {
 
         const result = await response.json();
         showPopup('Venda Finalizada', 'Venda registrada com sucesso! ID da Transação: ' + result.id, false, () => {
-            // Limpa o carrinho e a seleção de produto e cliente após a venda
             cart = [];
             renderCart();
             clearProductSelection();
-            clearClientSelection(); // Limpa seleção de cliente
+            clearClientSelection();
             aplicarDescontoCheckbox.checked = false;
             valorDescontoGlobalInput.classList.add('hidden');
             valorDescontoGlobalInput.value = 0;
 
-            // Redireciona para a página de nota após a venda (NOVO)
-            // Você pode querer que isso seja um "botão de visualizar nota" após a confirmação
-            // ou um redirecionamento automático para a nota.
-            // Por enquanto, faremos um redirecionamento direto para a nota.
             window.location.href = `receipt.html?transactionId=${result.id}`;
         });
 
@@ -375,14 +363,14 @@ function cancelAllItems() {
         cart = [];
         renderCart();
         clearProductSelection();
-        clearClientSelection(); // Limpa seleção de cliente
+        clearClientSelection();
         aplicarDescontoCheckbox.checked = false;
         valorDescontoGlobalInput.classList.add('hidden');
         valorDescontoGlobalInput.value = 0;
     });
 }
 
-// ==== Lógica do Cliente (NOVAS FUNÇÕES) ====
+// ==== Lógica do Cliente (NOVAS FUNÇÕES PARA EXIBIR LISTA) ====
 
 async function fetchClient(query) {
     try {
@@ -391,14 +379,20 @@ async function fetchClient(query) {
             throw new Error('Erro ao buscar cliente.');
         }
         const clients = await response.json();
+        
+        clientResultsUl.innerHTML = ''; // Limpa resultados anteriores
+        
         if (clients.length > 0) {
-            selectedClient = clients[0]; // Assume o primeiro resultado
-            foundClientName.textContent = selectedClient.name;
-            foundClientPhone.textContent = formatPhone(selectedClient.phone);
-            foundClientAddress.textContent = selectedClient.address;
-            selectedClientIdInput.value = selectedClient.id; // Armazena o ID
-            foundClientDetails.classList.remove('hidden');
-            showPopup('Cliente Selecionado', `Cliente "${selectedClient.name}" selecionado com sucesso.`);
+            clients.forEach(client => {
+                const li = document.createElement('li');
+                li.classList.add('client-result-item');
+                li.dataset.clientId = client.id;
+                li.textContent = `${client.name} - ${formatPhone(client.phone)}`;
+                li.addEventListener('click', () => selectClient(client));
+                clientResultsUl.appendChild(li);
+            });
+            clientSearchResultsDiv.classList.remove('hidden'); // Mostra a lista de resultados
+            foundClientDetails.classList.add('hidden'); // Esconde os detalhes do cliente selecionado enquanto a lista está visível
         } else {
             showPopup('Cliente Não Encontrado', 'Nenhum cliente encontrado com o nome ou CPF fornecido.', true);
             clearClientSelection();
@@ -410,6 +404,17 @@ async function fetchClient(query) {
     }
 }
 
+function selectClient(clientData) {
+    selectedClient = clientData;
+    foundClientName.textContent = selectedClient.name;
+    foundClientPhone.textContent = formatPhone(selectedClient.phone);
+    foundClientAddress.textContent = selectedClient.address || 'N/A';
+    selectedClientIdInput.value = selectedClient.id;
+    foundClientDetails.classList.remove('hidden'); // Mostra os detalhes do cliente selecionado
+    clientSearchResultsDiv.classList.add('hidden'); // Esconde a lista de resultados
+    showPopup('Cliente Selecionado', `Cliente "${selectedClient.name}" selecionado com sucesso.`);
+}
+
 function clearClientSelection() {
     selectedClient = null;
     foundClientDetails.classList.add('hidden');
@@ -418,73 +423,14 @@ function clearClientSelection() {
     foundClientAddress.textContent = '';
     selectedClientIdInput.value = '';
     searchClientInput.value = '';
+    clientResultsUl.innerHTML = '';
+    clientSearchResultsDiv.classList.add('hidden'); // Esconde a lista de resultados
 }
 
-function openAddClientPopup() {
-    newClientNameInput.value = '';
-    newClientPhoneInput.value = '';
-    newClientAddressInput.value = '';
-    newClientCpfInput.value = '';
-    addClientPopupOverlay.classList.remove('hidden');
-}
-
-function closeAddClientPopup() {
-    addClientPopupOverlay.classList.add('hidden');
-}
-
-async function saveNewClient() {
-    const name = newClientNameInput.value.trim();
-    const phone = newClientPhoneInput.value.trim();
-    const address = newClientAddressInput.value.trim();
-    const cpf = newClientCpfInput.value.trim();
-
-    if (!name || !cpf) {
-        showPopup('Erro de Cadastro', 'Nome e CPF são obrigatórios para o novo cliente.', true);
-        return;
-    }
-
-    // Validação de formato de telefone (básica, mais robusta pode ser feita no backend)
-    const phoneRegex = /^\(\d{2}\)\d{4,5}-\d{4}$/;
-    if (phone && !phoneRegex.test(phone)) {
-        showPopup('Erro de Cadastro', 'Formato de telefone inválido. Use (DD)NNNNN-NNNN ou (DD)NNNN-NNNN.', true);
-        return;
-    }
+// REMOVIDO: openAddClientPopup, closeAddClientPopup, saveNewClient e seus listeners.
 
 
-    try {
-        const response = await fetch('/api/clients', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ name, phone, address, cpf })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Erro ao adicionar novo cliente.');
-        }
-
-        const result = await response.json();
-        showPopup('Cliente Adicionado', `Cliente "${result.client.name}" adicionado com sucesso!`, false, () => {
-            closeAddClientPopup();
-            // Opcional: Selecionar o cliente recém-criado automaticamente
-            selectedClient = result.client;
-            foundClientName.textContent = selectedClient.name;
-            foundClientPhone.textContent = formatPhone(selectedClient.phone);
-            foundClientAddress.textContent = selectedClient.address;
-            selectedClientIdInput.value = selectedClient.id;
-            foundClientDetails.classList.remove('hidden');
-        });
-
-    } catch (error) {
-        console.error('Erro ao salvar novo cliente:', error);
-        showPopup('Erro ao Cadastrar Cliente', error.message, true);
-    }
-}
-
-
-// ==== Listeners de Eventos (existente + NOVOS) ====
+// ==== Listeners de Eventos (existente + ATUALIZADOS) ====
 findProductBtn.addEventListener('click', () => {
     const query = searchProdutoInput.value.trim();
     if (query) {
@@ -522,13 +468,13 @@ aplicarDescontoCheckbox.addEventListener('change', () => {
         valorDescontoGlobalInput.value = 0;
         valorDescontoGlobalInput.classList.add('hidden');
     }
-    updateCartSummary(); // Atualiza o total da venda ao aplicar/remover desconto
+    updateCartSummary();
 });
 
-valorDescontoGlobalInput.addEventListener('input', updateCartSummary); // Recalcula o total ao digitar o desconto
+valorDescontoGlobalInput.addEventListener('input', updateCartSummary);
 
 
-// ==== Listeners de Eventos para Clientes (NOVOS) ====
+// ==== Listeners de Eventos para Clientes (ATUALIZADOS) ====
 findClientBtn.addEventListener('click', () => {
     const query = searchClientInput.value.trim();
     if (query) {
@@ -545,50 +491,8 @@ searchClientInput.addEventListener('keypress', (e) => {
 });
 
 clearClientBtn.addEventListener('click', clearClientSelection);
-addNewClientBtn.addEventListener('click', openAddClientPopup);
-saveNewClientBtn.addEventListener('click', saveNewClient);
-cancelAddClientBtn.addEventListener('click', closeAddClientPopup);
-
-// Mask para o campo de telefone (opcional, pode ser feito com uma biblioteca)
-newClientPhoneInput.addEventListener('input', (e) => {
-    let value = e.target.value.replace(/\D/g, ''); // Remove não-dígitos
-    if (value.length > 0) {
-        value = '(' + value;
-        if (value.length > 3) {
-            value = value.substring(0, 3) + ')' + value.substring(3);
-        }
-        if (value.length > 9) { // Para 5 dígitos no meio (99999)
-            value = value.substring(0, 9) + '-' + value.substring(9);
-        } else if (value.length > 8 && value.length < 10) { // Para 4 dígitos no meio (9999)
-             value = value.substring(0, 8) + '-' + value.substring(8);
-        }
-        if (value.length > 14) { // Limita o tamanho total (ex: (99)99999-9999)
-            value = value.substring(0, 14);
-        }
-    }
-    e.target.value = value;
-});
-
-// Mask para o campo de CPF (opcional, pode ser feito com uma biblioteca)
-newClientCpfInput.addEventListener('input', (e) => {
-    let value = e.target.value.replace(/\D/g, ''); // Remove não-dígitos
-    if (value.length > 0) {
-        if (value.length > 3) {
-            value = value.substring(0, 3) + '.' + value.substring(3);
-        }
-        if (value.length > 7) {
-            value = value.substring(0, 7) + '.' + value.substring(7);
-        }
-        if (value.length > 11) {
-            value = value.substring(0, 11) + '-' + value.substring(11);
-        }
-        if (value.length > 14) { // Limita o tamanho total (ex: 999.999.999-99)
-            value = value.substring(0, 14);
-        }
-    }
-    e.target.value = value;
-});
-
+// REMOVIDO: Event listener para addNewClientBtn, saveNewClientBtn, cancelAddClientBtn
+// REMOVIDO: Masks para telefone e CPF (serão tratados na página de cadastro de clientes)
 
 // Inicialização (existente)
 renderCart();
