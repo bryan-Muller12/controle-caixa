@@ -30,9 +30,7 @@ const foundClientName = document.getElementById('found-client-name');
 const foundClientPhone = document.getElementById('found-client-phone');
 const foundClientAddress = document.getElementById('found-client-address');
 const selectedClientIdInput = document.getElementById('selected-client-id');
-// REMOVIDO: addNewClientBtn e elementos relacionados ao popup de adicionar cliente
 
-// NOVOS elementos para a lista de resultados da busca de clientes
 const clientSearchResultsDiv = document.getElementById('client-search-results');
 const clientResultsUl = document.getElementById('client-results-ul');
 
@@ -44,7 +42,7 @@ let currentProductId = null;
 let currentProductStock = 0;
 
 // Variáveis de estado (ATUALIZADO para clientes)
-let selectedClient = null; // Para armazenar o objeto do cliente selecionado
+let selectedClient = null;
 
 
 // ==== Funções de Utilidade (existente) ====
@@ -106,9 +104,7 @@ function formatPhone(phone) {
 }
 
 
-// ==== Lógica do Produto (existente) ====
-// Nenhuma alteração aqui, mas se os produtos não estão sendo puxados, a causa pode estar no backend ou na conexão.
-// Esta função está correta em sua lógica para puxar um produto pelo search.
+// ==== Lógica do Produto (ATUALIZADO PARA TRATAR preco_venda) ====
 async function fetchProduct(query) {
     try {
         const response = await fetch(`/api/produtos?search=${encodeURIComponent(query)}`);
@@ -127,7 +123,16 @@ async function fetchProduct(query) {
             foundProductDetails.classList.remove('hidden');
             addItemToCartBtn.disabled = false;
             productNameDisplay.textContent = selectedProduct.nome;
-            valorUnitarioItemInput.value = selectedProduct.preco_venda.toFixed(2);
+
+            // --- MODIFICAÇÃO PARA TRATAR preco_venda ---
+            if (selectedProduct.preco_venda !== undefined && selectedProduct.preco_venda !== null) {
+                valorUnitarioItemInput.value = parseFloat(selectedProduct.preco_venda).toFixed(2);
+            } else {
+                valorUnitarioItemInput.value = '0.00'; // Define um valor padrão se for indefinido/nulo
+                showPopup('Aviso de Produto', 'O preço de venda para este produto não está definido. Por favor, insira manualmente.', true);
+            }
+            // --- FIM DA MODIFICAÇÃO ---
+
             updateValorTotalItem();
         } else {
             showPopup('Produto Não Encontrado', 'Nenhum produto encontrado com o código ou nome fornecido.', true);
@@ -320,7 +325,6 @@ async function finalizeSale() {
         }
     };
 
-    // Adiciona o client_id se um cliente estiver selecionado
     if (selectedClient && selectedClient.id) {
         transactionData.clientId = selectedClient.id;
     }
@@ -370,7 +374,7 @@ function cancelAllItems() {
     });
 }
 
-// ==== Lógica do Cliente (NOVAS FUNÇÕES PARA EXIBIR LISTA) ====
+// ==== Lógica do Cliente (Funções para exibir lista) ====
 
 async function fetchClient(query) {
     try {
@@ -380,7 +384,7 @@ async function fetchClient(query) {
         }
         const clients = await response.json();
         
-        clientResultsUl.innerHTML = ''; // Limpa resultados anteriores
+        clientResultsUl.innerHTML = '';
         
         if (clients.length > 0) {
             clients.forEach(client => {
@@ -391,8 +395,8 @@ async function fetchClient(query) {
                 li.addEventListener('click', () => selectClient(client));
                 clientResultsUl.appendChild(li);
             });
-            clientSearchResultsDiv.classList.remove('hidden'); // Mostra a lista de resultados
-            foundClientDetails.classList.add('hidden'); // Esconde os detalhes do cliente selecionado enquanto a lista está visível
+            clientSearchResultsDiv.classList.remove('hidden');
+            foundClientDetails.classList.add('hidden');
         } else {
             showPopup('Cliente Não Encontrado', 'Nenhum cliente encontrado com o nome ou CPF fornecido.', true);
             clearClientSelection();
@@ -410,8 +414,8 @@ function selectClient(clientData) {
     foundClientPhone.textContent = formatPhone(selectedClient.phone);
     foundClientAddress.textContent = selectedClient.address || 'N/A';
     selectedClientIdInput.value = selectedClient.id;
-    foundClientDetails.classList.remove('hidden'); // Mostra os detalhes do cliente selecionado
-    clientSearchResultsDiv.classList.add('hidden'); // Esconde a lista de resultados
+    foundClientDetails.classList.remove('hidden');
+    clientSearchResultsDiv.classList.add('hidden');
     showPopup('Cliente Selecionado', `Cliente "${selectedClient.name}" selecionado com sucesso.`);
 }
 
@@ -424,11 +428,8 @@ function clearClientSelection() {
     selectedClientIdInput.value = '';
     searchClientInput.value = '';
     clientResultsUl.innerHTML = '';
-    clientSearchResultsDiv.classList.add('hidden'); // Esconde a lista de resultados
+    clientSearchResultsDiv.classList.add('hidden');
 }
-
-// REMOVIDO: openAddClientPopup, closeAddClientPopup, saveNewClient e seus listeners.
-
 
 // ==== Listeners de Eventos (existente + ATUALIZADOS) ====
 findProductBtn.addEventListener('click', () => {
@@ -491,8 +492,6 @@ searchClientInput.addEventListener('keypress', (e) => {
 });
 
 clearClientBtn.addEventListener('click', clearClientSelection);
-// REMOVIDO: Event listener para addNewClientBtn, saveNewClientBtn, cancelAddClientBtn
-// REMOVIDO: Masks para telefone e CPF (serão tratados na página de cadastro de clientes)
 
 // Inicialização (existente)
 renderCart();
