@@ -2,6 +2,10 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
     // ==== Seleção de Elementos do DOM ====
+    // Referências para o novo modal de edição de clientes
+    const editClientModalOverlay = document.getElementById('edit-client-modal-overlay');
+    const clientFormModal = document.getElementById('client-form-modal'); // Referência ao formulário dentro do modal
+
     const clientIdInput = document.getElementById('client-id');
     const clientNameInput = document.getElementById('client-name');
     const clientPhoneInput = document.getElementById('client-phone');
@@ -12,50 +16,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const clientsTableBody = document.getElementById('clients-table-body');
 
     // Funções de utilidade para popups (assumindo que common.js as fornece ou as duplique aqui)
-    function showPopup(title, message, isError = false, callback = null) {
-        const popupOverlay = document.getElementById('custom-popup-overlay');
-        const popupTitle = document.getElementById('custom-popup-title');
-        const popupMessage = document.getElementById('custom-popup-message');
-        const popupCloseBtn = document.getElementById('custom-popup-close-btn');
+    // Usando as funções showCustomPopup e showCustomConfirm do common.js
+    // Certifique-se de que common.js carrega antes de clients.js no HTML.
+    // function showPopup, showConfirm, formatPhone, formatCpf
+    // Já que common.js define showCustomPopup e showCustomConfirm, vou remover as duplicatas daqui para evitar conflito.
 
-        popupTitle.textContent = title;
-        popupMessage.textContent = message;
-        popupOverlay.classList.remove('hidden');
+    // ==== Funções de Utilidade (se não estiverem em common.js, elas devem ser mantidas) ====
+    // Verifique se showCustomPopup e showCustomConfirm estão realmente em common.js.
+    // Se não, você precisará ter essas definições ou incluir common.js primeiro.
 
-        if (isError) {
-            popupTitle.style.color = 'var(--color-danger)';
-        } else {
-            popupTitle.style.color = '';
-        }
-
-        popupCloseBtn.onclick = () => {
-            popupOverlay.classList.add('hidden');
-            if (callback) callback();
-        };
-    }
-
-    function showConfirm(title, message, onConfirm, onCancel = null) {
-        const confirmOverlay = document.getElementById('custom-confirm-overlay');
-        const confirmTitle = document.getElementById('custom-confirm-title');
-        const confirmMessage = document.getElementById('custom-confirm-message');
-        const confirmYesBtn = document.getElementById('custom-confirm-yes-btn');
-        const confirmNoBtn = document.getElementById('custom-confirm-no-btn');
-
-        confirmTitle.textContent = title;
-        confirmMessage.textContent = message;
-        confirmOverlay.classList.remove('hidden');
-
-        confirmYesBtn.onclick = () => {
-            confirmOverlay.classList.add('hidden');
-            onConfirm();
-        };
-        confirmNoBtn.onclick = () => {
-            confirmOverlay.classList.add('hidden');
-            if (onCancel) onCancel();
-        };
-    }
-
-    // Função para formatar telefone (repetida para garantir funcionamento independente)
     function formatPhone(phone) {
         if (!phone) return '';
         const cleaned = ('' + phone).replace(/\D/g, '');
@@ -66,7 +35,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         return phone;
     }
 
-    // Função para formatar CPF (repetida para garantir funcionamento independente)
     function formatCpf(cpf) {
         if (!cpf) return '';
         const cleaned = ('' + cpf).replace(/\D/g, '');
@@ -77,6 +45,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         return cpf;
     }
 
+    // ==== Funções de Controle de Modal (similar ao estoque.js) ====
+    const openModal = (overlay) => {
+        overlay.classList.remove('hidden');
+        overlay.style.display = 'flex'; // Garante que o display é flex para centralizar
+    };
+
+    const closeModal = (overlay) => {
+        overlay.classList.add('hidden');
+        overlay.style.display = 'none'; // Esconde completamente o modal
+        clientFormModal.reset(); // Limpa o formulário quando o modal é fechado
+    };
+
 
     // ==== Funções de API ====
 
@@ -85,6 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const response = await fetch('/api/clients');
             if (!response.ok) {
+                // Usando showCustomPopup do common.js
                 throw new Error('Erro ao buscar clientes.');
             }
             const clients = await response.json();
@@ -92,6 +73,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
             console.error('Erro ao carregar clientes:', error);
             clientsTableBody.innerHTML = `<tr><td colspan="5" style="color: var(--color-danger);">Erro ao carregar clientes: ${error.message}</td></tr>`;
+            if (typeof showCustomPopup === 'function') { // Verifica se showCustomPopup está disponível
+                showCustomPopup('Erro ao Carregar', error.message, 'error');
+            }
         }
     }
 
@@ -102,27 +86,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         const address = clientAddressInput.value.trim();
         const cpf = clientCpfInput.value.trim(); // CPF não é salvo como hash aqui, mas enviado para o backend
 
-        if (!name || !cpf) {
-            showPopup('Erro de Cadastro', 'Nome e CPF são obrigatórios.', true);
+        if (!name || (!id && !cpf)) { // CPF é obrigatório apenas para novas criações
+            if (typeof showCustomPopup === 'function') {
+                showCustomPopup('Erro de Cadastro', 'Nome e CPF são obrigatórios para novos clientes. Nome é obrigatório para atualização.', 'error');
+            }
             return;
         }
 
         const phoneRegex = /^\(\d{2}\)\d{4,5}-\d{4}$/;
         if (phone && !phoneRegex.test(phone)) {
-            showPopup('Erro de Cadastro', 'Formato de telefone inválido. Use (DD)NNNNN-NNNN ou (DD)NNNN-NNNN.', true);
+            if (typeof showCustomPopup === 'function') {
+                showCustomPopup('Erro de Cadastro', 'Formato de telefone inválido. Use (DD)NNNNN-NNNN ou (DD)NNNN-NNNN.', 'error');
+            }
             return;
         }
 
-        const clientData = { name, phone, address, cpf };
+        const clientData = { name, phone, address };
         let url = '/api/clients';
         let method = 'POST';
 
         if (id) { // Se houver um ID, é uma edição (PUT)
-            url = `/api/clients?id=${id}`; // AGORA O ID É ENVIADO COMO PARÂMETRO DE CONSULTA
+            url = `/api/clients?id=${id}`; // O ID É ENVIADO COMO PARÂMETRO DE CONSULTA PARA O BACKEND
             method = 'PUT';
             // Para PUT, o CPF não deve ser enviado pois ele é o que o hash foi feito com base
             // Se precisar editar CPF, seria um caso mais complexo de "alterar CPF" no backend
-            delete clientData.cpf;
+            // delete clientData.cpf; // Não precisamos deletar se nunca adicionamos
+        } else { // Se não houver ID, é uma nova criação (POST)
+            clientData.cpf = cpf; // Adiciona CPF apenas para criação
         }
 
         try {
@@ -139,36 +129,55 @@ document.addEventListener('DOMContentLoaded', async () => {
                 throw new Error(errorData.error || `Erro ao ${id ? 'atualizar' : 'adicionar'} cliente.`);
             }
 
-            showPopup('Sucesso', `Cliente ${id ? 'atualizado' : 'adicionado'} com sucesso!`, false, () => {
-                clearForm();
-                fetchClients(); // Recarrega a lista
-            });
+            if (typeof showCustomPopup === 'function') {
+                showCustomPopup('Sucesso', `Cliente ${id ? 'atualizado' : 'adicionado'} com sucesso!`, 'success', () => {
+                    closeModal(editClientModalOverlay); // Fecha o modal
+                    fetchClients(); // Recarrega a lista
+                });
+            } else {
+                 closeModal(editClientModalOverlay); // Fecha o modal mesmo sem popup
+                 fetchClients();
+            }
+
 
         } catch (error) {
             console.error('Erro ao salvar cliente:', error);
-            showPopup('Erro ao Salvar Cliente', error.message, true);
+            if (typeof showCustomPopup === 'function') {
+                showCustomPopup('Erro ao Salvar Cliente', error.message, 'error');
+            }
         }
     }
 
     async function deleteClient(id) {
-        showConfirm('Confirmar Exclusão', 'Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.', async () => {
-            try {
-                // Modificado para enviar ID como query parameter, igual ao PUT
-                const response = await fetch(`/api/clients?id=${id}`, {
-                    method: 'DELETE'
-                });
+        if (typeof showCustomConfirm === 'function') {
+            const confirm = await showCustomConfirm('Confirmar Exclusão', 'Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.');
+            if (!confirm) return;
+        } else {
+             if (!confirm('Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.')) return;
+        }
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Erro ao excluir cliente.');
-                }
+        try {
+            const response = await fetch(`/api/clients?id=${id}`, { // ID enviado como query parameter
+                method: 'DELETE'
+            });
 
-                showPopup('Sucesso', 'Cliente excluído com sucesso!', false, fetchClients); // Recarrega a lista
-            } catch (error) {
-                console.error('Erro ao excluir cliente:', error);
-                showPopup('Erro ao Excluir Cliente', error.message, true);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Erro ao excluir cliente.');
             }
-        });
+
+            if (typeof showCustomPopup === 'function') {
+                showCustomPopup('Sucesso', 'Cliente excluído com sucesso!', 'success', fetchClients); // Recarrega a lista
+            } else {
+                fetchClients(); // Recarrega mesmo sem popup
+            }
+
+        } catch (error) {
+            console.error('Erro ao excluir cliente:', error);
+            if (typeof showCustomPopup === 'function') {
+                showCustomPopup('Erro ao Excluir Cliente', error.message, 'error');
+            }
+        }
     }
 
     // ==== Funções de UI ====
@@ -203,7 +212,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         clientCpfInput.value = ''; // CPF não é editável diretamente aqui por segurança (hash)
         clientCpfInput.disabled = true; // Desabilita o campo CPF na edição
         saveClientBtn.textContent = 'Atualizar Cliente';
-        cancelEditBtn.classList.remove('hidden'); // Mostra o botão cancelar
+        // O botão cancelar não precisa mais ser explicitamente escondido/mostrado, pois o modal lida com isso.
+        // cancelEditBtn.classList.remove('hidden'); // Removido: o modal controla a visibilidade
+
+        openModal(editClientModalOverlay); // Abre o modal de edição
     }
 
     function clearForm() {
@@ -212,14 +224,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         clientPhoneInput.value = '';
         clientAddressInput.value = '';
         clientCpfInput.value = '';
-        clientCpfInput.disabled = false; // Habilita o campo CPF
+        clientCpfInput.disabled = false; // Habilita o campo CPF para nova criação
         saveClientBtn.textContent = 'Salvar Cliente';
-        cancelEditBtn.classList.add('hidden'); // Esconde o botão cancelar
+        // cancelEditBtn.classList.add('hidden'); // Removido: o modal controla a visibilidade
+        clientFormModal.reset(); // Garante que o formulário é resetado
     }
 
     // ==== Listeners de Eventos ====
-    saveClientBtn.addEventListener('click', saveClient);
-    cancelEditBtn.addEventListener('click', clearForm);
+    // O formulário do modal agora tem o ID client-form-modal
+    clientFormModal.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await saveClient();
+    });
+
+    cancelEditBtn.addEventListener('click', () => {
+        clearForm();
+        closeModal(editClientModalOverlay); // Fecha o modal ao cancelar
+    });
+
+    // Listener para abrir o modal para adicionar um NOVO cliente (opcional, adicione um botão no HTML se quiser)
+    // Se você tiver um botão "Adicionar Novo Cliente" no HTML, pode adicionar um listener aqui:
+    /*
+    const addNewClientBtn = document.getElementById('add-new-client-btn'); // Adicione este ID no seu HTML
+    if (addNewClientBtn) {
+        addNewClientBtn.addEventListener('click', () => {
+            clearForm();
+            openModal(editClientModalOverlay);
+            saveClientBtn.textContent = 'Adicionar Cliente'; // Certifica que o texto está correto para adicionar
+        });
+    }
+    */
 
     clientsTableBody.addEventListener('click', (event) => {
         if (event.target.closest('.btn-edit-client')) {
@@ -236,6 +270,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             deleteClient(id);
         }
     });
+
+    // Fechar modal ao clicar fora dele
+    editClientModalOverlay.addEventListener('click', (e) => {
+        if (e.target === editClientModalOverlay) {
+            clearForm(); // Limpa o formulário se fechar clicando fora
+            closeModal(editClientModalOverlay);
+        }
+    });
+
 
     // Masks para telefone e CPF
     clientPhoneInput.addEventListener('input', (e) => {

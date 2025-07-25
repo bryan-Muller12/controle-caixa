@@ -8,7 +8,7 @@ const notificationsTab = document.getElementById('notifications-tab');
 const notificationsList = document.getElementById('notifications-list');
 const notificationsBadge = document.getElementById('notifications-badge');
 const clearNotificationsBtn = document.getElementById('clear-notifications-btn');
-const logoutBtn = document.getElementById('logout-btn');
+const logoutBtn = document.getElementById('logout-btn'); // Elemento do botão de logout
 
 // Elementos de pop-up (declarados globalmente para showCustomPopup e showCustomConfirm)
 const customPopupOverlay = document.getElementById('custom-popup-overlay');
@@ -223,8 +223,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carrega a preferência de tema do usuário ao carregar a página
     loadUserThemePreference();
 
-    // Garante que os elementos do cabeçalho existem antes de adicionar listeners
-    if (notificationsBtn && notificationsTab && notificationsList && notificationsBadge && clearNotificationsBtn && logoutBtn) {
+    // Adiciona listener para o botão de logout - AGORA FORA DO BLOCO CONDICIONAL DE NOTIFICAÇÕES
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+
+    // Lógica para os botões e aba de notificações (apenas se os elementos existirem na página)
+    if (notificationsBtn && notificationsTab && notificationsList && notificationsBadge && clearNotificationsBtn) {
         notificationsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             notificationsTab.classList.toggle('hidden');
@@ -246,8 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
-
-        logoutBtn.addEventListener('click', logout);
     }
     
     // Adicione a verificação e exibição da seção de admin, se necessário

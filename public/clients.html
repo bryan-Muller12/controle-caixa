@@ -17,9 +17,10 @@
             margin-bottom: 20px;
         }
 
-        .client-form, .client-list {
+        /* O formulário agora estará dentro de um modal, então os estilos abaixo podem ser ajustados conforme seu estilo de modal */
+        /* .client-form, .client-list {
             margin-top: 20px;
-        }
+        } */
 
         .client-form .form-group {
             margin-bottom: 15px;
@@ -67,6 +68,54 @@
         .client-actions button {
             margin-right: 5px;
         }
+
+        /* Estilos para o Modal (replicando de estoque.html e style.css se já existirem) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--color-background);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-dark);
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-content h2 {
+            color: var(--color-primary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* Animações (se já estiverem no style.css, pode remover daqui) */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body id="page-clients">
@@ -96,33 +145,6 @@
 
     <main class="content">
         <div class="client-management-section">
-            <h2>Adicionar/Editar Cliente</h2>
-            <div class="client-form">
-                <input type="hidden" id="client-id">
-                <div class="form-group">
-                    <label for="client-name">Nome do Cliente:</label>
-                    <input type="text" id="client-name" placeholder="Nome completo" required>
-                </div>
-                <div class="form-group">
-                    <label for="client-phone">Telefone (DDD)9999-9999:</label>
-                    <input type="text" id="client-phone" placeholder="(DD)NNNNN-NNNN" pattern="\(\d{2}\)\d{4,5}-\d{4}">
-                </div>
-                <div class="form-group">
-                    <label for="client-address">Endereço:</label>
-                    <input type="text" id="client-address" placeholder="Endereço completo">
-                </div>
-                <div class="form-group">
-                    <label for="client-cpf">CPF:</label>
-                    <input type="text" id="client-cpf" placeholder="Apenas números" required>
-                </div>
-                <div class="btn-group">
-                    <button id="save-client-btn" class="btn-primary">Salvar Cliente</button>
-                    <button id="cancel-edit-btn" class="btn-secondary">Cancelar</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="client-management-section client-list">
             <h2>Lista de Clientes</h2>
             <table class="client-table">
                 <thead>
@@ -141,6 +163,33 @@
         </div>
     </main>
 
+    <div class="modal-overlay hidden" id="edit-client-modal-overlay">
+        <div class="modal-content">
+            <h2>Adicionar/Editar Cliente</h2>
+            <form id="client-form-modal"> <input type="hidden" id="client-id">
+                <div class="form-group">
+                    <label for="client-name">Nome do Cliente:</label>
+                    <input type="text" id="client-name" placeholder="Nome completo" required>
+                </div>
+                <div class="form-group">
+                    <label for="client-phone">Telefone (DDD)9999-9999:</label>
+                    <input type="text" id="client-phone" placeholder="(DD)NNNNN-NNNN" pattern="\(\d{2}\)\d{4,5}-\d{4}">
+                </div>
+                <div class="form-group">
+                    <label for="client-address">Endereço:</label>
+                    <input type="text" id="client-address" placeholder="Endereço completo">
+                </div>
+                <div class="form-group">
+                    <label for="client-cpf">CPF:</label>
+                    <input type="text" id="client-cpf" placeholder="Apenas números" required>
+                </div>
+                <div class="modal-actions btn-group">
+                    <button type="submit" id="save-client-btn" class="btn-primary">Salvar Cliente</button>
+                    <button type="button" id="cancel-edit-btn" class="btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <div class="custom-popup-overlay hidden" id="custom-popup-overlay">
         <div class="custom-popup-content">
             <h2 id="custom-popup-title"></h2>
