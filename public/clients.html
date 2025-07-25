@@ -107,6 +107,28 @@
             margin-top: 20px;
         }
 
+        /* Estilos para a seção de controles, similar ao estoque.html */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background-color: var(--color-background-card);
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-light);
+            flex-wrap: wrap; /* Para telas menores */
+            gap: 10px; /* Espaçamento entre itens */
+        }
+
+        .controls input[type="text"] {
+            flex-grow: 1; /* Permite que o campo de filtro ocupe o espaço disponível */
+            padding: 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            max-width: 300px; /* Limita a largura para melhor visualização */
+        }
+
         /* Animações (se já estiverem no style.css, pode remover daqui) */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-20px); }
@@ -144,7 +166,12 @@
     </aside>
 
     <main class="content">
-        <div class="client-management-section">
+        <div class="controls">
+            <input type="text" id="filtro-clientes" placeholder="Filtrar clientes...">
+            <button id="open-add-client-modal-btn" class="btn-primary">Adicionar Novo Cliente</button>
+        </div>
+
+        <div class="client-management-section client-list">
             <h2>Lista de Clientes</h2>
             <table class="client-table">
                 <thead>
@@ -166,7 +193,8 @@
     <div class="modal-overlay hidden" id="edit-client-modal-overlay">
         <div class="modal-content">
             <h2>Adicionar/Editar Cliente</h2>
-            <form id="client-form-modal"> <input type="hidden" id="client-id">
+            <form id="client-form-modal">
+                <input type="hidden" id="client-id">
                 <div class="form-group">
                     <label for="client-name">Nome do Cliente:</label>
                     <input type="text" id="client-name" placeholder="Nome completo" required>
