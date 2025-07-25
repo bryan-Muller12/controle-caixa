@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const saveClientBtn = document.getElementById('save-client-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     // MUDANÇA AQUI: Agora a referência é para a UL, não para o tbody da tabela
-    const clientsList = document.getElementById('clients-list'); //
+    const clientsList = document.getElementById('clients-list');
 
     // Variável para armazenar todos os clientes (para filtro local)
     let allClients = [];
@@ -62,17 +62,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==== Funções de API ====
 
     async function fetchClients() {
-        clientsList.innerHTML = '<li>Carregando clientes...</li>'; // Ajuste para <li>
+        clientsList.innerHTML = '<li>Carregando clientes...</li>';
         try {
             const response = await fetch('/api/clients');
             if (!response.ok) {
                 throw new Error('Erro ao buscar clientes.');
             }
-            allClients = await response.json(); // Armazena todos os clientes
-            renderClients(); // Renderiza com base na lista completa (ou filtrada)
+            allClients = await response.json();
+            renderClients();
         } catch (error) {
             console.error('Erro ao carregar clientes:', error);
-            clientsList.innerHTML = `<li style="color: var(--danger-color);">Erro ao carregar clientes: ${error.message}</li>`; // Ajuste para <li>
+            clientsList.innerHTML = `<li style="color: var(--danger-color);">Erro ao carregar clientes: ${error.message}</li>`;
             if (typeof showCustomPopup === 'function') {
                 showCustomPopup('Erro ao Carregar', error.message, 'error');
             }
@@ -197,15 +197,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
 
         if (clientsFiltered.length === 0) {
-            clientsList.innerHTML = `<li>Nenhum cliente ${filtro ? 'encontrado com o filtro' : 'cadastrado'}.</li>`; // Ajuste para <li>
+            clientsList.innerHTML = `<li>Nenhum cliente ${filtro ? 'encontrado com o filtro' : 'cadastrado'}.</li>`;
             return;
         }
 
         clientsFiltered.forEach(client => {
-            const li = document.createElement('li'); // Cria um LI
-            // Não precisa de classList.add('product-item') aqui, pois o UL já é 'product-list' e o estilo já se aplica aos LIs.
-            // A classe 'product-item' é mais usada no estoque para cada LI individual.
-            // Para consistência visual, é bom aplicar a mesma estrutura e classes internas.
+            const li = document.createElement('li');
             li.innerHTML = `
                 <div class="product-info">
                     <span class="product-name">${client.name}</span>
@@ -217,7 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <button class="btn-action btn-danger" data-id="${client.id}" title="Excluir Cliente"><i class="fas fa-trash"></i></button>
                 </div>
             `;
-            clientsList.appendChild(li); // Adiciona o LI à UL
+            clientsList.appendChild(li);
         });
     }
 
@@ -245,47 +242,64 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ==== Listeners de Eventos ====
-    clientFormModal.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await saveClient();
-    });
+    // ESTAS SÃO AS LINHAS ONDE O ERRO ESTÁ PROVAVELMENTE ACONTECENDO SE OS ELEMENTOS FOREM NULL
+    if (clientFormModal) { // Adicionado verificação
+      clientFormModal.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          await saveClient();
+      });
+    } else { console.error("Elemento clientFormModal não encontrado!"); }
 
-    cancelEditBtn.addEventListener('click', () => {
-        clearForm();
-        closeModal(editClientModalOverlay);
-    });
+    if (cancelEditBtn) { // Adicionado verificação
+      cancelEditBtn.addEventListener('click', () => {
+          clearForm();
+          closeModal(editClientModalOverlay);
+      });
+    } else { console.error("Elemento cancelEditBtn não encontrado!"); }
+    
+    if (openAddClientModalBtn) { // Adicionado verificação
+      openAddClientModalBtn.addEventListener('click', () => {
+          clearForm();
+          openModal(editClientModalOverlay);
+          saveClientBtn.textContent = 'Salvar Cliente';
+      });
+    } else { console.error("Elemento openAddClientModalBtn não encontrado!"); }
 
-    openAddClientModalBtn.addEventListener('click', () => {
-        clearForm();
-        openModal(editClientModalOverlay);
-        saveClientBtn.textContent = 'Salvar Cliente';
-    });
 
     // MUDANÇA AQUI: O listener agora está na UL, não no tbody
-    clientsList.addEventListener('click', (event) => {
-        if (event.target.closest('.btn-edit')) {
-            const btn = event.target.closest('.btn-edit');
-            const clientData = {
-                id: btn.dataset.id,
-                name: btn.dataset.name,
-                phone: btn.dataset.phone,
-                address: btn.dataset.address
-            };
-            editClient(clientData);
-        } else if (event.target.closest('.btn-danger')) {
-            const id = event.target.closest('.btn-danger').dataset.id;
-            deleteClient(id);
-        }
-    });
+    if (clientsList) { // Adicionado verificação
+      clientsList.addEventListener('click', (event) => {
+          if (event.target.closest('.btn-edit')) {
+              const btn = event.target.closest('.btn-edit');
+              const clientData = {
+                  id: btn.dataset.id,
+                  name: btn.dataset.name,
+                  phone: btn.dataset.phone,
+                  address: btn.dataset.address
+              };
+              editClient(clientData);
+          } else if (event.target.closest('.btn-danger')) {
+              const id = event.target.closest('.btn-danger').dataset.id;
+              deleteClient(id);
+          }
+      });
+    } else { console.error("Elemento clientsList não encontrado!"); }
 
-    editClientModalOverlay.addEventListener('click', (e) => {
-        if (e.target === editClientModalOverlay) {
-            clearForm();
-            closeModal(editClientModalOverlay);
-        }
-    });
 
-    filtroClientesInput.addEventListener('input', renderClients);
+    if (editClientModalOverlay) { // Adicionado verificação
+      editClientModalOverlay.addEventListener('click', (e) => {
+          if (e.target === editClientModalOverlay) {
+              clearForm();
+              closeModal(editClientModalOverlay);
+          }
+      });
+    } else { console.error("Elemento editClientModalOverlay não encontrado!"); }
+
+
+    if (filtroClientesInput) { // Adicionado verificação
+      filtroClientesInput.addEventListener('input', renderClients);
+    } else { console.error("Elemento filtroClientesInput não encontrado!"); }
+
 
     clientPhoneInput.addEventListener('input', (e) => {
         let value = e.target.value.replace(/\D/g, '');
