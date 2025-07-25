@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MullerSys</title>
+    <title>MullerSys - Controle de Caixa</title>
     <link rel="icon" type="image/png" href="mullersys.png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -11,21 +11,18 @@
 <body id="page-controle">
     <header>
         <div class="header-left">
-            <h1>
-                Controle de Caixa
-            </h1>
+            <h1>Controle de Caixa</h1>
         </div>
         <div class="header-right">
             <button id="theme-toggle-btn" class="btn-icon" title="Alternar Tema">
                 <i class="fas fa-sun"></i> </button>
-            <button id="notifications-btn" class="btn-icon"><i class="fas fa-bell"></i><span id="notifications-badge" class="badge hidden">0</span></button>
             <button id="logout-btn" class="btn-icon" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
         </div>
     </header>
 
     <aside class="sidebar-nav">
         <div class="sidebar-logo">
-            <i><img src="mullersys.png" alt="" style="height: 80px; vertical-align: middle;"></i>
+            <i> <img src="mullersys.png" alt="" style="height: 80px; vertical-align: middle;"></i>
         </div>
         <ul>
             <li><a href="venda.html" title="Venda"><i class="fas fa-cash-register"></i><span>Venda</span></a></li>
@@ -36,96 +33,54 @@
     </aside>
 
     <main class="content">
-        <div class="notifications-tab hidden" id="notifications-tab">
-            <h2>Notificações</h2>
-            <ul id="notifications-list">
-                <li>Nenhuma notificação.</li>
-            </ul>
-            <button id="clear-notifications-btn" class="btn-clear-notifications">Limpar Notificações</button>
+        <div class="dashboard-section">
+            <div class="balance-card">
+                <h2>Saldo Atual do Caixa:</h2>
+                <p id="saldo-caixa">Carregando...</p>
+            </div>
         </div>
 
-        <div class="balance-summary">
-            <h3>Saldo Atual do Caixa:</h3>
-            <p id="saldo-atual">R$ 0.00</p>
-        </div>
+        <div class="transaction-history-section">
+            <h2>Histórico de Transações</h2>
 
-
-        <div class="card" style="margin-top: 30px;">
-            <div class="card-header">
-                <h2>Relatórios de Vendas</h2>
-            </div>
-            <div class="form-group">
-                <label for="data-inicio-vendas">Data de Início:</label>
-                <input type="date" id="data-inicio-vendas">
-            </div>
-            <div class="form-group">
-                <label for="data-fim-vendas">Data de Fim:</label>
-                <input type="date" id="data-fim-vendas">
-            </div>
-            <button type="button" id="gerar-relatorio-vendas-btn" class="btn-primary" style="margin-top: 10px;">Gerar Relatório de Vendas</button>
-            <div id="relatorio-vendas-output" style="margin-top: 20px;">
+            <div class="filters-container">
+                <div class="form-group">
+                    <label for="filter-data-inicio">Data Início:</label>
+                    <input type="date" id="filter-data-inicio">
                 </div>
-        </div>
-        <div class="card">
-            <div class="card-header">
-                <h2>Histórico de Transações</h2>
-                <button id="toggle-sort-btn" class="btn-secondary btn-icon" title="Alternar Ordem"><i class="fas fa-sort"></i></button>
+                <div class="form-group">
+                    <label for="filter-data-fim">Data Fim:</label>
+                    <input type="date" id="filter-data-fim">
+                </div>
+                <div class="form-group">
+                    <label for="filter-tipo">Tipo:</label>
+                    <select id="filter-tipo">
+                        <option value="">Todos</option>
+                        <option value="entrada">Entrada</option>
+                        <option value="saida">Saída</option>
+                        <option value="venda">Venda</option>
+                    </select>
+                </div>
+                <button id="apply-filters-btn" class="btn-primary">Aplicar Filtros</button>
+                <button id="clear-filters-btn" class="btn-secondary">Limpar Filtros</button>
             </div>
-            <div class="transaction-type-filter">
-                <button class="active" data-filter="all">Todas</button>
-                <button data-filter="entrada">Entradas</button>
-                <button data-filter="saida">Saídas</button>
-            </div>
-            <div class="transaction-list-container">
-                <ul id="lista-transacoes" class="transaction-list">
-                </ul>
-            </div>
-        </div>
 
-        <div class="card collapsible-card" id="registrar-transacao-card">
-            <div class="card-header collapsible-header">
-                <h2>Registrar Outra Transação</h2>
-                <i class="fas fa-chevron-down toggle-icon"></i>
-            </div>
-            <div class="collapsible-content">
-                <form id="outra-transacao-form">
-                    <div class="form-group">
-                        <label for="tipo-transacao">Tipo:</label>
-                        <select id="tipo-transacao" required>
-                            <option value="entrada">Entrada</option>
-                            <option value="saida">Saída</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="descricao-transacao">Descrição:</label>
-                        <input type="text" id="descricao-transacao" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="valor-transacao">Valor:</label>
-                        <input type="number" id="valor-transacao" min="0.01" step="0.01" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="data-transacao">Data:</label>
-                        <input type="date" id="data-transacao" required>
-                    </div>
-                    <div class="modal-actions">
-                        <button type="submit" class="btn-primary">Registrar Transação</button>
-                    </div>
-                </form>
-            </div>
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tipo</th>
+                        <th>Descrição</th>
+                        <th>Valor (R$)</th>
+                        <th>Data</th>
+                        <th>Cliente</th> <th>Ações</th> </tr>
+                </thead>
+                <tbody id="transactions-table-body">
+                    <tr><td colspan="7">Carregando transações...</td></tr>
+                </tbody>
+            </table>
         </div>
     </main>
-
-    <div class="custom-popup-overlay hidden" id="custom-popup-overlay">
-        <div class="custom-popup-content">
-            <h2 id="custom-popup-title"></h2>
-            <p id="custom-popup-message"></p>
-            <div class="custom-popup-actions">
-                <button id="custom-popup-close-btn" class="btn-primary">OK</button>
-            </div>
-        </div>
-    </div>
- 
 
     <script src="common.js"></script>
     <script src="controle.js"></script>
