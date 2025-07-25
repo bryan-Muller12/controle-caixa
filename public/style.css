@@ -298,9 +298,11 @@ header h1 img {
 }
 
 /* --- FORMULÁRIOS E BOTÕES --- */
+/* MODIFICAÇÃO AQUI: Incluído input[type="password"] e ajustes no select */
 input[type="text"],
 input[type="number"],
 input[type="date"],
+input[type="password"], /* Adicionado para garantir o estilo do campo de senha */
 select {
   width: 100%;
   padding: 12px 15px;
@@ -310,16 +312,51 @@ select {
   background-color: var(--input-bg); /* Fundo do input escuro */
   color: var(--text-light); /* Texto do input claro */
   transition: all var(--transition-speed) ease;
-  box-sizing: border-box;
-  margin-bottom: 10px;
+  box-sizing: border-box; /* Essencial para que padding e borda não aumentem o width */
+  margin-bottom: 10px; /* Garante espaçamento entre os campos */
 }
 
-input:focus, select:focus {
+/* MODIFICAÇÃO AQUI: Incluído input[type="password"]:focus */
+input:focus,
+select:focus,
+input[type="password"]:focus { /* Adicionado para o foco do campo de senha */
   outline: none;
   border-color: var(--input-border); /* Borda verde vibrante no foco */
   background-color: var(--primary-alternative); /* Fundo verde escuro no foco */
   box-shadow: 0 0 0 3px rgba(0, 255, 127, 0.2); /* Sombra verde */
 }
+
+/* MODIFICAÇÃO AQUI: Estilo para o form-group e select para melhor visualização */
+.form-group {
+    margin-bottom: 25px; /* Mais espaço entre grupos de campo */
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-light);
+}
+
+/* Estilo para remover a seta padrão do select e adicionar uma customizada */
+select {
+    -webkit-appearance: none; /* Remove a seta padrão em WebKit */
+    -moz-appearance: none; /* Remove a seta padrão em Firefox */
+    appearance: none; /* Remove a seta padrão */
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23e0e0e0" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); /* Seta customizada */
+    background-repeat: no-repeat;
+    background-position: right 10px center; /* Posição da seta */
+    padding-right: 35px; /* Espaço para a seta */
+}
+/* Estilo para input readonly (já existente, mas importante) */
+input[readonly] {
+    background-color: var(--input-bg);
+    cursor: not-allowed;
+    border-color: var(--border-color-dark);
+    color: var(--text-muted);
+}
+
 
 .btn-primary {
   background: linear-gradient(to right, var(--primary-color), var(--primary-hover)); /* Gradiente verde */
@@ -1271,6 +1308,7 @@ body.light-mode .venda-container {
 body.light-mode input[type="text"],
 body.light-mode input[type="number"],
 body.light-mode input[type="date"],
+body.light-mode input[type="password"], /* Adicionado para tema claro */
 body.light-mode select {
     background-color: var(--input-bg);
     border: 1px solid var(--border-color-dark);
@@ -1278,7 +1316,8 @@ body.light-mode select {
 }
 
 body.light-mode input:focus,
-body.light-mode select:focus {
+body.light-mode select:focus,
+body.light-mode input[type="password"]:focus { /* Adicionado para tema claro */
     border-color: var(--input-border);
     background-color: var(--primary-alternative);
     box-shadow: 0 0 0 3px rgba(0, 140, 76, 0.2);

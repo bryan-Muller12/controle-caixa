@@ -58,10 +58,12 @@ function atualizarNotificacoesComuns(produtosArray) {
     }
 }
 
-// Função de Logout
+// Função de Logout (MODIFICADA: remove também o role do armazenamento)
 function logout() {
     localStorage.removeItem('usuarioLogado');
     sessionStorage.removeItem('usuarioLogado');
+    localStorage.removeItem('usuarioRole'); // Remove o role
+    sessionStorage.removeItem('usuarioRole'); // Remove o role
     // Em uma aplicação real com DB, você faria uma chamada à API para invalidar a sessão no backend
     showCustomPopup('Logout', 'Você foi desconectado.', 'info');
     setTimeout(() => {
@@ -149,15 +151,17 @@ function showCustomConfirm(title, message) {
     });
 }
 
-// --- VERIFICAÇÃO DE LOGIN ---
-// A verificação de login agora é uma função e é chamada no DOMContentLoaded
+// --- VERIFICAÇÃO DE LOGIN (MODIFICADA: agora considera o role do usuário) ---
 function checkLoginStatus() {
     let usuarioLogado = sessionStorage.getItem('usuarioLogado');
+    let usuarioRole = sessionStorage.getItem('usuarioRole'); // Pega o role do sessionStorage
 
     if (!usuarioLogado) {
         usuarioLogado = localStorage.getItem('usuarioLogado');
+        usuarioRole = localStorage.getItem('usuarioRole'); // Pega o role do localStorage
         if (usuarioLogado) {
             sessionStorage.setItem('usuarioLogado', usuarioLogado);
+            sessionStorage.setItem('usuarioRole', usuarioRole); // Move o role para sessionStorage
         }
     }
 
@@ -172,6 +176,12 @@ function checkLoginStatus() {
         return true;
     }
     return !!usuarioLogado; // Retorna true se logado, false caso contrário
+}
+
+// NOVA FUNÇÃO: para verificar se o usuário logado é admin
+function isUserAdmin() {
+    const usuarioRole = sessionStorage.getItem('usuarioRole') || localStorage.getItem('usuarioRole');
+    return usuarioRole === 'admin';
 }
 
 // --- LÓGICA DE TEMA CLARO/ESCURO ---
@@ -205,8 +215,6 @@ function toggleTheme() {
 
 // --- EVENT LISTENERS COMUNS (adicionados apenas após o DOM estar carregado) ---
 document.addEventListener('DOMContentLoaded', () => {
-    // ... seu código existente ...
-
     // Adiciona listener para o botão de alternar tema
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener('click', toggleTheme);
@@ -215,12 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carrega a preferência de tema do usuário ao carregar a página
     loadUserThemePreference();
 
-    // NOTA: renderizarNotificacoesComuns será chamada por cada script de página (venda.js, estoque.js, controle.js)
-    // após eles carregarem seus próprios dados de produtos da API.
-});
-
-// --- EVENT LISTENERS COMUNS (adicionados apenas após o DOM estar carregado) ---
-document.addEventListener('DOMContentLoaded', () => {
     // Garante que os elementos do cabeçalho existem antes de adicionar listeners
     if (notificationsBtn && notificationsTab && notificationsList && notificationsBadge && clearNotificationsBtn && logoutBtn) {
         notificationsBtn.addEventListener('click', (e) => {
@@ -248,9 +250,19 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutBtn.addEventListener('click', logout);
     }
     
+    // Adicione a verificação e exibição da seção de admin, se necessário
+    const adminSectionLink = document.getElementById('admin-section-link'); // Ex: um link no menu
+    if (adminSectionLink) {
+        if (isUserAdmin()) {
+            adminSectionLink.classList.remove('hidden'); // Mostra o link para admins
+        } else {
+            adminSectionLink.classList.add('hidden'); // Esconde para não-admins
+        }
+    }
+
     // Chama a verificação de login uma vez que o DOM esteja carregado
     checkLoginStatus();
 
-    // NOTA: renderizarNotificacoesComuns será chamada por cada script de página (venda.js, estoque.js, controle.js)
+    // NOTA: atualizarNotificacoesComuns será chamada por cada script de página (venda.js, estoque.js, controle.js)
     // após eles carregarem seus próprios dados de produtos da API.
 });

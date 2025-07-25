@@ -50,36 +50,47 @@
   </div>
 
 <script>
-    // Lista de usuários hardcoded (como no início)
-    const usuarios = [
-      { email: 'brysn.ms@gmail.com', senha: 'Palmeiras.12' },
-      { email: 'admin@estoque.com', senha: 'admin' }
-    ];
-
-    document.getElementById('login-form').addEventListener('submit', (e) => {
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
-      const keepLoggedIn = document.getElementById('keep-logged-in').checked; // Captura o estado do checkbox
+      const keepLoggedIn = document.getElementById('keep-logged-in').checked;
       const erroEl = document.getElementById('login-erro');
+      erroEl.style.display = 'none';
 
-      const usuarioValido = usuarios.find(u => u.email === username && u.senha === password);
+      try {
+        const response = await fetch('/api/auth', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+        });
 
-      if (usuarioValido) {
-        // Limpa ambos os armazenamentos para evitar conflitos de sessões anteriores
-        localStorage.removeItem('usuarioLogado');
-        sessionStorage.removeItem('usuarioLogado');
+        const data = await response.json();
 
-        if (keepLoggedIn) {
-          // Se "Manter conectado" estiver marcado, usa localStorage (persistente)
-          localStorage.setItem('usuarioLogado', username);
+        if (response.ok) {
+          localStorage.removeItem('usuarioLogado');
+          sessionStorage.removeItem('usuarioLogado');
+          // Limpar também o role anterior
+          localStorage.removeItem('usuarioRole');
+          sessionStorage.removeItem('usuarioRole');
+
+          if (keepLoggedIn) {
+            localStorage.setItem('usuarioLogado', data.user.username);
+            localStorage.setItem('usuarioRole', data.user.role); // Armazenar o role
+          } else {
+            sessionStorage.setItem('usuarioLogado', data.user.username);
+            sessionStorage.setItem('usuarioRole', data.user.role); // Armazenar o role
+          }
+          window.location.href = 'venda.html';
         } else {
-          // Se NÃO estiver marcado, usa sessionStorage (apenas para a sessão atual)
-          sessionStorage.setItem('usuarioLogado', username);
+          erroEl.textContent = data.error || 'Erro ao fazer login. Tente novamente.';
+          erroEl.style.display = 'block';
         }
-        window.location.href = 'venda.html';
-      } else {
-        erroEl.textContent = 'Usuário ou senha incorretos.';
+      } catch (error) {
+        console.error('Erro de rede ou servidor:', error);
+        erroEl.textContent = 'Não foi possível conectar ao servidor. Verifique sua conexão.';
         erroEl.style.display = 'block';
       }
     });
