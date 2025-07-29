@@ -344,257 +344,251 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
     }
 
-    // NOVA FUNÇÃO: Abrir Comprovante em Nova Aba HTML
-    async function openSaleReceiptHtml(saleData) {
-        const receiptHtmlContent = `
-            <!DOCTYPE html>
-            <html lang="pt-BR">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>MullerSys - Comprovante de Venda ${saleData.orderNumber}</title>
-                <link rel="stylesheet" href="style.css">
-                <style>
-                    /* Estilos específicos para o comprovante, inspirados no PDF */
-                    body {
-                        margin: 0;
-                        padding: 0;
-                        background-color: #f4f4f4;
-                    }
-                    .receipt-container {
-                        font-family: Arial, sans-serif;
-                        width: 800px;
-                        margin: 20px auto;
-                        padding: 30px;
-                        border: 1px solid #ddd;
-                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                        background-color: #fff;
-                        color: #333;
-                    }
+async function openSaleReceiptHtml(saleData) {
+    const receiptHtmlContent = `
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>MullerSys - Orçamento ${saleData.orderNumber}</title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    background-color: #f4f4f4;
+                    font-family: Arial, sans-serif;
+                }
+                .receipt-container {
+                    width: 800px;
+                    margin: 20px auto;
+                    padding: 30px;
+                    background-color: #fff;
+                    border: 1px solid #ccc;
+                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                    color: #000;
+                }
 
-                    .receipt-header, .receipt-client-info, .receipt-items, .receipt-summary, .receipt-footer {
-                        margin-bottom: 20px;
-                    }
+                .company-info {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
 
-                    .receipt-header {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        border-bottom: 2px solid #333;
-                        padding-bottom: 10px;
-                        margin-bottom: 30px;
-                    }
+                .company-info h2 {
+                    margin: 0;
+                    font-size: 1.4em;
+                }
 
-                    .receipt-header .company-info h2 {
-                        margin: 0;
-                        color: #0056b3;
-                    }
-                    .receipt-header .company-info p {
-                        margin: 0;
-                        font-size: 0.9em;
-                        color: #555;
-                    }
+                .company-info p {
+                    margin: 2px 0;
+                    font-size: 0.95em;
+                }
 
-                    .receipt-header .document-type {
-                        font-size: 1.5em;
-                        font-weight: bold;
-                        color: #222;
-                    }
+                .document-type {
+                    text-align: center;
+                    font-size: 1.5em;
+                    font-weight: bold;
+                    margin: 30px 0 20px;
+                    border-top: 2px solid #333;
+                    padding-top: 10px;
+                }
 
-                    .receipt-info-grid {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 10px;
-                        margin-bottom: 20px;
-                    }
+                .receipt-info {
+                    margin-bottom: 20px;
+                }
 
-                    .receipt-info-grid p {
-                        margin: 0;
-                        font-size: 0.95em;
-                    }
-                    .receipt-info-grid strong {
-                        color: #222;
-                    }
+                .receipt-info p {
+                    margin: 4px 0;
+                    font-size: 0.95em;
+                }
 
-                    .receipt-client-info h3, .receipt-items h3 {
-                        color: #0056b3;
-                        margin-bottom: 10px;
-                        border-bottom: 1px solid #eee;
-                        padding-bottom: 5px;
-                    }
+                .receipt-client-info {
+                    border-top: 1px solid #ccc;
+                    padding-top: 10px;
+                    margin-top: 20px;
+                    margin-bottom: 20px;
+                }
 
-                    .receipt-items table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 15px;
-                    }
+                .receipt-client-info h3 {
+                    margin-bottom: 10px;
+                    font-size: 1.1em;
+                    border-bottom: 1px solid #ccc;
+                    padding-bottom: 5px;
+                }
 
-                    .receipt-items th, .receipt-items td {
-                        border: 1px solid #ddd;
-                        padding: 8px 12px;
-                        text-align: left;
-                        font-size: 0.9em;
-                    }
+                .receipt-client-info p {
+                    margin: 2px 0;
+                    font-size: 0.95em;
+                }
 
-                    .receipt-items th {
-                        background-color: #f0f0f0;
-                        color: #333;
-                        font-weight: bold;
-                    }
+                .receipt-items h3 {
+                    margin-bottom: 10px;
+                    font-size: 1.1em;
+                    border-bottom: 1px solid #ccc;
+                    padding-bottom: 5px;
+                }
 
-                    .receipt-items tr:nth-child(even) {
-                        background-color: #f9f9f9;
-                    }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 10px;
+                }
 
-                    .receipt-summary {
-                        text-align: right;
-                        border-top: 2px solid #333;
-                        padding-top: 15px;
-                        margin-top: 20px;
-                    }
+                th, td {
+                    border: 1px solid #999;
+                    padding: 6px 8px;
+                    font-size: 0.9em;
+                    text-align: left;
+                }
 
-                    .receipt-summary .summary-line {
-                        display: flex;
-                        justify-content: flex-end;
-                        margin-bottom: 5px;
-                    }
-                    .receipt-summary .summary-line span:first-child {
-                        flex: 0 0 150px;
-                        font-weight: bold;
-                        color: #222;
-                    }
-                    .receipt-summary .summary-line span:last-child {
-                        flex: 0 0 100px;
-                        text-align: right;
-                    }
-                    .receipt-summary .total-final {
-                        font-size: 1.2em;
-                        font-weight: bold;
-                        color: #28a745;
-                        margin-top: 10px;
-                    }
+                th {
+                    background-color: #eee;
+                    font-weight: bold;
+                }
 
-                    .payment-conditions {
-                        border-top: 1px solid #eee;
-                        padding-top: 15px;
-                        margin-top: 20px;
-                        font-size: 0.9em;
-                        color: #555;
-                    }
+                .receipt-summary {
+                    margin-top: 20px;
+                    border-top: 1px solid #333;
+                    padding-top: 10px;
+                    font-size: 0.95em;
+                }
 
-                    .receipt-footer {
-                        text-align: center;
-                        border-top: 2px solid #333;
-                        padding-top: 10px;
-                        margin-top: 30px;
-                        font-size: 0.85em;
-                        color: #555;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="receipt-container">
-                    <div class="receipt-header">
-                        <div class="company-info">
-                            <h2>MullerSys</h2>
-                            <p>AGROPECUARIA OURO BRANCO FILIAL</p>
-                            <p>RUA PRIMEIRO DE MAIO, 120</p>
-                            <p>PINHALZINHO DOS GOES</p>
-                            <p>CNPJ: ${saleData.companyCnpj}</p>
-                            <p>Telefone: ${saleData.companyPhone}</p>
-                            <p>Fax: ${saleData.companyFax}</p>
-                        </div>
-                        <div class="document-type">
-                            Comprovante de Venda
-                        </div>
-                    </div>
+                .receipt-summary p {
+                    display: flex;
+                    justify-content: space-between;
+                    margin: 3px 0;
+                }
 
-                    <div class="receipt-info-grid">
-                        <div>
-                            <p><strong>Pedido nº:</strong> ${saleData.orderNumber}</p>
-                        </div>
-                        <div>
-                            <p><strong>Data:</strong> ${saleData.saleDate}</p>
-                        </div>
-                    </div>
+                .payment-conditions {
+                    margin-top: 20px;
+                    border-top: 1px solid #ccc;
+                    padding-top: 10px;
+                }
 
-                    <div class="receipt-client-info">
-                        <h3>Informações do Cliente</h3>
-                        <p><strong>Cliente:</strong> ${saleData.clientName}</p>
-                        <p><strong>Endereço:</strong> ${saleData.clientAddress}</p>
-                        <p><strong>CEP:</strong> ${saleData.clientCep}</p>
-                        <p><strong>Cidade:</strong> ${saleData.clientCity} - ${saleData.clientUf}</p>
-                        <p><strong>Telefone:</strong> ${saleData.clientPhone}</p>
-                        <p><strong>CPF/ID:</strong> ${saleData.clientId}</p>
-                        <p style="font-style: italic; color: #dc3545;">* CPF original não disponível por segurança (armazenado como hash).</p>
-                    </div>
+                .payment-conditions h3 {
+                    font-size: 1em;
+                    margin-bottom: 10px;
+                }
 
-                    <div class="receipt-items">
-                        <h3>Itens da Venda</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ITEM</th>
-                                    <th>CÓDIGO</th>
-                                    <th>DESCRIÇÃO</th>
-                                    <th>QTD</th>
-                                    <th>VL.UNIT</th>
-                                    <th>VL.ITEM(R$)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${saleData.itemsHtml}
-                            </tbody>
-                        </table>
-                    </div>
+                .payment-conditions table {
+                    margin-top: 5px;
+                }
 
-                    <div class="receipt-summary">
-                        <div class="summary-line">
-                            <span>Volumes:</span>
-                            <span>${saleData.totalVolumes}</span>
-                        </div>
-                        <div class="summary-line">
-                            <span>Total Bruto:</span>
-                            <span>R$ ${saleData.totalBruto}</span>
-                        </div>
-                        <div class="summary-line">
-                            <span>Desconto:</span>
-                            <span>R$ ${saleData.discountValue}</span>
-                        </div>
-                        <div class="summary-line total-final">
-                            <span>Total Final da Venda:</span>
-                            <span>R$ ${saleData.totalFinal}</span>
-                        </div>
-                    </div>
+                .receipt-footer {
+                    text-align: center;
+                    margin-top: 30px;
+                    border-top: 2px solid #000;
+                    padding-top: 10px;
+                    font-size: 0.85em;
+                }
 
-                    <div class="payment-conditions">
-                        <p><strong>Condições de Pagamento:</strong> ${saleData.paymentConditions}</p>
-                        <p>Vendedor(es): ${saleData.sellerName}</p>
-                    </div>
-
-                    <div class="receipt-footer">
-                        <p>MullerSys - Ouro Fino, MG - ${saleData.currentYear}</p>
-                    </div>
+                .print-button {
+                    position: fixed;
+                    top: 10px;
+                    right: 10px;
+                    padding: 10px 20px;
+                    background-color: #007bff;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    z-index: 1000;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="receipt-container">
+                <div class="company-info">
+                    <h2>AGROPECUÁRIA OURO BRANCO FILIAL</h2>
+                    <p>RUA PRIMEIRO DE MAIO, 120 - PINHALZINHO DOS GOES</p>
+                    <p>Ouro Fino - MG - CEP: 37570-000</p>
+                    <p>CNPJ: ${saleData.companyCnpj} - IE: ${saleData.ieNumber}</p>
+                    <p>Telefone: ${saleData.companyPhone} - Fax: ${saleData.companyFax}</p>
                 </div>
-            </body>
-            </html>
-        `;
 
-        const newWindow = window.open('', '_blank', 'width=850,height=800,scrollbars=yes');
-        if (newWindow) {
-            newWindow.document.write(receiptHtmlContent);
-            newWindow.document.close();
-            // Opcional: Adicionar um botão de impressão na nova aba
-            newWindow.document.title = `Comprovante - ${saleData.orderNumber}`; // Define o título da aba
-            const printButton = newWindow.document.createElement('button');
-            printButton.textContent = 'Imprimir Comprovante';
-            printButton.style.cssText = 'position: fixed; top: 10px; right: 10px; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 1000;';
-            printButton.onclick = () => newWindow.print();
-            newWindow.document.body.appendChild(printButton);
-        } else {
-            showCustomPopup('Erro', 'Não foi possível abrir a nova aba para o comprovante. Verifique se pop-ups estão bloqueados.', 'error');
-        }
+                <div class="document-type">
+                    ORÇAMENTO A CLIENTES
+                </div>
+
+                <div class="receipt-info">
+                    <p><strong>Pedido nº:</strong> ${saleData.orderNumber}</p>
+                    <p><strong>Data:</strong> ${saleData.saleDate}</p>
+                </div>
+
+                <div class="receipt-client-info">
+                    <h3>Dados do Cliente</h3>
+                    <p><strong>Cliente:</strong> ${saleData.clientName}</p>
+                    <p><strong>Código:</strong> ${saleData.clientCode}</p>
+                    <p><strong>Endereço:</strong> ${saleData.clientAddress}</p>
+                    <p><strong>CEP:</strong> ${saleData.clientCep}</p>
+                    <p><strong>Cidade/UF:</strong> ${saleData.clientCity} - ${saleData.clientUf}</p>
+                    <p><strong>Telefone:</strong> ${saleData.clientPhone}</p>
+                    <p><strong>CPF/CNPJ:</strong> ${saleData.clientId}</p>
+                </div>
+
+                <div class="receipt-items">
+                    <h3>Itens do Pedido</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Quantidade</th>
+                                <th>Código</th>
+                                <th>Descrição</th>
+                                <th>Preço Unitário (R$)</th>
+                                <th>Total (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${saleData.itemsHtml}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="receipt-summary">
+                    <p><strong>Total Bruto:</strong> R$ ${saleData.totalBruto}</p>
+                    <p><strong>Desconto:</strong> R$ ${saleData.discountValue}</p>
+                    <p><strong>Frete:</strong> R$ ${saleData.freightValue}</p>
+                    <p><strong><u>Total do Pedido:</u></strong> R$ ${saleData.totalFinal}</p>
+                </div>
+
+                <div class="payment-conditions">
+                    <h3>Condições de Pagamento</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Percentual (%)</th>
+                                <th>Vencimento</th>
+                                <th>Valor (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${saleData.paymentHtml}
+                        </tbody>
+                    </table>
+                    <p><strong>Vendedor(es):</strong> ${saleData.sellerCode} - ${saleData.sellerName}</p>
+                </div>
+
+                <div class="receipt-footer">
+                    <p>Emitido por: MullerSys - ${saleData.currentYear}</p>
+                    <p>Ouro Fino - MG</p>
+                </div>
+            </div>
+            <button class="print-button" onclick="window.print()">Imprimir Comprovante</button>
+        </body>
+        </html>
+    `;
+
+    const newWindow = window.open('', '_blank', 'width=850,height=900,scrollbars=yes');
+    if (newWindow) {
+        newWindow.document.write(receiptHtmlContent);
+        newWindow.document.close();
+        newWindow.document.title = `Orçamento - ${saleData.orderNumber}`;
+    } else {
+        showCustomPopup('Erro', 'Não foi possível abrir a nova aba para o comprovante. Verifique se pop-ups estão bloqueados.', 'error');
     }
+}
+
 
 
     async function finalizarVenda() {
