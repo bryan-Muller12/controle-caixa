@@ -204,7 +204,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         const quantidade = parseFloat(quantidadeItemInput.value);
         const valorUnitario = parseFloat(valorUnitarioItemInput.value);
         let total = 0;
-        if (!isNaN(quantidade) && quantidade > 0 && !isNaN(valorUnitario) && valorUnitario > 0) {
+        if (!isNaN(quantidade) && quantity > 0 && !isNaN(valorUnitario) && valorUnitario > 0) { // Erro de digitação aqui: quantity -> quantidade
             total = quantidade * valorUnitario;
         }
         valorTotalItemInput.value = total.toFixed(2);
@@ -597,9 +597,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 heightLeft -= pageHeight;
             }
 
-            // MODIFICADO AQUI: Abre o PDF em uma nova aba para visualização
             doc.output('dataurlnewwindow'); 
-            // doc.save(`comprovante_venda_${saleData.orderNumber}.pdf`); // Linha original para download
 
             document.body.removeChild(tempElement);
         }).catch(error => {
@@ -635,7 +633,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
                     itensVendidosParaTransacao.push({
                         produtoId: itemCarrinho.id,
-                        codProduto: itemCarrinho.cod_produto, // CORRIGIDO: Usar itemCarrinho.cod_produto
+                        codProduto: itemCarrinho.codProduto,
                         nomeProduto: itemCarrinho.nomeProduto,
                         quantidadeVendida: itemCarrinho.quantidadeVendidaNoCarrinho,
                         precoUnitarioOriginal: itemCarrinho.precoUnitarioOriginal,
@@ -664,7 +662,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 await carregarProdutos(); 
 
                 const saleDataForPdf = {
-                    orderNumber: transactionResult.transaction_id || ('VENDA-' + new Date().getTime()),
+                    orderNumber: transactionResult.id || ('VENDA-' + new Date().getTime()), // CORRIGIDO AQUI: de transaction_id para id
                     saleDate: new Date().toLocaleDateString('pt-BR'),
                     clientName: selectedClient ? selectedClient.name : 'Cliente Não Identificado',
                     clientAddress: selectedClient ? selectedClient.address : 'N/A',
@@ -679,7 +677,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     totalFinal: totalDaVenda.toFixed(2),
                     paymentConditions: 'A vista',
                     sellerName: 'Vendedor Padrão',
-                    companyCnpj: '00.000.000/0001-00',
+                    companyCnpj: '00.000.000/0001-00', // Preencher com seus dados
                     companyPhone: '(00)0000-0000',
                     companyFax: '(00)0000-0000',
                     currentYear: new Date().getFullYear(),
