@@ -204,7 +204,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         const quantidade = parseFloat(quantidadeItemInput.value);
         const valorUnitario = parseFloat(valorUnitarioItemInput.value);
         let total = 0;
-        if (!isNaN(quantidade) && quantity > 0 && !isNaN(valorUnitario) && valorUnitario > 0) { // Erro de digitação aqui: quantity -> quantidade
+        if (!isNaN(quantidade) && quantidade > 0 && !isNaN(valorUnitario) && valorUnitario > 0) {
             total = quantidade * valorUnitario;
         }
         valorTotalItemInput.value = total.toFixed(2);
@@ -367,6 +367,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     box-sizing: border-box; /* Garante que padding e borda não aumentem a largura */
                     background-color: #fff; /* Fundo branco para PDF */
                     color: #333;
+                    border: 1px solid #ccc; /* Adicionado para visibilidade durante depuração */
                 }
 
                 .receipt-header {
@@ -569,9 +570,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
         const tempElement = document.createElement('div');
         tempElement.innerHTML = receiptHtmlContent;
-        tempElement.style.position = 'absolute';
-        tempElement.style.left = '-9999px';
+        // REMOVIDO: tempElement.style.position = 'absolute';
+        // REMOVIDO: tempElement.style.left = '-9999px';
         document.body.appendChild(tempElement); 
+
+        // Adicione um pequeno atraso para que o navegador renderize o tempElement antes da captura
+        await new Promise(resolve => setTimeout(resolve, 50)); // Adiciona um pequeno atraso
 
         html2canvas(tempElement, {
             scale: 2,
@@ -598,8 +602,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             }
 
             doc.output('dataurlnewwindow'); 
-
-            document.body.removeChild(tempElement);
+            document.body.removeChild(tempElement); // Remove o elemento visível após a geração
         }).catch(error => {
             console.error('Erro ao gerar PDF:', error);
             showCustomPopup('Erro', 'Não foi possível gerar o comprovante PDF.', 'error');
@@ -662,7 +665,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 await carregarProdutos(); 
 
                 const saleDataForPdf = {
-                    orderNumber: transactionResult.id || ('VENDA-' + new Date().getTime()), // CORRIGIDO AQUI: de transaction_id para id
+                    orderNumber: transactionResult.id || ('VENDA-' + new Date().getTime()),
                     saleDate: new Date().toLocaleDateString('pt-BR'),
                     clientName: selectedClient ? selectedClient.name : 'Cliente Não Identificado',
                     clientAddress: selectedClient ? selectedClient.address : 'N/A',
@@ -677,7 +680,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     totalFinal: totalDaVenda.toFixed(2),
                     paymentConditions: 'A vista',
                     sellerName: 'Vendedor Padrão',
-                    companyCnpj: '00.000.000/0001-00', // Preencher com seus dados
+                    companyCnpj: '00.000.000/0001-00',
                     companyPhone: '(00)0000-0000',
                     companyFax: '(00)0000-0000',
                     currentYear: new Date().getFullYear(),
