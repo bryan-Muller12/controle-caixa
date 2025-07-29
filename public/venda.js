@@ -1,7 +1,6 @@
 // public/venda.js
-// Lógica específica da tela de Vendas
 
-// Garante que o código só rode na página de venda
+// Lógica específica da tela de Vendas
 if (document.body.id === 'page-venda' || location.pathname.includes('venda.html')) {
     // ==== Seleção de Elementos do DOM ====
     const productNameDisplay = document.getElementById('product-name-display');
@@ -345,15 +344,21 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
     }
 
-    // NOVA FUNÇÃO: Gerar PDF do Comprovante de Venda
+    // FUNÇÃO MODIFICADA: Gerar PDF do Comprovante de Venda
     async function generateSaleReceiptPDF(saleData) {
-        const { jsPDF } = window.jspdf;
+        // Verifica se a biblioteca jsPDF está disponível.
+        // O construtor jsPDF geralmente é exposto diretamente na window como `window.jsPDF`
+        // quando o script UMD é carregado via CDN.
+        const jsPDF = window.jsPDF; 
+
+        if (typeof jsPDF === 'undefined') {
+            console.error("jsPDF library not loaded or not correctly exposed on window.jsPDF");
+            showCustomPopup('Erro na Geração do PDF', 'A biblioteca de PDF não foi carregada corretamente. Por favor, tente novamente ou contate o suporte.', 'error');
+            return;
+        }
+        
         const doc = new jsPDF('p', 'pt', 'a4'); // 'p' para retrato, 'pt' para pontos, 'a4' para tamanho A4
 
-        // HTML do comprovante (o mesmo template que você já tem, preenchido com saleData)
-        // Certifique-se de que todo o CSS que afeta o layout do comprovante está no <style>
-        // ou que ele está sendo carregado corretamente para a nova janela/iframe que html2canvas usará.
-        // Para simplificar, o CSS específico do comprovante está inline aqui.
         const receiptHtmlContent = `
             <style>
                 /* Cole aqui os estilos específicos do comprovante de venda do seu style.css ou do <style> do comprovante_venda.html */
@@ -565,29 +570,34 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             </html>
         `;
 
-        // Criar um elemento temporário para renderizar o HTML
         const tempElement = document.createElement('div');
         tempElement.innerHTML = receiptHtmlContent;
-        document.body.appendChild(tempElement); // Adiciona ao DOM para html2canvas renderizar corretamente (pode ser escondido)
+        // Para garantir que html2canvas capture os estilos de style.css,
+        // é melhor carregá-los diretamente ou garantir que tempElement
+        // esteja visível no DOM e o CSS esteja aplicado a ele.
+        // Uma forma é adicionar temporariamente e esconder visualmente:
+        tempElement.style.position = 'absolute';
+        tempElement.style.left = '-9999px';
+        document.body.appendChild(tempElement); 
 
-        // Usar html2canvas para renderizar o elemento HTML em uma imagem (canvas)
         html2canvas(tempElement, {
-            scale: 2, // Aumenta a escala para melhor qualidade no PDF
-            useCORS: true, // Importante se tiver imagens de URLs diferentes
+            scale: 2,
+            useCORS: true,
+            logging: true, // Adiciona logs para depuração do html2canvas
+            windowWidth: tempElement.scrollWidth, // Captura a largura real do conteúdo
+            windowHeight: tempElement.scrollHeight // Captura a altura real do conteúdo
         }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
             const imgWidth = 595.28; // Largura da A4 em pontos (210mm)
             const pageHeight = 841.89; // Altura da A4 em pontos (297mm)
-            const imgHeight = canvas.height * imgWidth / canvas.width;
+            let imgHeight = canvas.height * imgWidth / canvas.width;
             let heightLeft = imgHeight;
-
             let position = 0;
 
             doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
             heightLeft -= pageHeight;
 
-            // Se o conteúdo for maior que uma página, adicione novas páginas
-            while (heightLeft >= 0) {
+            while (heightLeft > 0) { // Alterado para > 0 para garantir que a última página seja adicionada
                 position = heightLeft - imgHeight;
                 doc.addPage();
                 doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
@@ -595,14 +605,13 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             }
 
             doc.save(`comprovante_venda_${saleData.orderNumber}.pdf`);
-            document.body.removeChild(tempElement); // Remove o elemento temporário
+            document.body.removeChild(tempElement);
         }).catch(error => {
             console.error('Erro ao gerar PDF:', error);
             showCustomPopup('Erro', 'Não foi possível gerar o comprovante PDF.', 'error');
-            document.body.removeChild(tempElement); // Garante que o elemento seja removido em caso de erro
+            document.body.removeChild(tempElement);
         });
     }
-
 
     async function finalizarVenda() {
         if (carrinho.length === 0) {
@@ -631,12 +640,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                         produtoId: itemCarrinho.id,
                         codProduto: itemCarrinho.codProduto,
                         nomeProduto: itemCarrinho.nomeProduto,
-                        quantidadeVendida: itemCarrinho.quantidadeVendidaNoCarrinho,
-                        precoUnitarioOriginal: itemCarrinho.precoUnitarioOriginal,
-                        precoUnitarioVenda: itemCarrinho.precoUnitario,
-                        totalItem: itemCarrinho.totalItem
+                        quantidadeVendida: item.quantidadeVendidaNoCarrinho,
+                        precoUnitarioOriginal: item.precoUnitarioOriginal,
+                        precoUnitarioVenda: item.precoUnitario,
+                        totalItem: item.totalItem
                     });
-                    subtotalBruto += itemCarrinho.totalItem;
+                    subtotalBruto += item.totalItem;
                 }
 
                 const novaTransacaoData = {
@@ -657,9 +666,8 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 
                 await carregarProdutos(); 
 
-                // Prepara os dados para o comprovante PDF
                 const saleDataForPdf = {
-                    orderNumber: transactionResult.transaction_id || ('VENDA-' + new Date().getTime()), // Usar o ID retornado pelo backend
+                    orderNumber: transactionResult.client.id || ('VENDA-' + new Date().getTime()), // Usar o ID retornado pelo backend
                     saleDate: new Date().toLocaleDateString('pt-BR'),
                     clientName: selectedClient ? selectedClient.name : 'Cliente Não Identificado',
                     clientAddress: selectedClient ? selectedClient.address : 'N/A',
@@ -678,7 +686,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     companyPhone: '(00)0000-0000',
                     companyFax: '(00)0000-0000',
                     currentYear: new Date().getFullYear(),
-                    itemsHtml: itemsVendidosParaTransacao.map((item, index) => `
+                    itemsHtml: itensVendidosParaTransacao.map((item, index) => `
                         <tr>
                             <td>${index + 1}</td>
                             <td>${item.codProduto}</td>
@@ -690,7 +698,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     `).join('')
                 };
 
-                await generateSaleReceiptPDF(saleDataForPdf); // Chama a nova função para gerar o PDF
+                await generateSaleReceiptPDF(saleDataForPdf);
 
                 showCustomPopup('Sucesso', 'Venda finalizada com sucesso e comprovante gerado!', 'success');
                 
