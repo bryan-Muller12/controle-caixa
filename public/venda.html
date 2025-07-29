@@ -11,9 +11,7 @@
 <body id="page-venda">
     <header>
         <div class="header-left">
-            <h1>
-             
-                Ponto de Venda</h1>
+            <h1>Ponto de Venda</h1>
         </div>
         <div class="header-right">
             <button id="theme-toggle-btn" class="btn-icon" title="Alternar Tema">
@@ -53,7 +51,7 @@
 
                 <div class="form-item-input">
                     <div class="form-group">
-                        <label for="search-produto-input">Código ou Nome:</label>
+                        <label for="search-produto-input">Código ou Nome do Produto:</label>
                         <input type="text" id="search-produto-input" placeholder="Pesquisar produto" autofocus>
                         <button type="button" id="find-product-btn" class="btn-find-product"><i class="fas fa-search"></i></button>
                     </div>
@@ -76,7 +74,21 @@
                     </div>
                     <button type="button" id="add-item-to-cart-btn" class="btn-primary" disabled>Adicionar ao Carrinho</button>
                 </div>
-            </div>
+
+                <div class="form-item-input" style="margin-top: 20px;">
+                    <h3>Informações do Cliente (Opcional)</h3>
+                    <div class="form-group">
+                        <label for="search-client-input">Buscar Cliente por Nome ou CPF:</label>
+                        <input type="text" id="search-client-input" placeholder="Buscar cliente por nome ou CPF...">
+                        <button type="button" id="find-client-btn" class="btn-find-product"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div id="selected-client-display" class="hidden">
+                        <p><strong>Cliente Selecionado:</strong> <span id="selected-client-name"></span></p>
+                        <p><strong>CPF/ID:</strong> <span id="selected-client-cpf"></span></p>
+                        <button type="button" id="remove-client-btn" class="btn-secondary" title="Remover Cliente">Remover Cliente</button>
+                    </div>
+                </div>
+                </div>
 
             <div class="venda-right-panel">
                 <div class="cart-header-row">

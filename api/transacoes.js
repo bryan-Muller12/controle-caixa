@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
   try {
     // MÉTODO POST: Registrar uma nova transação (venda ou outra)
     if (req.method === 'POST') {
-      const { tipo, descricao, valor, data, detalhesVenda } = req.body;
+      const { tipo, descricao, valor, data, clientId, detalhesVenda } = req.body; // Adicionado clientId
 
       if (!tipo || valor === undefined || !data) {
         return res.status(400).json({ error: 'Campos obrigatórios: tipo, valor, data.' });
@@ -23,8 +23,8 @@ module.exports = async (req, res) => {
 
       // 1. Inserir a transação principal
       const insertTransacaoQuery = `
-        INSERT INTO transacoes (tipo, descricao, valor, data_transacao, total_bruto, valor_desconto)
-        VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;
+        INSERT INTO transacoes (tipo, descricao, valor, data_transacao, total_bruto, valor_desconto, client_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;
       `;
       const transacaoValues = [
         tipo,
@@ -32,7 +32,8 @@ module.exports = async (req, res) => {
         parseFloat(valor),
         data, // data já está em formato 'YYYY-MM-DD'
         detalhesVenda ? parseFloat(detalhesVenda.totalBruto) : parseFloat(valor), // totalBruto da venda ou valor direto
-        detalhesVenda ? parseFloat(detalhesVenda.valorDesconto) : 0 // valorDesconto da venda ou 0
+        detalhesVenda ? parseFloat(detalhesVenda.valorDesconto) : 0, // valorDesconto da venda ou 0
+        clientId // Adicionado client_id aqui
       ];
       const { rows: transacaoRows } = await client.query(insertTransacaoQuery, transacaoValues);
       const transacaoId = transacaoRows[0].id;
@@ -85,6 +86,9 @@ module.exports = async (req, res) => {
             t.data_transacao,
             t.total_bruto,
             t.valor_desconto,
+            t.client_id, -- Adicionado client_id
+            c.name AS client_name, -- Nome do cliente
+            c.cpf_hash AS client_cpf, -- CPF do cliente (se necessário exibir no relatório)
             ARRAY_AGG(
                 jsonb_build_object(
                     'produtoId', it.produto_id,
@@ -98,6 +102,7 @@ module.exports = async (req, res) => {
             ) FILTER (WHERE it.id IS NOT NULL) AS itens
         FROM transacoes t
         LEFT JOIN itens_transacao it ON t.id = it.transacao_id
+        LEFT JOIN clients c ON t.client_id = c.id -- JOIN com a tabela clients
       `;
       const queryParams = [];
       const conditions = [];
@@ -116,7 +121,7 @@ module.exports = async (req, res) => {
         query += ` WHERE ${conditions.join(' AND ')}`;
       }
 
-      query += ` GROUP BY t.id ORDER BY t.data_transacao DESC, t.id DESC;`; // Ordena por data e ID
+      query += ` GROUP BY t.id, t.client_id, c.name, c.cpf_hash ORDER BY t.data_transacao DESC, t.id DESC;`; // Adicionado client fields ao GROUP BY
 
       const { rows } = await client.query(query, queryParams);
 
@@ -127,6 +132,9 @@ module.exports = async (req, res) => {
         descricao: row.descricao,
         valor: parseFloat(row.valor),
         data: row.data_transacao, // Já vem como string no formato 'YYYY-MM-DD'
+        clientId: row.client_id, // Inclui o ID do cliente
+        clientName: row.client_name, // Inclui o nome do cliente
+        clientCpf: row.client_cpf, // Inclui o CPF do cliente
         detalhesVenda: row.itens && row.itens.length > 0 ? {
           totalBruto: parseFloat(row.total_bruto),
           valorDesconto: parseFloat(row.valor_desconto),
