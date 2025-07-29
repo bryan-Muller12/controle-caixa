@@ -345,255 +345,173 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     }
 
 async function openSaleReceiptHtml(saleData) {
-    const receiptHtmlContent = `
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>MullerSys - Orçamento ${saleData.orderNumber}</title>
-            <style>
-                body {
-                    margin: 0;
-                    padding: 0;
-                    background-color: #f4f4f4;
-                    font-family: Arial, sans-serif;
-                }
-                .receipt-container {
-                    width: 800px;
-                    margin: 20px auto;
-                    padding: 30px;
-                    background-color: #fff;
-                    border: 1px solid #ccc;
-                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                    color: #000;
-                }
-                .company-info {
-                    text-align: center;
-                    margin-bottom: 20px;
-                }
-                .company-info h2 {
-                    margin: 0;
-                    font-size: 1.4em;
-                }
-                .company-info p {
-                    margin: 2px 0;
-                    font-size: 0.95em;
-                }
-                .document-type {
-                    text-align: center;
-                    font-size: 1.5em;
-                    font-weight: bold;
-                    margin: 30px 0 20px;
-                    border-top: 2px solid #333;
-                    padding-top: 10px;
-                }
-                .receipt-info p {
-                    margin: 4px 0;
-                    font-size: 0.95em;
-                }
-                .receipt-client-info {
-                    border-top: 1px solid #ccc;
-                    padding-top: 10px;
-                    margin-top: 20px;
-                    margin-bottom: 20px;
-                }
-                .receipt-client-info h3 {
-                    margin-bottom: 10px;
-                    font-size: 1.1em;
-                    border-bottom: 1px solid #ccc;
-                    padding-bottom: 5px;
-                }
-                .receipt-client-info p {
-                    margin: 2px 0;
-                    font-size: 0.95em;
-                }
-                .receipt-items h3 {
-                    margin-bottom: 10px;
-                    font-size: 1.1em;
-                    border-bottom: 1px solid #ccc;
-                    padding-bottom: 5px;
-                }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-top: 10px;
-                }
-                th, td {
-                    border: 1px solid #999;
-                    padding: 6px 8px;
-                    font-size: 0.9em;
-                    text-align: left;
-                }
-                th {
-                    background-color: #eee;
-                    font-weight: bold;
-                }
-                .receipt-summary {
-                    margin-top: 20px;
-                    border-top: 1px solid #333;
-                    padding-top: 10px;
-                    font-size: 0.95em;
-                }
-                .receipt-summary p {
-                    display: flex;
-                    justify-content: space-between;
-                    margin: 3px 0;
-                }
-                .payment-conditions {
-                    margin-top: 20px;
-                    border-top: 1px solid #ccc;
-                    padding-top: 10px;
-                }
-                .payment-conditions h3 {
-                    font-size: 1em;
-                    margin-bottom: 10px;
-                }
-                .payment-conditions table {
-                    margin-top: 5px;
-                }
-                .receipt-footer {
-                    text-align: center;
-                    margin-top: 30px;
-                    border-top: 2px solid #000;
-                    padding-top: 10px;
-                    font-size: 0.85em;
-                }
-                .promissory-note {
-                    font-size: 0.95em;
-                    line-height: 1.5;
-                    color: #000;
-                    margin-top: 40px;
-                }
-                .print-button {
-                    position: fixed;
-                    top: 10px;
-                    right: 10px;
-                    padding: 10px 20px;
-                    background-color: #007bff;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    z-index: 1000;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="receipt-container">
-                <div class="company-info">
-                    <h2>AGROPECUÁRIA OURO BRANCO FILIAL</h2>
-                    <p>RUA PRIMEIRO DE MAIO, 120 - PINHALZINHO DOS GOES</p>
-                    <p>Ouro Fino - MG - CEP: 37570-000</p>
-                    <p>CNPJ: ${saleData.companyCnpj} - IE: ${saleData.ieNumber}</p>
-                    <p>Telefone: ${saleData.companyPhone} - Fax: ${saleData.companyFax}</p>
-                </div>
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Orçamento ${saleData.orderNumber}</title>
+  <style>
+    body {
+      font-family: "Courier New", Courier, monospace;
+      margin: 0;
+      padding: 0;
+      background: white;
+    }
 
-                <div class="document-type">ORÇAMENTO A CLIENTES</div>
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 20mm;
+      margin: auto;
+      background: white;
+      box-sizing: border-box;
+    }
 
-                <div class="receipt-info">
-                    <p><strong>Pedido nº:</strong> ${saleData.orderNumber}</p>
-                    <p><strong>Data:</strong> ${saleData.saleDate}</p>
-                </div>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
 
-                <div class="receipt-client-info">
-                    <h3>Dados do Cliente</h3>
-                    <p><strong>Cliente:</strong> ${saleData.clientName}</p>
-                    <p><strong>Código:</strong> ${saleData.clientCode}</p>
-                    <p><strong>Endereço:</strong> ${saleData.clientAddress}</p>
-                    <p><strong>CEP:</strong> ${saleData.clientCep}</p>
-                    <p><strong>Cidade/UF:</strong> ${saleData.clientCity} - ${saleData.clientUf}</p>
-                    <p><strong>Telefone:</strong> ${saleData.clientPhone}</p>
-                    <p><strong>CPF/CNPJ:</strong> ${saleData.clientId}</p>
-                </div>
+    .center {
+      text-align: center;
+    }
 
-                <div class="receipt-items">
-                    <h3>Itens do Pedido</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Quantidade</th>
-                                <th>Código</th>
-                                <th>Descrição</th>
-                                <th>Preço Unitário (R$)</th>
-                                <th>Total (R$)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${saleData.itemsHtml}
-                        </tbody>
-                    </table>
-                </div>
+    .bordered td, .bordered th {
+      border: 1px solid #000;
+      padding: 4px;
+    }
 
-                <div class="receipt-summary">
-                    <p><strong>Total Bruto:</strong> R$ ${saleData.totalBruto}</p>
-                    <p><strong>Desconto:</strong> R$ ${saleData.discountValue}</p>
-                    <p><strong>Frete:</strong> R$ ${saleData.freightValue}</p>
-                    <p><strong><u>Total do Pedido:</u></strong> R$ ${saleData.totalFinal}</p>
-                </div>
+    .spaced {
+      margin: 20px 0;
+    }
 
-                <div class="payment-conditions">
-                    <h3>Condições de Pagamento</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Percentual (%)</th>
-                                <th>Vencimento</th>
-                                <th>Valor (R$)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${saleData.paymentHtml}
-                        </tbody>
-                    </table>
-                    <p><strong>Vendedor(es):</strong> ${saleData.sellerCode} - ${saleData.sellerName}</p>
-                </div>
+    hr.dashed {
+      border: none;
+      border-top: 1px dashed #000;
+      margin: 30px 0;
+    }
 
-                <div class="receipt-footer">
-                    <p>Emitido por: MullerSys - ${saleData.currentYear}</p>
-                    <p>Ouro Fino - MG</p>
-                </div>
+    .promissory {
+      font-size: 13px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="center">
+      <h2>AGROPECUÁRIA OURO BRANCO FILIAL</h2>
+      <p>RUA PRIMEIRO DE MAIO, 120 - PINHALZINHO DOS GOES</p>
+      <p>Ouro Fino - MG - CEP: 37570-000</p>
+      <p>Telefone: ${saleData.companyPhone} - Fax: ${saleData.companyFax}</p>
+      <p>CNPJ: ${saleData.companyCnpj} - IE: ${saleData.ieNumber}</p>
+    </div>
 
-                <hr style="margin: 40px 0; border: 1px dashed #666;">
+    <h3 class="center spaced">ORÇAMENTO A CLIENTES</h3>
 
-                <div class="promissory-note">
-                    <h3 style="text-align: center; text-transform: uppercase; margin-bottom: 20px;">Nota Promissória</h3>
-                    <p>Por esta única via de <strong>NOTA PROMISSÓRIA</strong>, prometo pagar à ordem de <strong>${saleData.companyName}</strong>,
-                    inscrita no CNPJ sob nº <strong>${saleData.companyCnpj}</strong>, a quantia de
-                    <strong>R$ ${saleData.totalFinal}</strong> (<em>${saleData.totalExtenso}</em>), em moeda corrente deste país.</p>
+    <table class="spaced">
+      <tr>
+        <td><strong>Pedido nº:</strong> ${saleData.orderNumber}</td>
+        <td><strong>Data:</strong> ${saleData.saleDate}</td>
+      </tr>
+    </table>
 
-                    <p>O pagamento será efetuado em <strong>${saleData.paymentCity} - ${saleData.paymentState}</strong>, no dia
-                    <strong>${saleData.paymentDueDate}</strong>.</p>
+    <table>
+      <tr>
+        <td><strong>Código:</strong> ${saleData.clientCode}</td>
+        <td><strong>Cliente:</strong> ${saleData.clientName}</td>
+      </tr>
+      <tr>
+        <td colspan="2"><strong>Endereço:</strong> ${saleData.clientAddress}</td>
+      </tr>
+      <tr>
+        <td><strong>Cidade:</strong> ${saleData.clientCity}</td>
+        <td><strong>Estado:</strong> ${saleData.clientUf}</td>
+      </tr>
+      <tr>
+        <td><strong>CEP:</strong> ${saleData.clientCep}</td>
+        <td><strong>Telefone:</strong> ${saleData.clientPhone}</td>
+      </tr>
+      <tr>
+        <td colspan="2"><strong>CPF/CNPJ:</strong> ${saleData.clientId}</td>
+      </tr>
+    </table>
 
-                    <br>
-                    <p><strong>Emitente:</strong> ${saleData.clientName}</p>
-                    <p><strong>CPF/CNPJ:</strong> ${saleData.clientId}</p>
-                    <p><strong>Endereço:</strong> ${saleData.clientAddress}, ${saleData.clientCity} - ${saleData.clientUf}, CEP: ${saleData.clientCep}</p>
+    <h4 class="spaced">Itens</h4>
+    <table class="bordered">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Quantidade</th>
+          <th>UN</th>
+          <th>Código</th>
+          <th>Descrição</th>
+          <th>Preço Unit.</th>
+          <th>Total (R$)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${saleData.itemsHtml}
+      </tbody>
+    </table>
 
-                    <br><br>
-                    <p style="text-align: right;">${saleData.clientCity}, ${saleData.saleDate}</p>
+    <table class="spaced">
+      <tr>
+        <td><strong>Desc. Parciais:</strong> R$ 0,00</td>
+        <td><strong>Desc. Gerais:</strong> R$ ${saleData.discountValue}</td>
+        <td><strong>Frete:</strong> R$ ${saleData.freightValue}</td>
+        <td><strong>Total do Pedido:</strong> R$ ${saleData.totalFinal}</td>
+      </tr>
+    </table>
 
-                    <br><br>
-                    <p style="text-align: center;">_____________________________________________<br>Assinatura do Emitente</p>
-                </div>
-            </div>
+    <h4>Condições de Pagamento</h4>
+    <table class="bordered">
+      <thead>
+        <tr>
+          <th>Percentual</th>
+          <th>Vencimento</th>
+          <th>Valor</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${saleData.paymentHtml}
+      </tbody>
+    </table>
 
-            <button class="print-button" onclick="window.print()">Imprimir Comprovante</button>
-        </body>
-        </html>
+    <p class="spaced"><strong>Vendedor:</strong> ${saleData.sellerCode} - ${saleData.sellerName}</p>
+
+    <hr class="dashed">
+
+    <div class="promissory">
+      <h3 class="center">NOTA PROMISSÓRIA</h3>
+      <p>Pagarei por esta única via de <strong>NOTA PROMISSÓRIA</strong>, em moeda corrente deste país, à ordem de <strong>${saleData.companyName}</strong>, CNPJ <strong>${saleData.companyCnpj}</strong>, a quantia de <strong>R$ ${saleData.totalFinal}</strong> (<em>${saleData.totalExtenso}</em>), pagável em <strong>${saleData.paymentCity} - ${saleData.paymentState}</strong>, no dia <strong>${saleData.paymentDueDate}</strong>.</p>
+
+      <p><strong>Emitente:</strong> ${saleData.clientName}</p>
+      <p><strong>CPF/CNPJ:</strong> ${saleData.clientId}</p>
+      <p><strong>Endereço:</strong> ${saleData.clientAddress}, ${saleData.clientCity} - ${saleData.clientUf}, CEP: ${saleData.clientCep}</p>
+
+      <p class="right" style="text-align: right;">${saleData.clientCity}, ${saleData.saleDate}</p>
+
+      <p class="center" style="margin-top: 60px;">_____________________________________________<br>Assinatura do Emitente</p>
+    </div>
+  </div>
+  <script>
+    window.print();
+  </script>
+</body>
+</html>
     `;
 
-    const newWindow = window.open('', '_blank', 'width=850,height=1000,scrollbars=yes');
+    const newWindow = window.open('', '_blank');
     if (newWindow) {
-        newWindow.document.write(receiptHtmlContent);
+        newWindow.document.write(htmlContent);
         newWindow.document.close();
-        newWindow.document.title = `Orçamento - ${saleData.orderNumber}`;
     } else {
         showCustomPopup('Erro', 'Não foi possível abrir a nova aba para o comprovante. Verifique se pop-ups estão bloqueados.', 'error');
     }
 }
-
 
     async function finalizarVenda() {
         if (carrinho.length === 0) {
