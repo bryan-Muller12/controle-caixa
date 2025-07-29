@@ -351,7 +351,7 @@ async function openSaleReceiptHtml(saleData) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Orçamento ${saleData.orderNumber}</title>
+  [cite_start]<title>Orçamento ${saleData.orderNumber} [cite: 5, 28]</title>
   <style>
     :root {
       --text-color: #333;
@@ -472,41 +472,41 @@ async function openSaleReceiptHtml(saleData) {
 <body>
   <div class="page">
     <header>
-      <h2>AGROPECUARIA OURO BRANCO FILIAL</h2> [cite: 2]
-      <p>RUA PRIMEIRO DE MAIO, 120 - PINHALZINHO DOS GOES</p> [cite: 3, 4]
-      <p>Ouro Fino - MG - CEP: 37570-000</p> [cite: 8, 10, 11]
-      <p>Telefone: (35-) 344-2-1101 - Fax: (35-) 344-2-1101</p> [cite: 4, 12]
-      <p>CNPJ: 02.533.142/0002-20 - IE: 0917415980151</p> [cite: 4, 9]
+      [cite_start]<h2>AGROPECUARIA OURO BRANCO FILIAL [cite: 2]</h2>
+      [cite_start]<p>RUA PRIMEIRO DE MAIO, 120 - PINHALZINHO DOS GOES [cite: 3, 4]</p>
+      [cite_start]<p>Ouro Fino - MG - CEP: 37570-000 [cite: 10, 11, 8]</p>
+      [cite_start]<p>Telefone: ${saleData.companyPhone} [cite: 4] - [cite_start]Fax: ${saleData.companyFax} [cite: 12]</p>
+      [cite_start]<p>CNPJ: ${saleData.companyCnpj} [cite: 4] - [cite_start]IE: ${saleData.ieNumber} [cite: 9]</p>
     </header>
 
-    <h3 class="center spaced-section">Orçamento a Clientes</h3> [cite: 5]
+    [cite_start]<h3 class="center spaced-section">Orçamento a Clientes [cite: 5]</h3>
 
     <section class="spaced-section">
       <table>
         <tr>
-          <td><span class="bold">Pedido nº:</span> 585539</td> [cite: 28]
-          <td class="right"><span class="bold">Data:</span> 10/06/2025</td> [cite: 18, 29]
+          [cite_start]<td><span class="bold">Pedido nº:</span> ${saleData.orderNumber} [cite: 28]</td>
+          [cite_start]<td class="right"><span class="bold">Data:</span> ${saleData.saleDate} [cite: 18, 29]</td>
         </tr>
       </table>
 
       <table>
         <tr>
-          <td><span class="bold">Código:</span> 4918/4978</td> [cite: 19]
-          <td><span class="bold">Cliente:</span> GABRIEL MAIA TELES</td> [cite: 6]
+          [cite_start]<td><span class="bold">Código:</span> ${saleData.clientCode} [cite: 19]</td>
+          [cite_start]<td><span class="bold">Cliente:</span> ${saleData.clientName} [cite: 6]</td>
         </tr>
         <tr>
-          <td colspan="2"><span class="bold">Endereço:</span> SITIO SÃO MARCOS CORGO DA ONÇA</td> [cite: 7]
+          [cite_start]<td colspan="2"><span class="bold">Endereço:</span> ${saleData.clientAddress} [cite: 7]</td>
         </tr>
         <tr>
-          <td><span class="bold">Cidade:</span> Inconfidentes</td> [cite: 17]
-          <td><span class="bold">Estado:</span> MG</td> [cite: 19]
+          [cite_start]<td><span class="bold">Cidade:</span> ${saleData.clientCity} [cite: 17]</td>
+          [cite_start]<td><span class="bold">Estado:</span> ${saleData.clientUf} [cite: 19]</td>
         </tr>
         <tr>
-          <td><span class="bold">CEP:</span> 37576000</td> [cite: 23]
-          <td><span class="bold">Telefone:</span> (359) 984-28731</td> [cite: 14]
+          [cite_start]<td><span class="bold">CEP:</span> ${saleData.clientCep} [cite: 23]</td>
+          [cite_start]<td><span class="bold">Telefone:</span> ${saleData.clientPhone} [cite: 14]</td>
         </tr>
         <tr>
-          <td colspan="2"><span class="bold">CPF/CNPJ:</span> 132.066.126-24</td> [cite: 15]
+          [cite_start]<td colspan="2"><span class="bold">CPF/CNPJ:</span> ${saleData.clientId} [cite: 15]</td>
         </tr>
       </table>
     </section>
@@ -526,28 +526,16 @@ async function openSaleReceiptHtml(saleData) {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>1</td> 
-            <td>150,00</td> 
-            <td>UN</td> 
-            <td>12.671</td> 
-            <td>TIJOLO COMUM</td> 
-            <td class="right">0,80000</td> 
-            <td class="right">120,00</td> 
-          </tr>
-          <tr>
-            <td colspan="6" class="right bold">Total</td> 
-            <td class="right bold">120,00</td> 
-          </tr>
+          [cite_start]${saleData.itemsHtml} [cite: 30]
         </tbody>
       </table>
 
       <table>
         <tr>
-          <td><span class="bold">Desc. Parciais:</span> R$ 0,00</td> 
-          <td><span class="bold">Desc. Gerais:</span> R$ 0,00</td> 
-          <td><span class="bold">Frete:</span> R$ 0,00</td> 
-          <td class="right"><span class="bold">Total do Pedido:</span> R$ 120,00</td> 
+          <td><span class="bold">Desc. [cite_start]Parciais:</span> R$ ${saleData.discountValuePartial} [cite: 30]</td>
+          <td><span class="bold">Desc. [cite_start]Gerais:</span> R$ ${saleData.discountValueGeneral} [cite: 30]</td>
+          [cite_start]<td><span class="bold">Frete:</span> R$ ${saleData.freightValue} [cite: 30]</td>
+          [cite_start]<td class="right"><span class="bold">Total do Pedido:</span> R$ ${saleData.totalFinal} [cite: 30]</td>
         </tr>
       </table>
     </section>
@@ -563,28 +551,24 @@ async function openSaleReceiptHtml(saleData) {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td></td> [cite: 25]
-            <td>10/07/2025</td> [cite: 25]
-            <td>120,00</td> [cite: 25]
-          </tr>
+          [cite_start]${saleData.paymentHtml} [cite: 25]
         </tbody>
       </table>
     </section>
 
-    <p class="spaced-section"><span class="bold">Vendedor:</span> 6.460 THAISSA DE LIMA BENTO</p> [cite: 26, 27]
+    [cite_start]<p class="spaced-section"><span class="bold">Vendedor:</span> ${saleData.sellerCode} ${saleData.sellerName} [cite: 26, 27]</p>
 
     <hr class="dashed">
 
     <footer class="promissory">
       <h3 class="center">NOTA PROMISSÓRIA</h3>
-      <p><span class="bold">Pagarei</span> por esta única via de <span class="bold">NOTA PROMISSÓRIA</span>, em moeda corrente deste país, à ordem de <span class="bold">AGROPECUARIA OURO BRANCO FILIAL</span> [cite: 39], CNPJ <span class="bold">02533142000220</span> [cite: 42], a quantia de <span class="bold">R$ 120,00</span> [cite: 37, 38] (<em>cento e vinte reais</em>) [cite: 40], pagável em <span class="bold">Ouro Fino-MG</span> [cite: 43], no dia <span class="bold">10/07/2025</span> [cite: 34, 36].</p> [cite: 13, 41]
+      [cite_start]<p><span class="bold">Pagarei</span> por esta única via de <span class="bold">NOTA PROMISSÓRIA</span> [cite: 41][cite_start], em moeda corrente deste país, à ordem de <span class="bold">${saleData.companyName}</span> [cite: 39][cite_start], CNPJ <span class="bold">${saleData.companyCnpjNotaPromissoria}</span> [cite: 42][cite_start], a quantia de <span class="bold">R$ ${saleData.totalFinalNotaPromissoria}</span> [cite: 37, 38] (<em>${saleData.totalExtenso}</em>) [cite_start][cite: 40][cite_start], pagável em <span class="bold">${saleData.paymentCityNotaPromissoria} - ${saleData.paymentStateNotaPromissoria}</span> [cite: 43][cite_start], no dia <span class="bold">${saleData.paymentDueDateNotaPromissoria}</span>[cite: 34, 36].</p>
 
-      <p><span class="bold">Emitente:</span> GABRIEL MAIA TELES</p> [cite: 35, 43]
-      <p><span class="bold">CPF/CNPJ:</span> 13206612624</p> [cite: 35, 44, 45]
-      <p><span class="bold">Endereço:</span> SITIO SÃO MARCOS, SITIO CORGO DA ONÇA, Inconfidentes-MG, CEP: 37576000</p> [cite: 21, 22, 23, 46]
+      [cite_start]<p><span class="bold">Emitente:</span> ${saleData.clientNameNotaPromissoria} [cite: 35, 43]</p>
+      [cite_start]<p><span class="bold">CPF/CNPJ:</span> ${saleData.clientIdNotaPromissoria} [cite: 35, 44, 45]</p>
+      [cite_start]<p><span class="bold">Endereço:</span> ${saleData.clientAddressNotaPromissoria}[cite: 46], ${saleData.clientCityNotaPromissoria} - ${saleData.clientUfNotaPromissoria}, CEP: ${saleData.clientCepNotaPromissoria}</p>
 
-      <p class="right" style="margin-top: 20px;">Inconfidentes-MG, 10 de junho de 2025</p> [cite: 51]
+      [cite_start]<p class="right" style="margin-top: 20px;">${saleData.clientCityNotaPromissoria}, ${saleData.saleDateNotaPromissoria} [cite: 51]</p>
 
       <p class="center" style="margin-top: 60px;">_____________________________________________<br>Assinatura do Emitente</p>
     </footer>
@@ -605,57 +589,6 @@ async function openSaleReceiptHtml(saleData) {
         showCustomPopup('Erro', 'Não foi possível abrir a nova aba para o comprovante. Verifique se pop-ups estão bloqueados.', 'error');
     }
 }
-
-// Exemplo de como você chamaria a função com os dados
-// Note: Você precisaria criar um objeto saleData com todas as propriedades necessárias.
-/*
-const saleDataExample = {
-    orderNumber: "585539",
-    companyName: "AGROPECUARIA OURO BRANCO FILIAL",
-    companyPhone: "(35-) 344-2-1101",
-    companyFax: "(35-) 344-2-1101",
-    companyCnpj: "02.533.142/0002-20",
-    ieNumber: "0917415980151",
-    saleDate: "10/06/2025",
-    clientCode: "4918/4978",
-    clientName: "GABRIEL MAIA TELES",
-    clientAddress: "SITIO SÃO MARCOS CORGO DA ONÇA",
-    clientCity: "Inconfidentes",
-    clientUf: "MG",
-    clientCep: "37576000",
-    clientPhone: "(359) 984-28731",
-    clientId: "132.066.126-24",
-    itemsHtml: `
-        <tr>
-            <td>1</td>
-            <td>150,00</td>
-            <td>UN</td>
-            <td>12.671</td>
-            <td>TIJOLO COMUM</td>
-            <td class="right">0,80000</td>
-            <td class="right">120,00</td>
-        </tr>
-    `,
-    discountValue: "0,00",
-    freightValue: "0,00",
-    totalFinal: "120,00",
-    paymentHtml: `
-        <tr>
-            <td></td>
-            <td>10/07/2025</td>
-            <td>120,00</td>
-        </tr>
-    `,
-    sellerCode: "6.460",
-    sellerName: "THAISSA DE LIMA BENTO",
-    totalExtenso: "cento e vinte reais",
-    paymentCity: "Ouro Fino",
-    paymentState: "MG",
-    paymentDueDate: "10/07/2025"
-};
-
-openSaleReceiptHtml(saleDataExample);
-*/
     async function finalizarVenda() {
         if (carrinho.length === 0) {
             showCustomPopup('Erro', 'Não há itens no carrinho para finalizar a venda.', 'error');
