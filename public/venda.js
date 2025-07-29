@@ -1,6 +1,6 @@
 // public/venda.js
 
-// Lógica específica da tela de Vendas
+// Lógica específica da tela de Venda
 if (document.body.id === 'page-venda' || location.pathname.includes('venda.html')) {
     // ==== Seleção de Elementos do DOM ====
     const productNameDisplay = document.getElementById('product-name-display');
@@ -27,7 +27,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     const valorDescontoGlobalInput = document.getElementById('valor-desconto-global');
 
     const finalizeSaleBtn = document.getElementById('finalize-sale-btn');
-    const cancelAllItemsBtn = document = document.getElementById('cancel-all-items-btn'); // Corrigido, estava com 'document = document'
+    const cancelAllItemsBtn = document.getElementById('cancel-all-items-btn');
 
     const searchClientInput = document.getElementById('search-client-input');
     const findClientBtn = document.getElementById('find-client-btn');
@@ -597,7 +597,10 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 heightLeft -= pageHeight;
             }
 
-            doc.save(`comprovante_venda_${saleData.orderNumber}.pdf`);
+            // MODIFICADO AQUI: Abre o PDF em uma nova aba para visualização
+            doc.output('dataurlnewwindow'); 
+            // doc.save(`comprovante_venda_${saleData.orderNumber}.pdf`); // Linha original para download
+
             document.body.removeChild(tempElement);
         }).catch(error => {
             console.error('Erro ao gerar PDF:', error);
@@ -632,12 +635,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
                     itensVendidosParaTransacao.push({
                         produtoId: itemCarrinho.id,
-                        codProduto: itemCarrinho.codProduto,
+                        codProduto: itemCarrinho.cod_produto, // CORRIGIDO: Usar itemCarrinho.cod_produto
                         nomeProduto: itemCarrinho.nomeProduto,
-                        quantidadeVendida: itemCarrinho.quantidadeVendidaNoCarrinho, // CORRIGIDO AQUI
-                        precoUnitarioOriginal: itemCarrinho.precoUnitarioOriginal,    // CORRIGIDO AQUI
-                        precoUnitarioVenda: itemCarrinho.precoUnitario,             // CORRIGIDO AQUI
-                        totalItem: itemCarrinho.totalItem                           // CORRIGIDO AQUI
+                        quantidadeVendida: itemCarrinho.quantidadeVendidaNoCarrinho,
+                        precoUnitarioOriginal: itemCarrinho.precoUnitarioOriginal,
+                        precoUnitarioVenda: itemCarrinho.precoUnitario,
+                        totalItem: itemCarrinho.totalItem
                     });
                     subtotalBruto += itemCarrinho.totalItem;
                 }
@@ -661,7 +664,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 await carregarProdutos(); 
 
                 const saleDataForPdf = {
-                    orderNumber: transactionResult.transaction_id || ('VENDA-' + new Date().getTime()), // Usar o ID retornado pelo backend
+                    orderNumber: transactionResult.transaction_id || ('VENDA-' + new Date().getTime()),
                     saleDate: new Date().toLocaleDateString('pt-BR'),
                     clientName: selectedClient ? selectedClient.name : 'Cliente Não Identificado',
                     clientAddress: selectedClient ? selectedClient.address : 'N/A',
@@ -676,7 +679,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     totalFinal: totalDaVenda.toFixed(2),
                     paymentConditions: 'A vista',
                     sellerName: 'Vendedor Padrão',
-                    companyCnpj: '00.000.000/0001-00', // Preencher com seus dados
+                    companyCnpj: '00.000.000/0001-00',
                     companyPhone: '(00)0000-0000',
                     companyFax: '(00)0000-0000',
                     currentYear: new Date().getFullYear(),
@@ -771,7 +774,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     });
 
     // ==== Funções de Formatação (helpers) ====
-    function formatCpf(cpf) { /* ... */ return cpf; } // Mantenha sua função original, mesmo que não seja usada diretamente aqui
+    function formatCpf(cpf) { /* ... */ return cpf; }
     function formatPhone(phone) {
         if (!phone) return '';
         const cleaned = ('' + phone).replace(/\D/g, '');
