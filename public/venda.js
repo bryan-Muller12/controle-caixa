@@ -1,7 +1,6 @@
-// venda.js
-// Lógica específica da tela de Vendas
+// public/venda.js
 
-// Garante que o código só rode na página de venda
+// Lógica específica da tela de Vendas
 if (document.body.id === 'page-venda' || location.pathname.includes('venda.html')) {
     // --- ELEMENTOS DO DOM ---
     const productNameDisplay = document.getElementById('product-name-display');
@@ -37,6 +36,8 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     const selectedClientName = document.getElementById('selected-client-name');
     const selectedClientCpf = document.getElementById('selected-client-cpf');
     const removeClientBtn = document.getElementById('remove-client-btn'); // Botão para remover cliente selecionado
+    const clientSearchResultsDiv = document.getElementById('client-search-results');
+    const clientResultsList = document.getElementById('client-results-list');
 
     // --- ESTADO DA APLICAÇÃO ---
     let produtos = []; // Produtos carregados do banco de dados
@@ -57,7 +58,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
 
         const response = await fetch(url, options);
-        // Tenta ler JSON, mas permite que a resposta seja vazia (ex: 204 No Content)
         const responseData = await response.json().catch(() => null); 
         
         if (!response.ok) {
@@ -70,7 +70,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     async function carregarProdutos() {
         try {
             produtos = await fazerRequisicaoApi('/api/produtos', 'GET');
-            atualizarNotificacoesComuns(); // Atualiza as notificações com base nos produtos carregados
+            atualizarNotificacoesComuns();
         } catch (error) {
             console.error('Erro ao carregar produtos:', error);
             showCustomPopup('Erro', 'Não foi possível carregar os produtos do servidor.', 'error');
@@ -144,9 +144,10 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         selectedClient = client;
         if (client) {
             selectedClientName.textContent = client.name;
-            selectedClientCpf.textContent = client.cpf_hash ? 'CPF: ' + formatCpf(client.cpf_hash) : 'CPF: N/A'; // Assuming cpf_hash is returned from API or not displayed
+            selectedClientCpf.textContent = `ID: ${client.id}`; 
             selectedClientDisplay.classList.remove('hidden');
             removeClientBtn.classList.remove('hidden');
+            clientSearchResultsDiv.classList.add('hidden'); // Esconde a lista de resultados após a seleção
         } else {
             selectedClientName.textContent = 'Nenhum Cliente Selecionado';
             selectedClientCpf.textContent = '';
@@ -155,26 +156,64 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
     }
 
-    // Função para pesquisar e selecionar cliente
-    function pesquisarCliente() {
-        const termoBusca = searchClientInput.value.toLowerCase().trim();
-        let client = null;
-
-        if (termoBusca) {
-            client = allClients.find(c =>
-                (c.name.toLowerCase().includes(termoBusca)) ||
-                (c.phone && c.phone.toLowerCase().includes(termoBusca)) ||
-                (c.cpf_hash && c.cpf_hash.toLowerCase().includes(termoBusca)) // Assuming cpf_hash exists
-            );
-        }
-
-        if (client) {
-            exibirClienteSelecionado(client);
-            searchClientInput.value = client.name; // Preenche o input com o nome do cliente encontrado
+    // Função para renderizar a lista de clientes pesquisados
+    function renderClientSearchResults(results) {
+        clientResultsList.innerHTML = '';
+        if (results.length > 0) {
+            results.forEach(client => {
+                const li = document.createElement('li');
+                li.classList.add('client-search-item');
+                li.dataset.clientId = client.id;
+                li.innerHTML = `
+                    <span>${client.name}</span>
+                    <span class="client-search-phone">${formatPhone(client.phone) || 'N/A'}</span>
+                `;
+                li.addEventListener('click', () => {
+                    exibirClienteSelecionado(client);
+                    searchClientInput.value = client.name;
+                    clientSearchResultsDiv.classList.add('hidden');
+                });
+                clientResultsList.appendChild(li);
+            });
+            clientSearchResultsDiv.classList.remove('hidden');
         } else {
-            showCustomPopup('Alerta', 'Cliente não encontrado.', 'warning');
+            clientSearchResultsDiv.classList.add('hidden');
+        }
+    }
+
+    // MODIFICADO: Função para pesquisar e exibir clientes, agora com lógica de filtro aprimorada
+    function pesquisarClienteAoDigitar() {
+        const termoBusca = searchClientInput.value.toLowerCase().trim();
+        
+        if (termoBusca.length >= 2) {
+            let directNameStartsWithMatches = [];
+
+            // 1. Primeira e mais prioritária busca: Nomes que COMEÇAM com o termo
+            directNameStartsWithMatches = allClients.filter(client =>
+                client.name.toLowerCase().startsWith(termoBusca)
+            );
+
+            let finalResults = [...directNameStartsWithMatches]; // Começa com os resultados mais relevantes
+
+            // 2. Condição para expandir a busca:
+            //    Só expande se NENHUM nome começar com o termo (directNameStartsWithMatches está vazio)
+            //    E se o termo de busca for longo o suficiente (ex: >= 5 caracteres) para sugerir uma busca mais ampla.
+            //    Isso evita que "Hellen" apareça para "brya".
+            if (directNameStartsWithMatches.length === 0 && termoBusca.length >= 25) {
+                const broaderMatches = allClients.filter(client =>
+                    // Não é necessário verificar duplicatas aqui pois directNameStartsWithMatches está vazio
+                    (client.name.toLowerCase().includes(termoBusca) || // Inclui nome que contém o termo
+                    (client.phone && client.phone.replace(/\D/g, '').includes(termoBusca.replace(/\D/g, ''))) || // Inclui telefone
+                    (client.address && client.address.toLowerCase().includes(termoBusca))) // Inclui endereço
+                );
+                finalResults = [...broaderMatches]; // Substitui os resultados finais pelos resultados mais amplos
+            }
+
+            const MAX_SUGGESTIONS = 10; 
+            renderClientSearchResults(finalResults.slice(0, MAX_SUGGESTIONS));
+        } else {
+            clientSearchResultsDiv.classList.add('hidden');
             exibirClienteSelecionado(null);
-            searchClientInput.value = '';
         }
     }
 
@@ -226,7 +265,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             carrinho[itemExistenteIndex].totalItem = novaQuantidadeTotal * valorUnitario;
         } else {
             carrinho.push({
-                id: produtoEncontradoParaAdicionar.id, // ID do produto no banco
+                id: produtoEncontradoParaAdicionar.id,
                 codProduto: produtoEncontradoParaAdicionar.cod_produto,
                 nomeProduto: produtoEncontradoParaAdicionar.nome,
                 quantidadeVendidaNoCarrinho: quantidadeAdicionar,
@@ -284,8 +323,14 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     }
 
     function removerItemDoCarrinho(index) {
-        carrinho.splice(index, 1);
-        atualizarCarrinhoDisplay();
+        showCustomConfirm('Confirmar Remoção', 'Tem certeza que deseja remover este item do carrinho?')
+            .then(confirmRemoval => {
+                if (confirmRemoval) {
+                    carrinho.splice(index, 1);
+                    atualizarCarrinhoDisplay();
+                    showCustomPopup('Sucesso', 'Item removido do carrinho!', 'success');
+                }
+            });
     }
 
     async function cancelarTodosItens() {
@@ -351,7 +396,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 let itensVendidosParaTransacao = [];
                 let subtotalBruto = 0;
 
-                // Prepara os itens para a transação e verifica estoque
                 for (const itemCarrinho of carrinho) {
                     const produtoEstoque = produtos.find(p => p.id === itemCarrinho.id);
                     
@@ -371,13 +415,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     subtotalBruto += itemCarrinho.totalItem;
                 }
 
-                // Cria o objeto da transação para enviar ao backend
                 const novaTransacaoData = {
-                    tipo: 'entrada', // Tipo de transação para vendas
+                    tipo: 'entrada',
                     descricao: `Venda de múltiplos itens`,
-                    valor: totalDaVenda, // Valor final da venda
-                    data: new Date().toISOString().split('T')[0], // Data atual no formato YYYY-MM-DD
-                    clientId: selectedClient ? selectedClient.id : null, // ID do cliente ou null
+                    valor: totalDaVenda,
+                    data: new Date().toISOString().split('T')[0],
+                    clientId: selectedClient ? selectedClient.id : null,
                     detalhesVenda: {
                         totalBruto: subtotalBruto.toFixed(2),
                         valorDesconto: valorDescontoAplicado.toFixed(2),
@@ -386,15 +429,13 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     }
                 };
 
-                // Envia a transação para a API de transações
                 await fazerRequisicaoApi('/api/transacoes', 'POST', novaTransacaoData);
                 
-                // Recarrega os produtos para refletir as atualizações de estoque feitas na API de transações
                 await carregarProdutos(); 
 
                 showCustomPopup('Sucesso', 'Venda finalizada com sucesso!', 'success');
                 
-                resetVendaCompleta(); // Reseta a venda após sucesso
+                resetVendaCompleta();
             } catch (error) {
                 console.error('Erro ao finalizar venda:', error);
                 showCustomPopup('Erro', error.message || 'Não foi possível finalizar a venda.', 'error');
@@ -412,11 +453,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         searchProdutoInput.value = '';
         productNameDisplay.textContent = 'Produto Selecionado';
         
-        exibirClienteSelecionado(null); // Reseta a exibição do cliente
-        searchClientInput.value = ''; // Limpa o campo de busca de cliente
+        exibirClienteSelecionado(null);
+        searchClientInput.value = '';
+        clientSearchResultsDiv.classList.add('hidden');
 
-        carregarProdutos(); // Recarrega os produtos após o reset da venda para garantir estoque atualizado
-        carregarClientes(); // Recarrega os clientes para garantir dados atualizados
+        carregarProdutos();
+        carregarClientes();
     }
 
     searchProdutoInput.addEventListener('keypress', (e) => {
@@ -428,7 +470,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     findProductBtn.addEventListener('click', pesquisarProduto);
 
     quantidadeItemInput.addEventListener('input', atualizarValorTotalItem);
-    valorUnitarioItemInput.addEventListener('input', atualizarValorTotalItem); // <-- CORRIGIDO AQUI
+    valorUnitarioItemInput.addEventListener('input', atualizarValorTotalItem);
     addItemToCartBtn.addEventListener('click', adicionarItemAoCarrinho);
 
     cartItemsList.addEventListener('click', (e) => {
@@ -445,23 +487,27 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     finalizeSaleBtn.addEventListener('click', finalizarVenda);
     cancelAllItemsBtn.addEventListener('click', cancelarTodosItens);
     
-    // --- NOVOS LISTENERS PARA CLIENTES ---
-    searchClientInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            pesquisarCliente();
+    // --- LISTENERS PARA CLIENTES ---
+    searchClientInput.addEventListener('input', pesquisarClienteAoDigitar);
+    findClientBtn.addEventListener('click', () => {
+        pesquisarClienteAoDigitar(); 
+        if (searchClientInput.value.trim().length === 0) {
+            showCustomPopup('Alerta', 'Digite algo para buscar um cliente.', 'warning');
         }
     });
-    findClientBtn.addEventListener('click', pesquisarCliente);
     removeClientBtn.addEventListener('click', removerClienteSelecionado);
 
+    document.addEventListener('click', (e) => {
+        if (!clientSearchResultsDiv.contains(e.target) && e.target !== searchClientInput && e.target !== findClientBtn) {
+            clientSearchResultsDiv.classList.add('hidden');
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
         carregarProdutos();
-        carregarClientes(); // Carrega clientes ao iniciar a página
+        carregarClientes();
     });
 
-    // Helper para formatar CPF, similar ao clients.js
     function formatCpf(cpf) {
         if (!cpf) return '';
         const cleaned = ('' + cpf).replace(/\D/g, '');
@@ -470,5 +516,15 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             return `${match[1]}.${match[2]}.${match[3]}-${match[4]}`;
         }
         return cpf;
+    }
+
+    function formatPhone(phone) {
+        if (!phone) return '';
+        const cleaned = ('' + phone).replace(/\D/g, '');
+        const match = cleaned.match(/^(\d{2})(\d{4,5})(\d{4})$/);
+        if (match) {
+            return `(${match[1]})${match[2]}-${match[3]}`;
+        }
+        return phone;
     }
 }
