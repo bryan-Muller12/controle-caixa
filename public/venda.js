@@ -27,7 +27,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     const valorDescontoGlobalInput = document.getElementById('valor-desconto-global');
 
     const finalizeSaleBtn = document.getElementById('finalize-sale-btn');
-    const cancelAllItemsBtn = document.getElementById('cancel-all-items-btn');
+    const cancelAllItemsBtn = document = document.getElementById('cancel-all-items-btn'); // Corrigido, estava com 'document = document'
 
     const searchClientInput = document.getElementById('search-client-input');
     const findClientBtn = document.getElementById('find-client-btn');
@@ -346,18 +346,15 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
     // FUNÇÃO MODIFICADA: Gerar PDF do Comprovante de Venda
     async function generateSaleReceiptPDF(saleData) {
-        // Verifica se a biblioteca jsPDF está disponível.
-        // O construtor jsPDF geralmente é exposto diretamente na window como `window.jsPDF`
-        // quando o script UMD é carregado via CDN.
         const jsPDF = window.jsPDF; 
 
         if (typeof jsPDF === 'undefined') {
-            console.error("jsPDF library not loaded or not correctly exposed on window.jsPDF");
+            console.error("jsPDF library not loaded or not correctly exposed on window.jsPDF. Please check CDN link and network.");
             showCustomPopup('Erro na Geração do PDF', 'A biblioteca de PDF não foi carregada corretamente. Por favor, tente novamente ou contate o suporte.', 'error');
             return;
         }
         
-        const doc = new jsPDF('p', 'pt', 'a4'); // 'p' para retrato, 'pt' para pontos, 'a4' para tamanho A4
+        const doc = new jsPDF('p', 'pt', 'a4');
 
         const receiptHtmlContent = `
             <style>
@@ -572,10 +569,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
         const tempElement = document.createElement('div');
         tempElement.innerHTML = receiptHtmlContent;
-        // Para garantir que html2canvas capture os estilos de style.css,
-        // é melhor carregá-los diretamente ou garantir que tempElement
-        // esteja visível no DOM e o CSS esteja aplicado a ele.
-        // Uma forma é adicionar temporariamente e esconder visualmente:
         tempElement.style.position = 'absolute';
         tempElement.style.left = '-9999px';
         document.body.appendChild(tempElement); 
@@ -583,13 +576,13 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         html2canvas(tempElement, {
             scale: 2,
             useCORS: true,
-            logging: true, // Adiciona logs para depuração do html2canvas
-            windowWidth: tempElement.scrollWidth, // Captura a largura real do conteúdo
-            windowHeight: tempElement.scrollHeight // Captura a altura real do conteúdo
+            logging: true,
+            windowWidth: tempElement.scrollWidth,
+            windowHeight: tempElement.scrollHeight
         }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
-            const imgWidth = 595.28; // Largura da A4 em pontos (210mm)
-            const pageHeight = 841.89; // Altura da A4 em pontos (297mm)
+            const imgWidth = 595.28;
+            const pageHeight = 841.89;
             let imgHeight = canvas.height * imgWidth / canvas.width;
             let heightLeft = imgHeight;
             let position = 0;
@@ -597,7 +590,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
             heightLeft -= pageHeight;
 
-            while (heightLeft > 0) { // Alterado para > 0 para garantir que a última página seja adicionada
+            while (heightLeft > 0) {
                 position = heightLeft - imgHeight;
                 doc.addPage();
                 doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
@@ -612,6 +605,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             document.body.removeChild(tempElement);
         });
     }
+
 
     async function finalizarVenda() {
         if (carrinho.length === 0) {
@@ -640,12 +634,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                         produtoId: itemCarrinho.id,
                         codProduto: itemCarrinho.codProduto,
                         nomeProduto: itemCarrinho.nomeProduto,
-                        quantidadeVendida: item.quantidadeVendidaNoCarrinho,
-                        precoUnitarioOriginal: item.precoUnitarioOriginal,
-                        precoUnitarioVenda: item.precoUnitario,
-                        totalItem: item.totalItem
+                        quantidadeVendida: itemCarrinho.quantidadeVendidaNoCarrinho, // CORRIGIDO AQUI
+                        precoUnitarioOriginal: itemCarrinho.precoUnitarioOriginal,    // CORRIGIDO AQUI
+                        precoUnitarioVenda: itemCarrinho.precoUnitario,             // CORRIGIDO AQUI
+                        totalItem: itemCarrinho.totalItem                           // CORRIGIDO AQUI
                     });
-                    subtotalBruto += item.totalItem;
+                    subtotalBruto += itemCarrinho.totalItem;
                 }
 
                 const novaTransacaoData = {
@@ -667,7 +661,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 await carregarProdutos(); 
 
                 const saleDataForPdf = {
-                    orderNumber: transactionResult.client.id || ('VENDA-' + new Date().getTime()), // Usar o ID retornado pelo backend
+                    orderNumber: transactionResult.transaction_id || ('VENDA-' + new Date().getTime()), // Usar o ID retornado pelo backend
                     saleDate: new Date().toLocaleDateString('pt-BR'),
                     clientName: selectedClient ? selectedClient.name : 'Cliente Não Identificado',
                     clientAddress: selectedClient ? selectedClient.address : 'N/A',
