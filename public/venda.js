@@ -188,22 +188,25 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         if (termoBusca.length >= 2) {
             let filteredClients = [];
 
-            // 1. Prioriza busca por nome (começa com)
-            filteredClients = allClients.filter(c =>
-                c.name.toLowerCase().startsWith(termoBusca)
+            // Primeira tentativa: Buscar por nomes que COMEÇAM com o termo
+            filteredClients = allClients.filter(client =>
+                client.name.toLowerCase().startsWith(termoBusca)
             );
 
-            // 2. Se poucos resultados por nome, expande para incluir (qualquer parte do nome, telefone ou endereço)
-            if (filteredClients.length < 5) { // Ajuste este número conforme necessário
-                const expandedResults = allClients.filter(c =>
-                    !filteredClients.includes(c) && // Evita duplicatas
-                    (c.name.toLowerCase().includes(termoBusca) ||
-                    (c.phone && c.phone.replace(/\D/g, '').includes(termoBusca.replace(/\D/g, ''))) ||
-                    (c.address && c.address.toLowerCase().includes(termoBusca)))
+            // Se não encontrou nenhum nome que comece com o termo,
+            // ou se o termo for um pouco mais longo,
+            // tenta uma busca mais abrangente (incluindo em outras propriedades)
+            if (filteredClients.length === 0 || termoBusca.length > 3) { // Aumenta o termo de busca para expandir
+                const expandedSearchClients = allClients.filter(client =>
+                    !filteredClients.includes(client) && // Evita duplicatas com a busca inicial
+                    (client.name.toLowerCase().includes(termoBusca) ||
+                    (client.phone && client.phone.replace(/\D/g, '').includes(termoBusca.replace(/\D/g, ''))) ||
+                    (client.address && client.address.toLowerCase().includes(termoBusca)))
                 );
-                filteredClients = [...filteredClients, ...expandedResults];
+                filteredClients = [...filteredClients, ...expandedSearchClients];
             }
-            // Opcional: Limita o número de resultados exibidos para evitar listas muito longas
+
+            // Limita o número de resultados exibidos para evitar listas muito longas
             const MAX_SUGGESTIONS = 10; 
             renderClientSearchResults(filteredClients.slice(0, MAX_SUGGESTIONS));
         } else {
@@ -485,8 +488,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     // --- LISTENERS PARA CLIENTES ---
     searchClientInput.addEventListener('input', pesquisarClienteAoDigitar);
     findClientBtn.addEventListener('click', () => {
-        // Agora o botão de busca pode ser usado para forçar a pesquisa e exibir os resultados,
-        // mesmo que o termo seja menor que 2 caracteres, ou para "confirmar" uma busca manual.
         pesquisarClienteAoDigitar(); 
         if (searchClientInput.value.trim().length === 0) {
             showCustomPopup('Alerta', 'Digite algo para buscar um cliente.', 'warning');
