@@ -1,7 +1,6 @@
-// venda.js
-// Lógica específica da tela de Vendas
+// public/venda.js
 
-// Garante que o código só rode na página de venda
+// Lógica específica da tela de Vendas
 if (document.body.id === 'page-venda' || location.pathname.includes('venda.html')) {
     // --- ELEMENTOS DO DOM ---
     const productNameDisplay = document.getElementById('product-name-display');
@@ -37,7 +36,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     const selectedClientName = document.getElementById('selected-client-name');
     const selectedClientCpf = document.getElementById('selected-client-cpf');
     const removeClientBtn = document.getElementById('remove-client-btn'); // Botão para remover cliente selecionado
-    // NOVO: Elementos para os resultados da busca de clientes
     const clientSearchResultsDiv = document.getElementById('client-search-results');
     const clientResultsList = document.getElementById('client-results-list');
 
@@ -60,7 +58,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
 
         const response = await fetch(url, options);
-        // Tenta ler JSON, mas permite que a resposta seja vazia (ex: 204 No Content)
         const responseData = await response.json().catch(() => null); 
         
         if (!response.ok) {
@@ -73,7 +70,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     async function carregarProdutos() {
         try {
             produtos = await fazerRequisicaoApi('/api/produtos', 'GET');
-            atualizarNotificacoesComuns(); // Atualiza as notificações com base nos produtos carregados
+            atualizarNotificacoesComuns();
         } catch (error) {
             console.error('Erro ao carregar produtos:', error);
             showCustomPopup('Erro', 'Não foi possível carregar os produtos do servidor.', 'error');
@@ -147,10 +144,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         selectedClient = client;
         if (client) {
             selectedClientName.textContent = client.name;
-            // O CPF_hash não deve ser exibido diretamente por questões de segurança.
-            // Se precisar exibir, pode ser o ID ou um identificador não sensível.
-            // Para este caso, vamos manter o ID como CPF/ID para fins de exemplo,
-            // ou pode ser o telefone formatado se for um dado público.
             selectedClientCpf.textContent = `ID: ${client.id}`; 
             selectedClientDisplay.classList.remove('hidden');
             removeClientBtn.classList.remove('hidden');
@@ -163,9 +156,9 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
     }
 
-    // NOVO: Função para renderizar a lista de clientes pesquisados
+    // Função para renderizar a lista de clientes pesquisados
     function renderClientSearchResults(results) {
-        clientResultsList.innerHTML = ''; // Limpa resultados anteriores
+        clientResultsList.innerHTML = '';
         if (results.length > 0) {
             results.forEach(client => {
                 const li = document.createElement('li');
@@ -177,31 +170,45 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 `;
                 li.addEventListener('click', () => {
                     exibirClienteSelecionado(client);
-                    searchClientInput.value = client.name; // Preenche o input com o nome do cliente selecionado
-                    clientSearchResultsDiv.classList.add('hidden'); // Esconde a lista
+                    searchClientInput.value = client.name;
+                    clientSearchResultsDiv.classList.add('hidden');
                 });
                 clientResultsList.appendChild(li);
             });
-            clientSearchResultsDiv.classList.remove('hidden'); // Mostra a div de resultados
+            clientSearchResultsDiv.classList.remove('hidden');
         } else {
-            clientSearchResultsDiv.classList.add('hidden'); // Esconde se não houver resultados
+            clientSearchResultsDiv.classList.add('hidden');
         }
     }
 
-    // Modificado: Função para pesquisar e exibir clientes, agora com sugestões
+    // MODIFICADO: Função para pesquisar e exibir clientes, agora com lógica de filtro aprimorada
     function pesquisarClienteAoDigitar() {
         const termoBusca = searchClientInput.value.toLowerCase().trim();
         
-        if (termoBusca.length >= 2) { // Começa a sugerir a partir de 2 caracteres
-            const filteredClients = allClients.filter(c =>
-                c.name.toLowerCase().includes(termoBusca) ||
-                (c.phone && c.phone.replace(/\D/g, '').includes(termoBusca.replace(/\D/g, ''))) || // Busca por telefone puro
-                (c.address && c.address.toLowerCase().includes(termoBusca))
+        if (termoBusca.length >= 2) {
+            let filteredClients = [];
+
+            // 1. Prioriza busca por nome (começa com)
+            filteredClients = allClients.filter(c =>
+                c.name.toLowerCase().startsWith(termoBusca)
             );
-            renderClientSearchResults(filteredClients);
+
+            // 2. Se poucos resultados por nome, expande para incluir (qualquer parte do nome, telefone ou endereço)
+            if (filteredClients.length < 5) { // Ajuste este número conforme necessário
+                const expandedResults = allClients.filter(c =>
+                    !filteredClients.includes(c) && // Evita duplicatas
+                    (c.name.toLowerCase().includes(termoBusca) ||
+                    (c.phone && c.phone.replace(/\D/g, '').includes(termoBusca.replace(/\D/g, ''))) ||
+                    (c.address && c.address.toLowerCase().includes(termoBusca)))
+                );
+                filteredClients = [...filteredClients, ...expandedResults];
+            }
+            // Opcional: Limita o número de resultados exibidos para evitar listas muito longas
+            const MAX_SUGGESTIONS = 10; 
+            renderClientSearchResults(filteredClients.slice(0, MAX_SUGGESTIONS));
         } else {
-            clientSearchResultsDiv.classList.add('hidden'); // Esconde a lista se o termo for muito curto
-            exibirClienteSelecionado(null); // Limpa o cliente selecionado se o campo for limpo
+            clientSearchResultsDiv.classList.add('hidden');
+            exibirClienteSelecionado(null);
         }
     }
 
@@ -253,7 +260,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             carrinho[itemExistenteIndex].totalItem = novaQuantidadeTotal * valorUnitario;
         } else {
             carrinho.push({
-                id: produtoEncontradoParaAdicionar.id, // ID do produto no banco
+                id: produtoEncontradoParaAdicionar.id,
                 codProduto: produtoEncontradoParaAdicionar.cod_produto,
                 nomeProduto: produtoEncontradoParaAdicionar.nome,
                 quantidadeVendidaNoCarrinho: quantidadeAdicionar,
@@ -321,7 +328,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             });
     }
 
-
     async function cancelarTodosItens() {
         const confirmCancel = await showCustomConfirm('Confirmação', 'Tem certeza que deseja cancelar todos os itens da venda atual?');
         if (confirmCancel) {
@@ -385,7 +391,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                 let itensVendidosParaTransacao = [];
                 let subtotalBruto = 0;
 
-                // Prepara os itens para a transação e verifica estoque
                 for (const itemCarrinho of carrinho) {
                     const produtoEstoque = produtos.find(p => p.id === itemCarrinho.id);
                     
@@ -405,13 +410,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     subtotalBruto += itemCarrinho.totalItem;
                 }
 
-                // Cria o objeto da transação para enviar ao backend
                 const novaTransacaoData = {
-                    tipo: 'entrada', // Tipo de transação para vendas
+                    tipo: 'entrada',
                     descricao: `Venda de múltiplos itens`,
-                    valor: totalDaVenda, // Valor final da venda
-                    data: new Date().toISOString().split('T')[0], // Data atual no formato YYYY-MM-DD
-                    clientId: selectedClient ? selectedClient.id : null, // ID do cliente ou null
+                    valor: totalDaVenda,
+                    data: new Date().toISOString().split('T')[0],
+                    clientId: selectedClient ? selectedClient.id : null,
                     detalhesVenda: {
                         totalBruto: subtotalBruto.toFixed(2),
                         valorDesconto: valorDescontoAplicado.toFixed(2),
@@ -420,15 +424,13 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     }
                 };
 
-                // Envia a transação para a API de transações
                 await fazerRequisicaoApi('/api/transacoes', 'POST', novaTransacaoData);
                 
-                // Recarrega os produtos para refletir as atualizações de estoque feitas na API de transações
                 await carregarProdutos(); 
 
                 showCustomPopup('Sucesso', 'Venda finalizada com sucesso!', 'success');
                 
-                resetVendaCompleta(); // Reseta a venda após sucesso
+                resetVendaCompleta();
             } catch (error) {
                 console.error('Erro ao finalizar venda:', error);
                 showCustomPopup('Erro', error.message || 'Não foi possível finalizar a venda.', 'error');
@@ -446,12 +448,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         searchProdutoInput.value = '';
         productNameDisplay.textContent = 'Produto Selecionado';
         
-        exibirClienteSelecionado(null); // Reseta a exibição do cliente
-        searchClientInput.value = ''; // Limpa o campo de busca de cliente
-        clientSearchResultsDiv.classList.add('hidden'); // Garante que a lista de resultados esteja escondida
+        exibirClienteSelecionado(null);
+        searchClientInput.value = '';
+        clientSearchResultsDiv.classList.add('hidden');
 
-        carregarProdutos(); // Recarrega os produtos após o reset da venda para garantir estoque atualizado
-        carregarClientes(); // Recarrega os clientes para garantir dados atualizados
+        carregarProdutos();
+        carregarClientes();
     }
 
     searchProdutoInput.addEventListener('keypress', (e) => {
@@ -463,7 +465,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     findProductBtn.addEventListener('click', pesquisarProduto);
 
     quantidadeItemInput.addEventListener('input', atualizarValorTotalItem);
-    valorUnitarioItemInput.addEventListener('input', atualizarValorTotalItem); // <-- CORRIGIDO AQUI
+    valorUnitarioItemInput.addEventListener('input', atualizarValorTotalItem);
     addItemToCartBtn.addEventListener('click', adicionarItemAoCarrinho);
 
     cartItemsList.addEventListener('click', (e) => {
@@ -480,33 +482,29 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     finalizeSaleBtn.addEventListener('click', finalizarVenda);
     cancelAllItemsBtn.addEventListener('click', cancelarTodosItens);
     
-    // --- NOVOS LISTENERS PARA CLIENTES ---
-    // NOVO: Adiciona listener para o evento 'input' para o campo de busca de cliente
+    // --- LISTENERS PARA CLIENTES ---
     searchClientInput.addEventListener('input', pesquisarClienteAoDigitar);
-    // O botão de busca agora apenas forçará a busca se o input não estiver vazio
     findClientBtn.addEventListener('click', () => {
-        if (searchClientInput.value.trim().length > 0) {
-            pesquisarClienteAoDigitar();
-        } else {
+        // Agora o botão de busca pode ser usado para forçar a pesquisa e exibir os resultados,
+        // mesmo que o termo seja menor que 2 caracteres, ou para "confirmar" uma busca manual.
+        pesquisarClienteAoDigitar(); 
+        if (searchClientInput.value.trim().length === 0) {
             showCustomPopup('Alerta', 'Digite algo para buscar um cliente.', 'warning');
         }
     });
     removeClientBtn.addEventListener('click', removerClienteSelecionado);
 
-    // NOVO: Esconde a lista de resultados de busca de cliente se o usuário clicar fora dela
     document.addEventListener('click', (e) => {
         if (!clientSearchResultsDiv.contains(e.target) && e.target !== searchClientInput && e.target !== findClientBtn) {
             clientSearchResultsDiv.classList.add('hidden');
         }
     });
 
-
     document.addEventListener('DOMContentLoaded', () => {
         carregarProdutos();
-        carregarClientes(); // Carrega clientes ao iniciar a página
+        carregarClientes();
     });
 
-    // Helper para formatar CPF, similar ao clients.js
     function formatCpf(cpf) {
         if (!cpf) return '';
         const cleaned = ('' + cpf).replace(/\D/g, '');
@@ -517,7 +515,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         return cpf;
     }
 
-    // Helper para formatar telefone, similar ao clients.js
     function formatPhone(phone) {
         if (!phone) return '';
         const cleaned = ('' + phone).replace(/\D/g, '');
