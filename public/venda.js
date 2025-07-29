@@ -346,7 +346,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
 async function openSaleReceiptHtml(saleData) {
     const htmlContent = `
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -453,7 +453,7 @@ async function openSaleReceiptHtml(saleData) {
       margin-bottom: 8px;
     }
 
-    /* Classes de Utilidade */
+    /* Utility Classes */
     .bold {
       font-weight: bold;
     }
@@ -472,41 +472,41 @@ async function openSaleReceiptHtml(saleData) {
 <body>
   <div class="page">
     <header>
-      <h2>AGROPECUÁRIA OURO BRANCO FILIAL</h2>
-      <p>RUA PRIMEIRO DE MAIO, 120 - PINHALZINHO DOS GOES</p>
-      <p>Ouro Fino - MG - CEP: 37570-000</p>
-      <p>Telefone: ${saleData.companyPhone} - Fax: ${saleData.companyFax}</p>
-      <p>CNPJ: ${saleData.companyCnpj} - IE: ${saleData.ieNumber}</p>
+      <h2>AGROPECUARIA OURO BRANCO FILIAL</h2> [cite: 2]
+      <p>RUA PRIMEIRO DE MAIO, 120 - PINHALZINHO DOS GOES</p> [cite: 3, 4]
+      <p>Ouro Fino - MG - CEP: 37570-000</p> [cite: 8, 10, 11]
+      <p>Telefone: (35-) 344-2-1101 - Fax: (35-) 344-2-1101</p> [cite: 4, 12]
+      <p>CNPJ: 02.533.142/0002-20 - IE: 0917415980151</p> [cite: 4, 9]
     </header>
 
-    <h3 class="center spaced-section">ORÇAMENTO A CLIENTES</h3>
+    <h3 class="center spaced-section">Orçamento a Clientes</h3> [cite: 5]
 
     <section class="spaced-section">
       <table>
         <tr>
-          <td><span class="bold">Pedido nº:</span> ${saleData.orderNumber}</td>
-          <td class="right"><span class="bold">Data:</span> ${saleData.saleDate}</td>
+          <td><span class="bold">Pedido nº:</span> 585539</td> [cite: 28]
+          <td class="right"><span class="bold">Data:</span> 10/06/2025</td> [cite: 18, 29]
         </tr>
       </table>
 
       <table>
         <tr>
-          <td><span class="bold">Código:</span> ${saleData.clientCode}</td>
-          <td><span class="bold">Cliente:</span> ${saleData.clientName}</td>
+          <td><span class="bold">Código:</span> 4918/4978</td> [cite: 19]
+          <td><span class="bold">Cliente:</span> GABRIEL MAIA TELES</td> [cite: 6]
         </tr>
         <tr>
-          <td colspan="2"><span class="bold">Endereço:</span> ${saleData.clientAddress}</td>
+          <td colspan="2"><span class="bold">Endereço:</span> SITIO SÃO MARCOS CORGO DA ONÇA</td> [cite: 7]
         </tr>
         <tr>
-          <td><span class="bold">Cidade:</span> ${saleData.clientCity}</td>
-          <td><span class="bold">Estado:</span> ${saleData.clientUf}</td>
+          <td><span class="bold">Cidade:</span> Inconfidentes</td> [cite: 17]
+          <td><span class="bold">Estado:</span> MG</td> [cite: 19]
         </tr>
         <tr>
-          <td><span class="bold">CEP:</span> ${saleData.clientCep}</td>
-          <td><span class="bold">Telefone:</span> ${saleData.clientPhone}</td>
+          <td><span class="bold">CEP:</span> 37576000</td> [cite: 23]
+          <td><span class="bold">Telefone:</span> (359) 984-28731</td> [cite: 14]
         </tr>
         <tr>
-          <td colspan="2"><span class="bold">CPF/CNPJ:</span> ${saleData.clientId}</td>
+          <td colspan="2"><span class="bold">CPF/CNPJ:</span> 132.066.126-24</td> [cite: 15]
         </tr>
       </table>
     </section>
@@ -526,16 +526,28 @@ async function openSaleReceiptHtml(saleData) {
           </tr>
         </thead>
         <tbody>
-          ${saleData.itemsHtml}
+          <tr>
+            <td>1</td> 
+            <td>150,00</td> 
+            <td>UN</td> 
+            <td>12.671</td> 
+            <td>TIJOLO COMUM</td> 
+            <td class="right">0,80000</td> 
+            <td class="right">120,00</td> 
+          </tr>
+          <tr>
+            <td colspan="6" class="right bold">Total</td> 
+            <td class="right bold">120,00</td> 
+          </tr>
         </tbody>
       </table>
 
       <table>
         <tr>
-          <td><span class="bold">Desc. Parciais:</span> R$ 0,00</td>
-          <td><span class="bold">Desc. Gerais:</span> R$ ${saleData.discountValue}</td>
-          <td><span class="bold">Frete:</span> R$ ${saleData.freightValue}</td>
-          <td class="right"><span class="bold">Total do Pedido:</span> R$ ${saleData.totalFinal}</td>
+          <td><span class="bold">Desc. Parciais:</span> R$ 0,00</td> 
+          <td><span class="bold">Desc. Gerais:</span> R$ 0,00</td> 
+          <td><span class="bold">Frete:</span> R$ 0,00</td> 
+          <td class="right"><span class="bold">Total do Pedido:</span> R$ 120,00</td> 
         </tr>
       </table>
     </section>
@@ -551,24 +563,28 @@ async function openSaleReceiptHtml(saleData) {
           </tr>
         </thead>
         <tbody>
-          ${saleData.paymentHtml}
+          <tr>
+            <td></td> [cite: 25]
+            <td>10/07/2025</td> [cite: 25]
+            <td>120,00</td> [cite: 25]
+          </tr>
         </tbody>
       </table>
     </section>
 
-    <p class="spaced-section"><span class="bold">Vendedor:</span> ${saleData.sellerCode} - ${saleData.sellerName}</p>
+    <p class="spaced-section"><span class="bold">Vendedor:</span> 6.460 THAISSA DE LIMA BENTO</p> [cite: 26, 27]
 
     <hr class="dashed">
 
     <footer class="promissory">
       <h3 class="center">NOTA PROMISSÓRIA</h3>
-      <p>Pagarei por esta única via de <span class="bold">NOTA PROMISSÓRIA</span>, em moeda corrente deste país, à ordem de <span class="bold">${saleData.companyName}</span>, CNPJ <span class="bold">${saleData.companyCnpj}</span>, a quantia de <span class="bold">R$ ${saleData.totalFinal}</span> (<em>${saleData.totalExtenso}</em>), pagável em <span class="bold">${saleData.paymentCity} - ${saleData.paymentState}</span>, no dia <span class="bold">${saleData.paymentDueDate}</span>.</p>
+      <p><span class="bold">Pagarei</span> por esta única via de <span class="bold">NOTA PROMISSÓRIA</span>, em moeda corrente deste país, à ordem de <span class="bold">AGROPECUARIA OURO BRANCO FILIAL</span> [cite: 39], CNPJ <span class="bold">02533142000220</span> [cite: 42], a quantia de <span class="bold">R$ 120,00</span> [cite: 37, 38] (<em>cento e vinte reais</em>) [cite: 40], pagável em <span class="bold">Ouro Fino-MG</span> [cite: 43], no dia <span class="bold">10/07/2025</span> [cite: 34, 36].</p> [cite: 13, 41]
 
-      <p><span class="bold">Emitente:</span> ${saleData.clientName}</p>
-      <p><span class="bold">CPF/CNPJ:</span> ${saleData.clientId}</p>
-      <p><span class="bold">Endereço:</span> ${saleData.clientAddress}, ${saleData.clientCity} - ${saleData.clientUf}, CEP: ${saleData.clientCep}</p>
+      <p><span class="bold">Emitente:</span> GABRIEL MAIA TELES</p> [cite: 35, 43]
+      <p><span class="bold">CPF/CNPJ:</span> 13206612624</p> [cite: 35, 44, 45]
+      <p><span class="bold">Endereço:</span> SITIO SÃO MARCOS, SITIO CORGO DA ONÇA, Inconfidentes-MG, CEP: 37576000</p> [cite: 21, 22, 23, 46]
 
-      <p class="right" style="margin-top: 20px;">${saleData.clientCity}, ${saleData.saleDate}</p>
+      <p class="right" style="margin-top: 20px;">Inconfidentes-MG, 10 de junho de 2025</p> [cite: 51]
 
       <p class="center" style="margin-top: 60px;">_____________________________________________<br>Assinatura do Emitente</p>
     </footer>
@@ -578,17 +594,68 @@ async function openSaleReceiptHtml(saleData) {
   </script>
 </body>
 </html>
-`
+`;
 
     const newWindow = window.open('', '_blank');
     if (newWindow) {
         newWindow.document.write(htmlContent);
         newWindow.document.close();
     } else {
+        // Assume showCustomPopup is defined elsewhere in your code
         showCustomPopup('Erro', 'Não foi possível abrir a nova aba para o comprovante. Verifique se pop-ups estão bloqueados.', 'error');
     }
 }
 
+// Exemplo de como você chamaria a função com os dados
+// Note: Você precisaria criar um objeto saleData com todas as propriedades necessárias.
+/*
+const saleDataExample = {
+    orderNumber: "585539",
+    companyName: "AGROPECUARIA OURO BRANCO FILIAL",
+    companyPhone: "(35-) 344-2-1101",
+    companyFax: "(35-) 344-2-1101",
+    companyCnpj: "02.533.142/0002-20",
+    ieNumber: "0917415980151",
+    saleDate: "10/06/2025",
+    clientCode: "4918/4978",
+    clientName: "GABRIEL MAIA TELES",
+    clientAddress: "SITIO SÃO MARCOS CORGO DA ONÇA",
+    clientCity: "Inconfidentes",
+    clientUf: "MG",
+    clientCep: "37576000",
+    clientPhone: "(359) 984-28731",
+    clientId: "132.066.126-24",
+    itemsHtml: `
+        <tr>
+            <td>1</td>
+            <td>150,00</td>
+            <td>UN</td>
+            <td>12.671</td>
+            <td>TIJOLO COMUM</td>
+            <td class="right">0,80000</td>
+            <td class="right">120,00</td>
+        </tr>
+    `,
+    discountValue: "0,00",
+    freightValue: "0,00",
+    totalFinal: "120,00",
+    paymentHtml: `
+        <tr>
+            <td></td>
+            <td>10/07/2025</td>
+            <td>120,00</td>
+        </tr>
+    `,
+    sellerCode: "6.460",
+    sellerName: "THAISSA DE LIMA BENTO",
+    totalExtenso: "cento e vinte reais",
+    paymentCity: "Ouro Fino",
+    paymentState: "MG",
+    paymentDueDate: "10/07/2025"
+};
+
+openSaleReceiptHtml(saleDataExample);
+*/
     async function finalizarVenda() {
         if (carrinho.length === 0) {
             showCustomPopup('Erro', 'Não há itens no carrinho para finalizar a venda.', 'error');
