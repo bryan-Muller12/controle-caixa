@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MullerSys - Comprovante de Venda</title>
+    <link rel="icon" type="image/png" href="mullersys.png">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos específicos para o comprovante, adicione ao seu style.css */
+        .receipt-container {
+            font-family: Arial, sans-serif;
+            width: 800px; /* Largura similar ao PDF */
+            margin: 20px auto;
+            padding: 30px;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: var(--card-background);
+            color: var(--text-color-primary);
+        }
+
+        .receipt-header, .receipt-client-info, .receipt-items, .receipt-summary, .receipt-footer {
+            margin-bottom: 20px;
+        }
+
+        .receipt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        .receipt-header .company-info h2 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+        .receipt-header .company-info p {
+            margin: 0;
+            font-size: 0.9em;
+            color: var(--text-color-secondary);
+        }
+
+        .receipt-header .document-type {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--header-color);
+        }
+
+        .receipt-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .receipt-info-grid p {
+            margin: 0;
+            font-size: 0.95em;
+        }
+        .receipt-info-grid strong {
+            color: var(--header-color);
+        }
+
+        .receipt-items table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .receipt-items th, .receipt-items td {
+            border: 1px solid var(--border-color-light);
+            padding: 8px 12px;
+            text-align: left;
+            font-size: 0.9em;
+        }
+
+        .receipt-items th {
+            background-color: var(--table-header-bg);
+            color: var(--table-header-text);
+            font-weight: bold;
+        }
+
+        .receipt-items tr:nth-child(even) {
+            background-color: var(--table-row-even-bg);
+        }
+
+        .receipt-summary {
+            text-align: right;
+            border-top: 2px solid var(--border-color);
+            padding-top: 15px;
+        }
+
+        .receipt-summary .summary-line {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 5px;
+        }
+        .receipt-summary .summary-line span:first-child {
+            flex: 0 0 150px;
+            font-weight: bold;
+            color: var(--header-color);
+        }
+        .receipt-summary .summary-line span:last-child {
+            flex: 0 0 100px;
+            text-align: right;
+        }
+        .receipt-summary .total-final {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--success-color);
+            margin-top: 10px;
+        }
+
+        .payment-conditions {
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: var(--text-color-secondary);
+        }
+
+        .receipt-footer {
+            text-align: center;
+            border-top: 2px solid var(--border-color);
+            padding-top: 10px;
+            margin-top: 30px;
+            font-size: 0.85em;
+            color: var(--text-color-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-container">
+        <div class="receipt-header">
+            <div class="company-info">
+                <h2>MullerSys</h2>
+                <p>AGROPECUARIA OURO BRANCO FILIAL</p>
+                <p>RUA PRIMEIRO DE MAIO, 120</p>
+                <p>PINHALZINHO DOS GOES</p>
+                <p>CNPJ: {{COMPANY_CNPJ}}</p>
+                <p>Telefone: {{COMPANY_PHONE}}</p>
+                <p>Fax: {{COMPANY_FAX}}</p>
+            </div>
+            <div class="document-type">
+                Comprovante de Venda
+            </div>
+        </div>
+
+        <div class="receipt-info-grid">
+            <div>
+                <p><strong>Pedido nº:</strong> {{ORDER_NUMBER}}</p>
+            </div>
+            <div>
+                <p><strong>Data:</strong> {{SALE_DATE}}</p>
+            </div>
+        </div>
+
+        <div class="receipt-client-info">
+            <h3>Informações do Cliente</h3>
+            <p><strong>Cliente:</strong> {{CLIENT_NAME}}</p>
+            <p><strong>Endereço:</strong> {{CLIENT_ADDRESS}}</p>
+            <p><strong>CEP:</strong> {{CLIENT_CEP}}</p>
+            <p><strong>Cidade:</strong> {{CLIENT_CITY}} - {{CLIENT_UF}}</p>
+            <p><strong>Telefone:</strong> {{CLIENT_PHONE}}</p>
+            <p><strong>CPF/ID:</strong> {{CLIENT_ID}}</p>
+            <p style="font-style: italic; color: var(--danger-color);">* CPF original não disponível por segurança (armazenado como hash).</p>
+        </div>
+
+        <div class="receipt-items">
+            <h3>Itens da Venda</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ITEM</th>
+                        <th>CÓDIGO</th>
+                        <th>DESCRIÇÃO</th>
+                        <th>QTD</th>
+                        <th>VL.UNIT</th>
+                        <th>VL.ITEM(R$)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ITEMS_LIST}}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="receipt-summary">
+            <div class="summary-line">
+                <span>Volumes:</span>
+                <span>{{TOTAL_VOLUMES}}</span>
+            </div>
+            <div class="summary-line">
+                <span>Total Bruto:</span>
+                <span>R$ {{TOTAL_BRUTO}}</span>
+            </div>
+            <div class="summary-line">
+                <span>Desconto:</span>
+                <span>R$ {{DISCOUNT_VALUE}}</span>
+            </div>
+            <div class="summary-line total-final">
+                <span>Total Final da Venda:</span>
+                <span>R$ {{TOTAL_FINAL}}</span>
+            </div>
+        </div>
+
+        <div class="payment-conditions">
+            <p><strong>Condições de Pagamento:</strong> {{PAYMENT_CONDITIONS}}</p>
+            <p>Vendedor(es): {{SELLER_NAME}}</p>
+        </div>
+
+        <div class="receipt-footer">
+            <p>MullerSys - Ouro Fino, MG - {{CURRENT_YEAR}}</p>
+        </div>
+    </div>
+</body>
+</html>
