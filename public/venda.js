@@ -37,6 +37,9 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     const selectedClientName = document.getElementById('selected-client-name');
     const selectedClientCpf = document.getElementById('selected-client-cpf');
     const removeClientBtn = document.getElementById('remove-client-btn'); // Botão para remover cliente selecionado
+    // NOVO: Elementos para os resultados da busca de clientes
+    const clientSearchResultsDiv = document.getElementById('client-search-results');
+    const clientResultsList = document.getElementById('client-results-list');
 
     // --- ESTADO DA APLICAÇÃO ---
     let produtos = []; // Produtos carregados do banco de dados
@@ -144,9 +147,14 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         selectedClient = client;
         if (client) {
             selectedClientName.textContent = client.name;
-            selectedClientCpf.textContent = client.cpf_hash ? 'CPF: ' + formatCpf(client.cpf_hash) : 'CPF: N/A'; // Assuming cpf_hash is returned from API or not displayed
+            // O CPF_hash não deve ser exibido diretamente por questões de segurança.
+            // Se precisar exibir, pode ser o ID ou um identificador não sensível.
+            // Para este caso, vamos manter o ID como CPF/ID para fins de exemplo,
+            // ou pode ser o telefone formatado se for um dado público.
+            selectedClientCpf.textContent = `ID: ${client.id}`; 
             selectedClientDisplay.classList.remove('hidden');
             removeClientBtn.classList.remove('hidden');
+            clientSearchResultsDiv.classList.add('hidden'); // Esconde a lista de resultados após a seleção
         } else {
             selectedClientName.textContent = 'Nenhum Cliente Selecionado';
             selectedClientCpf.textContent = '';
@@ -155,26 +163,45 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
     }
 
-    // Função para pesquisar e selecionar cliente
-    function pesquisarCliente() {
-        const termoBusca = searchClientInput.value.toLowerCase().trim();
-        let client = null;
-
-        if (termoBusca) {
-            client = allClients.find(c =>
-                (c.name.toLowerCase().includes(termoBusca)) ||
-                (c.phone && c.phone.toLowerCase().includes(termoBusca)) ||
-                (c.cpf_hash && c.cpf_hash.toLowerCase().includes(termoBusca)) // Assuming cpf_hash exists
-            );
-        }
-
-        if (client) {
-            exibirClienteSelecionado(client);
-            searchClientInput.value = client.name; // Preenche o input com o nome do cliente encontrado
+    // NOVO: Função para renderizar a lista de clientes pesquisados
+    function renderClientSearchResults(results) {
+        clientResultsList.innerHTML = ''; // Limpa resultados anteriores
+        if (results.length > 0) {
+            results.forEach(client => {
+                const li = document.createElement('li');
+                li.classList.add('client-search-item');
+                li.dataset.clientId = client.id;
+                li.innerHTML = `
+                    <span>${client.name}</span>
+                    <span class="client-search-phone">${formatPhone(client.phone) || 'N/A'}</span>
+                `;
+                li.addEventListener('click', () => {
+                    exibirClienteSelecionado(client);
+                    searchClientInput.value = client.name; // Preenche o input com o nome do cliente selecionado
+                    clientSearchResultsDiv.classList.add('hidden'); // Esconde a lista
+                });
+                clientResultsList.appendChild(li);
+            });
+            clientSearchResultsDiv.classList.remove('hidden'); // Mostra a div de resultados
         } else {
-            showCustomPopup('Alerta', 'Cliente não encontrado.', 'warning');
-            exibirClienteSelecionado(null);
-            searchClientInput.value = '';
+            clientSearchResultsDiv.classList.add('hidden'); // Esconde se não houver resultados
+        }
+    }
+
+    // Modificado: Função para pesquisar e exibir clientes, agora com sugestões
+    function pesquisarClienteAoDigitar() {
+        const termoBusca = searchClientInput.value.toLowerCase().trim();
+        
+        if (termoBusca.length >= 2) { // Começa a sugerir a partir de 2 caracteres
+            const filteredClients = allClients.filter(c =>
+                c.name.toLowerCase().includes(termoBusca) ||
+                (c.phone && c.phone.replace(/\D/g, '').includes(termoBusca.replace(/\D/g, ''))) || // Busca por telefone puro
+                (c.address && c.address.toLowerCase().includes(termoBusca))
+            );
+            renderClientSearchResults(filteredClients);
+        } else {
+            clientSearchResultsDiv.classList.add('hidden'); // Esconde a lista se o termo for muito curto
+            exibirClienteSelecionado(null); // Limpa o cliente selecionado se o campo for limpo
         }
     }
 
@@ -284,9 +311,16 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     }
 
     function removerItemDoCarrinho(index) {
-        carrinho.splice(index, 1);
-        atualizarCarrinhoDisplay();
+        showCustomConfirm('Confirmar Remoção', 'Tem certeza que deseja remover este item do carrinho?')
+            .then(confirmRemoval => {
+                if (confirmRemoval) {
+                    carrinho.splice(index, 1);
+                    atualizarCarrinhoDisplay();
+                    showCustomPopup('Sucesso', 'Item removido do carrinho!', 'success');
+                }
+            });
     }
+
 
     async function cancelarTodosItens() {
         const confirmCancel = await showCustomConfirm('Confirmação', 'Tem certeza que deseja cancelar todos os itens da venda atual?');
@@ -414,6 +448,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         
         exibirClienteSelecionado(null); // Reseta a exibição do cliente
         searchClientInput.value = ''; // Limpa o campo de busca de cliente
+        clientSearchResultsDiv.classList.add('hidden'); // Garante que a lista de resultados esteja escondida
 
         carregarProdutos(); // Recarrega os produtos após o reset da venda para garantir estoque atualizado
         carregarClientes(); // Recarrega os clientes para garantir dados atualizados
@@ -446,14 +481,24 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
     cancelAllItemsBtn.addEventListener('click', cancelarTodosItens);
     
     // --- NOVOS LISTENERS PARA CLIENTES ---
-    searchClientInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            pesquisarCliente();
+    // NOVO: Adiciona listener para o evento 'input' para o campo de busca de cliente
+    searchClientInput.addEventListener('input', pesquisarClienteAoDigitar);
+    // O botão de busca agora apenas forçará a busca se o input não estiver vazio
+    findClientBtn.addEventListener('click', () => {
+        if (searchClientInput.value.trim().length > 0) {
+            pesquisarClienteAoDigitar();
+        } else {
+            showCustomPopup('Alerta', 'Digite algo para buscar um cliente.', 'warning');
         }
     });
-    findClientBtn.addEventListener('click', pesquisarCliente);
     removeClientBtn.addEventListener('click', removerClienteSelecionado);
+
+    // NOVO: Esconde a lista de resultados de busca de cliente se o usuário clicar fora dela
+    document.addEventListener('click', (e) => {
+        if (!clientSearchResultsDiv.contains(e.target) && e.target !== searchClientInput && e.target !== findClientBtn) {
+            clientSearchResultsDiv.classList.add('hidden');
+        }
+    });
 
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -470,5 +515,16 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             return `${match[1]}.${match[2]}.${match[3]}-${match[4]}`;
         }
         return cpf;
+    }
+
+    // Helper para formatar telefone, similar ao clients.js
+    function formatPhone(phone) {
+        if (!phone) return '';
+        const cleaned = ('' + phone).replace(/\D/g, '');
+        const match = cleaned.match(/^(\d{2})(\d{4,5})(\d{4})$/);
+        if (match) {
+            return `(${match[1]})${match[2]}-${match[3]}`;
+        }
+        return phone;
     }
 }

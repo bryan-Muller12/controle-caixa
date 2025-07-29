@@ -1385,3 +1385,45 @@ body.light-mode .transaction-type-filter button:hover {
     color: white;
     border-color: var(--primary-color);
 }
+
+/* public/style.css (Exemplo de adição) */
+
+.client-search-results {
+    position: relative;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    background-color: var(--card-background);
+    z-index: 10;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.client-search-results ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.client-search-item {
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.client-search-item:last-child {
+    border-bottom: none;
+}
+
+.client-search-item:hover {
+    background-color: var(--button-hover-bg);
+}
+
+.client-search-phone {
+    font-size: 0.8em;
+    color: var(--text-color-secondary);
+}
