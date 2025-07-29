@@ -368,22 +368,18 @@ async function openSaleReceiptHtml(saleData) {
                     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
                     color: #000;
                 }
-
                 .company-info {
                     text-align: center;
                     margin-bottom: 20px;
                 }
-
                 .company-info h2 {
                     margin: 0;
                     font-size: 1.4em;
                 }
-
                 .company-info p {
                     margin: 2px 0;
                     font-size: 0.95em;
                 }
-
                 .document-type {
                     text-align: center;
                     font-size: 1.5em;
@@ -392,88 +388,70 @@ async function openSaleReceiptHtml(saleData) {
                     border-top: 2px solid #333;
                     padding-top: 10px;
                 }
-
-                .receipt-info {
-                    margin-bottom: 20px;
-                }
-
                 .receipt-info p {
                     margin: 4px 0;
                     font-size: 0.95em;
                 }
-
                 .receipt-client-info {
                     border-top: 1px solid #ccc;
                     padding-top: 10px;
                     margin-top: 20px;
                     margin-bottom: 20px;
                 }
-
                 .receipt-client-info h3 {
                     margin-bottom: 10px;
                     font-size: 1.1em;
                     border-bottom: 1px solid #ccc;
                     padding-bottom: 5px;
                 }
-
                 .receipt-client-info p {
                     margin: 2px 0;
                     font-size: 0.95em;
                 }
-
                 .receipt-items h3 {
                     margin-bottom: 10px;
                     font-size: 1.1em;
                     border-bottom: 1px solid #ccc;
                     padding-bottom: 5px;
                 }
-
                 table {
                     width: 100%;
                     border-collapse: collapse;
                     margin-top: 10px;
                 }
-
                 th, td {
                     border: 1px solid #999;
                     padding: 6px 8px;
                     font-size: 0.9em;
                     text-align: left;
                 }
-
                 th {
                     background-color: #eee;
                     font-weight: bold;
                 }
-
                 .receipt-summary {
                     margin-top: 20px;
                     border-top: 1px solid #333;
                     padding-top: 10px;
                     font-size: 0.95em;
                 }
-
                 .receipt-summary p {
                     display: flex;
                     justify-content: space-between;
                     margin: 3px 0;
                 }
-
                 .payment-conditions {
                     margin-top: 20px;
                     border-top: 1px solid #ccc;
                     padding-top: 10px;
                 }
-
                 .payment-conditions h3 {
                     font-size: 1em;
                     margin-bottom: 10px;
                 }
-
                 .payment-conditions table {
                     margin-top: 5px;
                 }
-
                 .receipt-footer {
                     text-align: center;
                     margin-top: 30px;
@@ -481,7 +459,12 @@ async function openSaleReceiptHtml(saleData) {
                     padding-top: 10px;
                     font-size: 0.85em;
                 }
-
+                .promissory-note {
+                    font-size: 0.95em;
+                    line-height: 1.5;
+                    color: #000;
+                    margin-top: 40px;
+                }
                 .print-button {
                     position: fixed;
                     top: 10px;
@@ -506,9 +489,7 @@ async function openSaleReceiptHtml(saleData) {
                     <p>Telefone: ${saleData.companyPhone} - Fax: ${saleData.companyFax}</p>
                 </div>
 
-                <div class="document-type">
-                    ORÇAMENTO A CLIENTES
-                </div>
+                <div class="document-type">ORÇAMENTO A CLIENTES</div>
 
                 <div class="receipt-info">
                     <p><strong>Pedido nº:</strong> ${saleData.orderNumber}</p>
@@ -573,13 +554,37 @@ async function openSaleReceiptHtml(saleData) {
                     <p>Emitido por: MullerSys - ${saleData.currentYear}</p>
                     <p>Ouro Fino - MG</p>
                 </div>
+
+                <hr style="margin: 40px 0; border: 1px dashed #666;">
+
+                <div class="promissory-note">
+                    <h3 style="text-align: center; text-transform: uppercase; margin-bottom: 20px;">Nota Promissória</h3>
+                    <p>Por esta única via de <strong>NOTA PROMISSÓRIA</strong>, prometo pagar à ordem de <strong>${saleData.companyName}</strong>,
+                    inscrita no CNPJ sob nº <strong>${saleData.companyCnpj}</strong>, a quantia de
+                    <strong>R$ ${saleData.totalFinal}</strong> (<em>${saleData.totalExtenso}</em>), em moeda corrente deste país.</p>
+
+                    <p>O pagamento será efetuado em <strong>${saleData.paymentCity} - ${saleData.paymentState}</strong>, no dia
+                    <strong>${saleData.paymentDueDate}</strong>.</p>
+
+                    <br>
+                    <p><strong>Emitente:</strong> ${saleData.clientName}</p>
+                    <p><strong>CPF/CNPJ:</strong> ${saleData.clientId}</p>
+                    <p><strong>Endereço:</strong> ${saleData.clientAddress}, ${saleData.clientCity} - ${saleData.clientUf}, CEP: ${saleData.clientCep}</p>
+
+                    <br><br>
+                    <p style="text-align: right;">${saleData.clientCity}, ${saleData.saleDate}</p>
+
+                    <br><br>
+                    <p style="text-align: center;">_____________________________________________<br>Assinatura do Emitente</p>
+                </div>
             </div>
+
             <button class="print-button" onclick="window.print()">Imprimir Comprovante</button>
         </body>
         </html>
     `;
 
-    const newWindow = window.open('', '_blank', 'width=850,height=900,scrollbars=yes');
+    const newWindow = window.open('', '_blank', 'width=850,height=1000,scrollbars=yes');
     if (newWindow) {
         newWindow.document.write(receiptHtmlContent);
         newWindow.document.close();
@@ -588,7 +593,6 @@ async function openSaleReceiptHtml(saleData) {
         showCustomPopup('Erro', 'Não foi possível abrir a nova aba para o comprovante. Verifique se pop-ups estão bloqueados.', 'error');
     }
 }
-
 
 
     async function finalizarVenda() {
