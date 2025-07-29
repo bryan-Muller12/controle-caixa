@@ -1,158 +1,159 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MullerSys</title>
-    <link rel="icon" type="image/png" href="mullersys.png">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MullerSys</title>
+    <link rel="icon" type="image/png" href="mullersys.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body id="page-venda">
-    <header>
-        <div class="header-left">
-            <h1>
-             
-                Ponto de Venda</h1>
-        </div>
-        <div class="header-right">
-            <button id="theme-toggle-btn" class="btn-icon" title="Alternar Tema">
-                <i class="fas fa-sun"></i> </button>
-            <button id="notifications-btn" class="btn-icon"><i class="fas fa-bell"></i><span id="notifications-badge" class="badge hidden">0</span></button>
-            <button id="logout-btn" class="btn-icon" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
-        </div>
-    </header>
+    <header>
+        <div class="header-left">
+            <h1>
+             
+                Ponto de Venda</h1>
+        </div>
+        <div class="header-right">
+            <button id="theme-toggle-btn" class="btn-icon" title="Alternar Tema">
+                <i class="fas fa-sun"></i> </button>
+            <button id="notifications-btn" class="btn-icon"><i class="fas fa-bell"></i><span id="notifications-badge" class="badge hidden">0</span></button>
+            <button id="logout-btn" class="btn-icon" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </header>
 
-    <aside class="sidebar-nav">
-        <div class="sidebar-logo">
-            <i> <img src="mullersys.png" alt="" style="height: 80px; vertical-align: middle;"></i>
-        </div>
-        <ul>
-            <li><a href="venda.html" class="active" title="Venda"><i class="fas fa-cash-register"></i><span>Venda</span></a></li>
-            <li><a href="estoque.html" title="Estoque"><i class="fas fa-boxes"></i><span>Estoque</span></a></li>
-            <li><a href="controle.html" title="Controle de Caixa"><i class="fas fa-wallet"></i><span>Caixa</span></a></li>
-            <li id="clients-section-link" class="active"><a href="clients.html" title="Clientes"><i class="fas fa-users"></i><span>Clientes</span></a></li>
-            <li id="admin-section-link" class="hidden"><a href="admin.html"><i class="fas fa-user-cog"></i> Admin</a></li>
-        </ul>
-    </aside>
+    <aside class="sidebar-nav">
+        <div class="sidebar-logo">
+            <i> <img src="mullersys.png" alt="" style="height: 80px; vertical-align: middle;"></i>
+        </div>
+        <ul>
+            <li><a href="venda.html" class="active" title="Venda"><i class="fas fa-cash-register"></i><span>Venda</span></a></li>
+            <li><a href="estoque.html" title="Estoque"><i class="fas fa-boxes"></i><span>Estoque</span></a></li>
+            <li><a href="controle.html" title="Controle de Caixa"><i class="fas fa-wallet"></i><span>Caixa</span></a></li>
+            <li id="clients-section-link" class="active"><a href="clients.html" title="Clientes"><i class="fas fa-users"></i><span>Clientes</span></a></li>
+            <li id="admin-section-link" class="hidden"><a href="admin.html"><i class="fas fa-user-cog"></i> Admin</a></li>
+        </ul>
+    </aside>
 
-    <main class="content venda-main">
-        <div class="notifications-tab hidden" id="notifications-tab">
-            <h2>Notificações</h2>
-            <ul id="notifications-list">
-                <li>Nenhuma notificação.</li>
-            </ul>
-            <button id="clear-notifications-btn" class="btn-clear-notifications">Limpar Notificações</button>
-        </div>
+    <main class="content venda-main">
+        <div class="notifications-tab hidden" id="notifications-tab">
+            <h2>Notificações</h2>
+            <ul id="notifications-list">
+                <li>Nenhuma notificação.</li>
+            </ul>
+            <button id="clear-notifications-btn" class="btn-clear-notifications">Limpar Notificações</button>
+        </div>
 
-        <div class="venda-container">
-            <div class="venda-left-panel">
-                <div class="product-display-card">
-                    <h3 id="product-name-display">Produto Selecionado</h3>
-                </div>
+        <div class="venda-container">
+            <div class="venda-left-panel">
+                <div class="product-display-card">
+                    <h3 id="product-name-display">Produto Selecionado</h3>
+                </div>
 
-                <div class="form-item-input">
-                    <div class="form-group">
-                        <label for="search-produto-input">Código ou Nome:</label>
-                        <input type="text" id="search-produto-input" placeholder="Pesquisar produto" autofocus>
-                        <button type="button" id="find-product-btn" class="btn-find-product"><i class="fas fa-search"></i></button>
-                    </div>
-                    <div id="found-product-details" class="hidden">
-                        <p><strong>Nome:</strong> <span id="found-product-name"></span></p>
-                        <p><strong>Cód:</strong> <span id="found-product-cod"></span></p>
-                        <p><strong>Estoque:</strong> <span id="found-product-quantity-stock"></span></p>
-                    </div>
-                    <div class="form-group">
-                        <label for="quantidade-item">Quantidade:</label>
-                        <input type="number" id="quantidade-item" min="1" value="1">
-                    </div>
-                    <div class="form-group">
-                        <label for="valor-unitario-item">Valor Unitário:</label>
-                        <input type="number" id="valor-unitario-item" min="0.01" step="0.01" value="0.00">
-                    </div>
-                    <div class="form-group">
-                        <label for="valor-total-item">Valor Total do Item:</label>
-                        <input type="text" id="valor-total-item" value="0.00" readonly>
-                    </div>
-                    <button type="button" id="add-item-to-cart-btn" class="btn-primary" disabled>Adicionar ao Carrinho</button>
-                </div>
+                <div class="form-item-input">
+                    <div class="form-group">
+                        <label for="search-produto-input">Código ou Nome do Produto:</label>
+                        <input type="text" id="search-produto-input" placeholder="Pesquisar produto" autofocus>
+                        <button type="button" id="find-product-btn" class="btn-find-product"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div id="found-product-details" class="hidden">
+                        <p><strong>Nome:</strong> <span id="found-product-name"></span></p>
+                        <p><strong>Cód:</strong> <span id="found-product-cod"></span></p>
+                        <p><strong>Estoque:</strong> <span id="found-product-quantity-stock"></span></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantidade-item">Quantidade:</label>
+                        <input type="number" id="quantidade-item" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="valor-unitario-item">Valor Unitário:</label>
+                        <input type="number" id="valor-unitario-item" min="0.01" step="0.01" value="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="valor-total-item">Valor Total do Item:</label>
+                        <input type="text" id="valor-total-item" value="0.00" readonly>
+                    </div>
+                    <button type="button" id="add-item-to-cart-btn" class="btn-primary" disabled>Adicionar ao Carrinho</button>
+                </div>
 
-                <div class="input-group" style="margin-top: 20px;">
-                    <label for="search-client-input">Cliente:</label>
-                    <div class="input-with-button">
-                        <input type="text" id="search-client-input" placeholder="Buscar cliente por nome ou CPF...">
-                        <button type="button" id="find-client-btn" class="btn-search"><i class="fas fa-search"></i></button>
+                <div class="client-selection-area">
+                    <h3>Informações do Cliente (Opcional)</h3>
+                    <div class="form-group">
+                        <label for="search-client-input">Buscar Cliente por Nome ou CPF:</label>
+                        <input type="text" id="search-client-input" placeholder="Pesquisar cliente">
+                        <button type="button" id="find-client-btn" class="btn-find-client"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div id="found-client-details" class="hidden">
+                        <p><strong>Nome do Cliente:</strong> <span id="found-client-name"></span></p>
+                        <p><strong>CPF/ID:</strong> <span id="found-client-id"></span></p>
+                        <button type="button" id="clear-client-btn" class="btn-secondary btn-clear-client">Limpar Cliente</button>
                     </div>
                 </div>
-                <div id="selected-client-display" class="hidden product-details-box">
-                    <p><strong>Cliente Selecionado:</strong> <span id="selected-client-name"></span></p>
-                    <p><span id="selected-client-cpf"></span></p>
-                    <button type="button" id="remove-client-btn" class="btn-action btn-danger hidden" title="Remover Cliente"><i class="fas fa-times"></i> Remover Cliente</button>
                 </div>
-                            </div>
 
-            <div class="venda-right-panel">
-                <div class="cart-header-row">
-                    <span>ITEM</span>
-                    <span>CÓDIGO</span>
-                    <span>DESCRIÇÃO</span>
-                    <span>QTD</span>
-                    <span>VL.UNIT</span>
-                    <span>VL.ITEM(R$)</span>
-                    <span>AÇÕES</span>
-                </div>
-                <ul id="cart-items-list" class="cart-items-list">
-                    <li class="empty-cart-message">Nenhum item no carrinho.</li>
-                </ul>
+            <div class="venda-right-panel">
+                <div class="cart-header-row">
+                    <span>ITEM</span>
+                    <span>CÓDIGO</span>
+                    <span>DESCRIÇÃO</span>
+                    <span>QTD</span>
+                    <span>VL.UNIT</span>
+                    <span>VL.ITEM(R$)</span>
+                    <span>AÇÕES</span>
+                </div>
+                <ul id="cart-items-list" class="cart-items-list">
+                    <li class="empty-cart-message">Nenhum item no carrinho.</li>
+                </ul>
 
-                <div class="sale-summary">
-                    <div class="summary-line">
-                        <span>Volumes:</span>
-                        <span id="total-volumes">0</span>
-                    </div>
-                    <div class="summary-line total-sale">
-                        <span>Total da Venda:</span>
-                        <span id="total-sale-display">R$ 0,00</span>
-                    </div>
-                </div>
+                <div class="sale-summary">
+                    <div class="summary-line">
+                        <span>Volumes:</span>
+                        <span id="total-volumes">0</span>
+                    </div>
+                    <div class="summary-line total-sale">
+                        <span>Total da Venda:</span>
+                        <span id="total-sale-display">R$ 0,00</span>
+                    </div>
+                </div>
 
-                <div class="sale-actions-bottom">
-                    <div class="discount-area">
-                        <input type="checkbox" id="aplicar-desconto">
-                        <label for="aplicar-desconto">Aplicar Desconto</label>
-                        <input type="number" id="valor-desconto-global" min="0" step="0.01" placeholder="R$" class="hidden">
-                    </div>
-                    <div class="main-sale-buttons">
-                        <button type="button" id="finalize-sale-btn" class="btn-primary" disabled>FINALIZAR VENDA</button>
-                        <button type="button" id="cancel-all-items-btn" class="btn-secondary" disabled>CANCELAR TUDO</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
+                <div class="sale-actions-bottom">
+                    <div class="discount-area">
+                        <input type="checkbox" id="aplicar-desconto">
+                        <label for="aplicar-desconto">Aplicar Desconto</label>
+                        <input type="number" id="valor-desconto-global" min="0" step="0.01" placeholder="R$" class="hidden">
+                    </div>
+                    <div class="main-sale-buttons">
+                        <button type="button" id="finalize-sale-btn" class="btn-primary" disabled>FINALIZAR VENDA</button>
+                        <button type="button" id="cancel-all-items-btn" class="btn-secondary" disabled>CANCELAR TUDO</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 
-    <div class="custom-popup-overlay hidden" id="custom-popup-overlay">
-        <div class="custom-popup-content">
-            <h2 id="custom-popup-title"></h2>
-            <p id="custom-popup-message"></p>
-            <div class="custom-popup-actions">
-                <button id="custom-popup-close-btn" class="btn-primary">OK</button>
-            </div>
-        </div>
-    </div>
+    <div class="custom-popup-overlay hidden" id="custom-popup-overlay">
+        <div class="custom-popup-content">
+            <h2 id="custom-popup-title"></h2>
+            <p id="custom-popup-message"></p>
+            <div class="custom-popup-actions">
+                <button id="custom-popup-close-btn" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
 
-    <div class="custom-confirm-overlay hidden" id="custom-confirm-overlay">
-        <div class="custom-confirm-content">
-            <h2 id="custom-confirm-title">Confirmação</h2>
-            <p id="custom-confirm-message">Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
-            <div class="custom-confirm-actions">
-                <button id="custom-confirm-yes-btn" class="btn-danger">Sim</button>
-                <button id="custom-confirm-no-btn" class="btn-secondary">Não</button>
-            </div>
-        </div>
-    </div>
+    <div class="custom-confirm-overlay hidden" id="custom-confirm-overlay">
+        <div class="custom-confirm-content">
+            <h2 id="custom-confirm-title">Confirmação</h2>
+            <p id="custom-confirm-message">Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
+            <div class="custom-confirm-actions">
+                <button id="custom-confirm-yes-btn" class="btn-danger">Sim</button>
+                <button id="custom-confirm-no-btn" class="btn-secondary">Não</button>
+            </div>
+        </div>
+    </div>
 
-    <script src="common.js"></script>
-    <script src="venda.js"></script>
+    <script src="common.js"></script>
+    <script src="venda.js"></script>
 </body>
 </html>
