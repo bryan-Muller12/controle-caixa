@@ -346,163 +346,239 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
 async function openSaleReceiptHtml(saleData) {
     const htmlContent = `
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Orçamento ${saleData.orderNumber}</title>
   <style>
+    :root {
+      --text-color: #333;
+      --border-color: #000;
+    }
+
     body {
       font-family: "Courier New", Courier, monospace;
       margin: 0;
       padding: 0;
-      background: white;
+      background: #f8f8f8;
+      color: var(--text-color);
     }
 
     .page {
       width: 210mm;
       min-height: 297mm;
       padding: 20mm;
-      margin: auto;
+      margin: 20px auto;
       background: white;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
       box-sizing: border-box;
     }
 
+    /* Tipografia */
+    h1, h2, h3, h4, h5, h6 {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      color: var(--text-color);
+      margin-bottom: 5px;
+    }
+
+    h3 {
+      font-size: 1.2em;
+      margin-top: 20px;
+      margin-bottom: 15px;
+    }
+
+    h4 {
+      font-size: 1.1em;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin: 3px 0;
+    }
+
+    /* Tabelas */
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
+      margin-bottom: 15px;
     }
 
+    table th,
+    table td {
+      padding: 6px;
+      text-align: left;
+    }
+
+    .bordered th,
+    .bordered td {
+      border: 1px solid var(--border-color);
+    }
+
+    /* Layout */
     .center {
       text-align: center;
     }
 
-    .bordered td, .bordered th {
-      border: 1px solid #000;
-      padding: 4px;
+    .right {
+      text-align: right;
     }
 
-    .spaced {
-      margin: 20px 0;
+    .spaced-section {
+      margin-top: 25px;
+      margin-bottom: 25px;
     }
 
     hr.dashed {
       border: none;
-      border-top: 1px dashed #000;
-      margin: 30px 0;
+      border-top: 1px dashed var(--border-color);
+      margin: 40px 0;
     }
 
+    /* Nota Promissória */
     .promissory {
       font-size: 13px;
       line-height: 1.6;
+    }
+
+    .promissory p {
+      margin-bottom: 8px;
+    }
+
+    /* Classes de Utilidade */
+    .bold {
+      font-weight: bold;
+    }
+
+    @media print {
+      body {
+        background: none;
+      }
+      .page {
+        margin: 0;
+        box-shadow: none;
+      }
     }
   </style>
 </head>
 <body>
   <div class="page">
-    <div class="center">
+    <header>
       <h2>AGROPECUÁRIA OURO BRANCO FILIAL</h2>
       <p>RUA PRIMEIRO DE MAIO, 120 - PINHALZINHO DOS GOES</p>
       <p>Ouro Fino - MG - CEP: 37570-000</p>
       <p>Telefone: ${saleData.companyPhone} - Fax: ${saleData.companyFax}</p>
       <p>CNPJ: ${saleData.companyCnpj} - IE: ${saleData.ieNumber}</p>
-    </div>
+    </header>
 
-    <h3 class="center spaced">ORÇAMENTO A CLIENTES</h3>
+    <h3 class="center spaced-section">ORÇAMENTO A CLIENTES</h3>
 
-    <table class="spaced">
-      <tr>
-        <td><strong>Pedido nº:</strong> ${saleData.orderNumber}</td>
-        <td><strong>Data:</strong> ${saleData.saleDate}</td>
-      </tr>
-    </table>
-
-    <table>
-      <tr>
-        <td><strong>Código:</strong> ${saleData.clientCode}</td>
-        <td><strong>Cliente:</strong> ${saleData.clientName}</td>
-      </tr>
-      <tr>
-        <td colspan="2"><strong>Endereço:</strong> ${saleData.clientAddress}</td>
-      </tr>
-      <tr>
-        <td><strong>Cidade:</strong> ${saleData.clientCity}</td>
-        <td><strong>Estado:</strong> ${saleData.clientUf}</td>
-      </tr>
-      <tr>
-        <td><strong>CEP:</strong> ${saleData.clientCep}</td>
-        <td><strong>Telefone:</strong> ${saleData.clientPhone}</td>
-      </tr>
-      <tr>
-        <td colspan="2"><strong>CPF/CNPJ:</strong> ${saleData.clientId}</td>
-      </tr>
-    </table>
-
-    <h4 class="spaced">Itens</h4>
-    <table class="bordered">
-      <thead>
+    <section class="spaced-section">
+      <table>
         <tr>
-          <th>Item</th>
-          <th>Quantidade</th>
-          <th>UN</th>
-          <th>Código</th>
-          <th>Descrição</th>
-          <th>Preço Unit.</th>
-          <th>Total (R$)</th>
+          <td><span class="bold">Pedido nº:</span> ${saleData.orderNumber}</td>
+          <td class="right"><span class="bold">Data:</span> ${saleData.saleDate}</td>
         </tr>
-      </thead>
-      <tbody>
-        ${saleData.itemsHtml}
-      </tbody>
-    </table>
+      </table>
 
-    <table class="spaced">
-      <tr>
-        <td><strong>Desc. Parciais:</strong> R$ 0,00</td>
-        <td><strong>Desc. Gerais:</strong> R$ ${saleData.discountValue}</td>
-        <td><strong>Frete:</strong> R$ ${saleData.freightValue}</td>
-        <td><strong>Total do Pedido:</strong> R$ ${saleData.totalFinal}</td>
-      </tr>
-    </table>
-
-    <h4>Condições de Pagamento</h4>
-    <table class="bordered">
-      <thead>
+      <table>
         <tr>
-          <th>Percentual</th>
-          <th>Vencimento</th>
-          <th>Valor</th>
+          <td><span class="bold">Código:</span> ${saleData.clientCode}</td>
+          <td><span class="bold">Cliente:</span> ${saleData.clientName}</td>
         </tr>
-      </thead>
-      <tbody>
-        ${saleData.paymentHtml}
-      </tbody>
-    </table>
+        <tr>
+          <td colspan="2"><span class="bold">Endereço:</span> ${saleData.clientAddress}</td>
+        </tr>
+        <tr>
+          <td><span class="bold">Cidade:</span> ${saleData.clientCity}</td>
+          <td><span class="bold">Estado:</span> ${saleData.clientUf}</td>
+        </tr>
+        <tr>
+          <td><span class="bold">CEP:</span> ${saleData.clientCep}</td>
+          <td><span class="bold">Telefone:</span> ${saleData.clientPhone}</td>
+        </tr>
+        <tr>
+          <td colspan="2"><span class="bold">CPF/CNPJ:</span> ${saleData.clientId}</td>
+        </tr>
+      </table>
+    </section>
 
-    <p class="spaced"><strong>Vendedor:</strong> ${saleData.sellerCode} - ${saleData.sellerName}</p>
+    <section class="spaced-section">
+      <h4>Itens</h4>
+      <table class="bordered">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Quantidade</th>
+            <th>UN</th>
+            <th>Código</th>
+            <th>Descrição</th>
+            <th class="right">Preço Unit.</th>
+            <th class="right">Total (R$)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${saleData.itemsHtml}
+        </tbody>
+      </table>
+
+      <table>
+        <tr>
+          <td><span class="bold">Desc. Parciais:</span> R$ 0,00</td>
+          <td><span class="bold">Desc. Gerais:</span> R$ ${saleData.discountValue}</td>
+          <td><span class="bold">Frete:</span> R$ ${saleData.freightValue}</td>
+          <td class="right"><span class="bold">Total do Pedido:</span> R$ ${saleData.totalFinal}</td>
+        </tr>
+      </table>
+    </section>
+
+    <section class="spaced-section">
+      <h4>Condições de Pagamento</h4>
+      <table class="bordered">
+        <thead>
+          <tr>
+            <th>Percentual</th>
+            <th>Vencimento</th>
+            <th>Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${saleData.paymentHtml}
+        </tbody>
+      </table>
+    </section>
+
+    <p class="spaced-section"><span class="bold">Vendedor:</span> ${saleData.sellerCode} - ${saleData.sellerName}</p>
 
     <hr class="dashed">
 
-    <div class="promissory">
+    <footer class="promissory">
       <h3 class="center">NOTA PROMISSÓRIA</h3>
-      <p>Pagarei por esta única via de <strong>NOTA PROMISSÓRIA</strong>, em moeda corrente deste país, à ordem de <strong>${saleData.companyName}</strong>, CNPJ <strong>${saleData.companyCnpj}</strong>, a quantia de <strong>R$ ${saleData.totalFinal}</strong> (<em>${saleData.totalExtenso}</em>), pagável em <strong>${saleData.paymentCity} - ${saleData.paymentState}</strong>, no dia <strong>${saleData.paymentDueDate}</strong>.</p>
+      <p>Pagarei por esta única via de <span class="bold">NOTA PROMISSÓRIA</span>, em moeda corrente deste país, à ordem de <span class="bold">${saleData.companyName}</span>, CNPJ <span class="bold">${saleData.companyCnpj}</span>, a quantia de <span class="bold">R$ ${saleData.totalFinal}</span> (<em>${saleData.totalExtenso}</em>), pagável em <span class="bold">${saleData.paymentCity} - ${saleData.paymentState}</span>, no dia <span class="bold">${saleData.paymentDueDate}</span>.</p>
 
-      <p><strong>Emitente:</strong> ${saleData.clientName}</p>
-      <p><strong>CPF/CNPJ:</strong> ${saleData.clientId}</p>
-      <p><strong>Endereço:</strong> ${saleData.clientAddress}, ${saleData.clientCity} - ${saleData.clientUf}, CEP: ${saleData.clientCep}</p>
+      <p><span class="bold">Emitente:</span> ${saleData.clientName}</p>
+      <p><span class="bold">CPF/CNPJ:</span> ${saleData.clientId}</p>
+      <p><span class="bold">Endereço:</span> ${saleData.clientAddress}, ${saleData.clientCity} - ${saleData.clientUf}, CEP: ${saleData.clientCep}</p>
 
-      <p class="right" style="text-align: right;">${saleData.clientCity}, ${saleData.saleDate}</p>
+      <p class="right" style="margin-top: 20px;">${saleData.clientCity}, ${saleData.saleDate}</p>
 
       <p class="center" style="margin-top: 60px;">_____________________________________________<br>Assinatura do Emitente</p>
-    </div>
+    </footer>
   </div>
   <script>
     window.print();
   </script>
 </body>
 </html>
-    `;
+`
 
     const newWindow = window.open('', '_blank');
     if (newWindow) {
