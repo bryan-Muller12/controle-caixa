@@ -186,29 +186,31 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         const termoBusca = searchClientInput.value.toLowerCase().trim();
         
         if (termoBusca.length >= 2) {
-            let filteredClients = [];
+            let directNameStartsWithMatches = [];
 
-            // Primeira tentativa: Buscar por nomes que COMEÇAM com o termo
-            filteredClients = allClients.filter(client =>
+            // 1. Primeira e mais prioritária busca: Nomes que COMEÇAM com o termo
+            directNameStartsWithMatches = allClients.filter(client =>
                 client.name.toLowerCase().startsWith(termoBusca)
             );
 
-            // Se não encontrou nenhum nome que comece com o termo,
-            // ou se o termo for um pouco mais longo,
-            // tenta uma busca mais abrangente (incluindo em outras propriedades)
-            if (filteredClients.length === 0 || termoBusca.length > 3) { // Aumenta o termo de busca para expandir
-                const expandedSearchClients = allClients.filter(client =>
-                    !filteredClients.includes(client) && // Evita duplicatas com a busca inicial
-                    (client.name.toLowerCase().includes(termoBusca) ||
-                    (client.phone && client.phone.replace(/\D/g, '').includes(termoBusca.replace(/\D/g, ''))) ||
-                    (client.address && client.address.toLowerCase().includes(termoBusca)))
+            let finalResults = [...directNameStartsWithMatches]; // Começa com os resultados mais relevantes
+
+            // 2. Condição para expandir a busca:
+            //    Só expande se NENHUM nome começar com o termo (directNameStartsWithMatches está vazio)
+            //    E se o termo de busca for longo o suficiente (ex: >= 5 caracteres) para sugerir uma busca mais ampla.
+            //    Isso evita que "Hellen" apareça para "brya".
+            if (directNameStartsWithMatches.length === 0 && termoBusca.length >= 25) {
+                const broaderMatches = allClients.filter(client =>
+                    // Não é necessário verificar duplicatas aqui pois directNameStartsWithMatches está vazio
+                    (client.name.toLowerCase().includes(termoBusca) || // Inclui nome que contém o termo
+                    (client.phone && client.phone.replace(/\D/g, '').includes(termoBusca.replace(/\D/g, ''))) || // Inclui telefone
+                    (client.address && client.address.toLowerCase().includes(termoBusca))) // Inclui endereço
                 );
-                filteredClients = [...filteredClients, ...expandedSearchClients];
+                finalResults = [...broaderMatches]; // Substitui os resultados finais pelos resultados mais amplos
             }
 
-            // Limita o número de resultados exibidos para evitar listas muito longas
             const MAX_SUGGESTIONS = 10; 
-            renderClientSearchResults(filteredClients.slice(0, MAX_SUGGESTIONS));
+            renderClientSearchResults(finalResults.slice(0, MAX_SUGGESTIONS));
         } else {
             clientSearchResultsDiv.classList.add('hidden');
             exibirClienteSelecionado(null);
