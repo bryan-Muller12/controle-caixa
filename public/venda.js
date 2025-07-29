@@ -29,23 +29,20 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
     const finalizeSaleBtn = document.getElementById('finalize-sale-btn');
     const cancelAllItemsBtn = document.getElementById('cancel-all-items-btn');
-    // REMOVIDO: const printReceiptBtn = document.getElementById('print-receipt-btn');
 
-    // REMOVIDO: Elementos do DOM para o recibo (não serão mais usados)
-    /*
-    const receiptPrintArea = document.getElementById('receipt-print-area');
-    const receiptDate = document.getElementById('receipt-date');
-    const receiptTransactionId = document.getElementById('receipt-transaction-id');
-    const receiptItemsList = document.getElementById('receipt-items-list');
-    const receiptSubtotal = document.getElementById('receipt-subtotal');
-    const receiptDiscount = document.getElementById('receipt-discount');
-    const receiptTotal = document.getElementById('receipt-total');
-    */
+    // --- NOVOS ELEMENTOS DO DOM PARA CLIENTE ---
+    const searchClientInput = document.getElementById('search-client-input');
+    const findClientBtn = document.getElementById('find-client-btn');
+    const selectedClientDisplay = document.getElementById('selected-client-display');
+    const selectedClientName = document.getElementById('selected-client-name');
+    const selectedClientCpf = document.getElementById('selected-client-cpf');
+    const removeClientBtn = document.getElementById('remove-client-btn'); // Botão para remover cliente selecionado
 
     // --- ESTADO DA APLICAÇÃO ---
     let produtos = []; // Produtos carregados do banco de dados
     let carrinho = [];
-    // REMOVIDO: let ultimaVendaFinalizada = null;
+    let allClients = []; // Todos os clientes carregados do banco de dados
+    let selectedClient = null; // Cliente selecionado para a venda
 
     // Função auxiliar para fazer requisições à API
     async function fazerRequisicaoApi(url, method, data = {}) {
@@ -77,6 +74,16 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         } catch (error) {
             console.error('Erro ao carregar produtos:', error);
             showCustomPopup('Erro', 'Não foi possível carregar os produtos do servidor.', 'error');
+        }
+    }
+
+    // Carregar clientes do backend
+    async function carregarClientes() {
+        try {
+            allClients = await fazerRequisicaoApi('/api/clients', 'GET');
+        } catch (error) {
+            console.error('Erro ao carregar clientes:', error);
+            showCustomPopup('Erro', 'Não foi possível carregar os clientes do servidor.', 'error');
         }
     }
 
@@ -130,6 +137,52 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             exibirDetalhesProdutoEncontrado(null);
             searchProdutoInput.value = '';
         }
+    }
+
+    // Função para exibir detalhes do cliente selecionado
+    function exibirClienteSelecionado(client) {
+        selectedClient = client;
+        if (client) {
+            selectedClientName.textContent = client.name;
+            selectedClientCpf.textContent = client.cpf_hash ? 'CPF: ' + formatCpf(client.cpf_hash) : 'CPF: N/A'; // Assuming cpf_hash is returned from API or not displayed
+            selectedClientDisplay.classList.remove('hidden');
+            removeClientBtn.classList.remove('hidden');
+        } else {
+            selectedClientName.textContent = 'Nenhum Cliente Selecionado';
+            selectedClientCpf.textContent = '';
+            selectedClientDisplay.classList.add('hidden');
+            removeClientBtn.classList.add('hidden');
+        }
+    }
+
+    // Função para pesquisar e selecionar cliente
+    function pesquisarCliente() {
+        const termoBusca = searchClientInput.value.toLowerCase().trim();
+        let client = null;
+
+        if (termoBusca) {
+            client = allClients.find(c =>
+                (c.name.toLowerCase().includes(termoBusca)) ||
+                (c.phone && c.phone.toLowerCase().includes(termoBusca)) ||
+                (c.cpf_hash && c.cpf_hash.toLowerCase().includes(termoBusca)) // Assuming cpf_hash exists
+            );
+        }
+
+        if (client) {
+            exibirClienteSelecionado(client);
+            searchClientInput.value = client.name; // Preenche o input com o nome do cliente encontrado
+        } else {
+            showCustomPopup('Alerta', 'Cliente não encontrado.', 'warning');
+            exibirClienteSelecionado(null);
+            searchClientInput.value = '';
+        }
+    }
+
+    // Função para remover o cliente selecionado
+    function removerClienteSelecionado() {
+        exibirClienteSelecionado(null);
+        searchClientInput.value = '';
+        showCustomPopup('Informação', 'Cliente removido da venda.', 'info');
     }
 
     function atualizarValorTotalItem() {
@@ -203,7 +256,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             emptyCartMessage.classList.remove('hidden');
             finalizeSaleBtn.disabled = true;
             cancelAllItemsBtn.disabled = true;
-            // REMOVIDO: printReceiptBtn.classList.add('hidden');
             valorDescontoGlobalInput.value = '';
             aplicarDescontoCheckbox.checked = false;
         } else {
@@ -243,7 +295,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
             atualizarCarrinhoDisplay();
             resetItemInputArea();
             showCustomPopup('Sucesso', 'Todos os itens da venda foram cancelados.', 'success');
-            // REMOVIDO: printReceiptBtn.classList.add('hidden');
         }
     }
 
@@ -326,6 +377,7 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
                     descricao: `Venda de múltiplos itens`,
                     valor: totalDaVenda, // Valor final da venda
                     data: new Date().toISOString().split('T')[0], // Data atual no formato YYYY-MM-DD
+                    clientId: selectedClient ? selectedClient.id : null, // ID do cliente ou null
                     detalhesVenda: {
                         totalBruto: subtotalBruto.toFixed(2),
                         valorDesconto: valorDescontoAplicado.toFixed(2),
@@ -350,40 +402,6 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         }
     }
 
-    // REMOVIDO: Função para gerar o conteúdo do recibo
-    /*
-    function gerarReciboParaImpressao() {
-        if (!ultimaVendaFinalizada) {
-            showCustomPopup('Erro', 'Nenhuma venda para gerar recibo.', 'error');
-            return;
-        }
-
-        receiptDate.textContent = new Date(ultimaVendaFinalizada.data).toLocaleDateString('pt-BR');
-        receiptTransactionId.textContent = ultimaVendaFinalizada.id;
-        
-        receiptSubtotal.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.totalBruto).toFixed(2);
-        receiptDiscount.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.valorDesconto).toFixed(2);
-        receiptTotal.textContent = parseFloat(ultimaVendaFinalizada.detalhesVenda.totalFinal).toFixed(2);
-
-        receiptItemsList.innerHTML = '';
-        if (ultimaVendaFinalizada.detalhesVenda && ultimaVendaFinalizada.detalhesVenda.itens) {
-            ultimaVendaFinalizada.detalhesVenda.itens.forEach(item => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <span>- ${item.nomeProduto} (${item.codProduto})</span>
-                    <span>${item.quantidadeVendida} x R$ ${item.precoUnitarioVenda.toFixed(2)}</span>
-                    <span>R$ ${item.totalItem.toFixed(2)}</span>
-                `;
-                receiptItemsList.appendChild(li);
-            });
-        }
-        
-        window.print();
-        
-        resetVendaCompleta();
-    }
-    */
-
     function resetVendaCompleta() {
         carrinho = [];
         atualizarCarrinhoDisplay();
@@ -393,10 +411,12 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
         valorDescontoGlobalInput.value = '';
         searchProdutoInput.value = '';
         productNameDisplay.textContent = 'Produto Selecionado';
-        // REMOVIDO: printReceiptBtn.classList.add('hidden');
-        // REMOVIDO: printReceiptBtn.disabled = true;
-        // REMOVIDO: ultimaVendaFinalizada = null;
+        
+        exibirClienteSelecionado(null); // Reseta a exibição do cliente
+        searchClientInput.value = ''; // Limpa o campo de busca de cliente
+
         carregarProdutos(); // Recarrega os produtos após o reset da venda para garantir estoque atualizado
+        carregarClientes(); // Recarrega os clientes para garantir dados atualizados
     }
 
     searchProdutoInput.addEventListener('keypress', (e) => {
@@ -424,8 +444,31 @@ if (document.body.id === 'page-venda' || location.pathname.includes('venda.html'
 
     finalizeSaleBtn.addEventListener('click', finalizarVenda);
     cancelAllItemsBtn.addEventListener('click', cancelarTodosItens);
-    // REMOVIDO: printReceiptBtn.addEventListener('click', gerarReciboParaImpressao);
+    
+    // --- NOVOS LISTENERS PARA CLIENTES ---
+    searchClientInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            pesquisarCliente();
+        }
+    });
+    findClientBtn.addEventListener('click', pesquisarCliente);
+    removeClientBtn.addEventListener('click', removerClienteSelecionado);
 
 
-    document.addEventListener('DOMContentLoaded', carregarProdutos);
+    document.addEventListener('DOMContentLoaded', () => {
+        carregarProdutos();
+        carregarClientes(); // Carrega clientes ao iniciar a página
+    });
+
+    // Helper para formatar CPF, similar ao clients.js
+    function formatCpf(cpf) {
+        if (!cpf) return '';
+        const cleaned = ('' + cpf).replace(/\D/g, '');
+        const match = cleaned.match(/^(\d{3})(\d{3})(\d{3})(\d{2})$/);
+        if (match) {
+            return `${match[1]}.${match[2]}.${match[3]}-${match[4]}`;
+        }
+        return cpf;
+    }
 }
